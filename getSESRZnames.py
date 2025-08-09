@@ -5,7 +5,7 @@ import json
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Specify the relative path to your GeoJSON file
-geojson_file_path = os.path.join(script_dir, 'councils.geojson')
+geojson_file_path = os.path.join(script_dir, 'ses.geojson')
 
 # Read the GeoJSON file
 with open(geojson_file_path, 'r') as file:
