@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>SES Response Boundaries</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/esri-leaflet@3.0.9/dist/esri-leaflet.js"></script>
+  <script>
+    var map = L.map('map').setView([-37.8, 144.9], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    var boundaries = L.esri.featureLayer({
+      url: 'https://maps.ffm.vic.gov.au/arcgis/rest/services/boundaries/MapServer/16'
+    }).addTo(map);
+    boundaries.once('load', function() {
+      map.fitBounds(boundaries.getBounds());
+    });
+  </script>
+</body>
+</html>
