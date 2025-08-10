@@ -1,0 +1,9 @@
+export const featureLayers = { ses:{}, lga:{}, cfa:{}, ambulance:{} };
+export const namesByCategory = { ses:[], lga:[], cfa:[], ambulance:[] };
+export const nameToKey = { ses:{}, lga:{}, cfa:{}, ambulance:{} };
+export const emphasised = { ses:{}, lga:{}, cfa:{}, ambulance:{} };
+export const nameLabelMarkers = { ses:{}, lga:{}, cfa:{}, ambulance:{} };
+export let activeListFilter = '';
+export function setActiveListFilter(v){ activeListFilter = v; }
+export let map = null;
+export function setMap(m){ map = m; }
