@@ -14,6 +14,8 @@ with open(geojson_file_path, 'r') as file:
 # Extract LGA names
 response_zone_names = [feature['properties']['RESPONSE_ZONE_NAME'] for feature in geojson_data['features']]
 
-# Print the list of LGA names
-for response_zone in response_zone_names:
-    print(response_zone)
+# Write the list of response zone names to SESRSnames.txt
+output_file_path = os.path.join(script_dir, 'SESRZnames.txt')
+with open(output_file_path, 'w', encoding='utf-8') as out_file:
+    for response_zone in response_zone_names:
+        out_file.write(f"{response_zone}\n")

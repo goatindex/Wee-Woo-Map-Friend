@@ -14,6 +14,8 @@ with open(geojson_file_path, 'r') as file:
 # Extract LGA names
 lga_names = [feature['properties']['LGA_NAME'] for feature in geojson_data['features']]
 
-# Print the list of LGA names
-for lga_name in lga_names:
-    print(lga_name)
+# Write the list of LGA names to LGAnames.txt
+output_file_path = os.path.join(script_dir, 'LGAnames.txt')
+with open(output_file_path, 'w', encoding='utf-8') as out_file:
+    for lga_name in lga_names:
+        out_file.write(f"{lga_name}\n")
