@@ -1,103 +1,109 @@
 import { categoryMeta } from '../config.js';
-import { featureLayers, namesByCategory, nameToKey, getMap } from '../state.js';
+import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers } from '../state.js';
 import { setupActiveListSync, updateActiveList } from '../ui/activeList.js';
 import { toTitleCase, createCheckbox } from '../utils.js';
-import { emphasised, nameLabelMarkers } from '../state.js';
+import { getMap } from '../state.js';
 
-export async function loadPolygonCategory(category,url){
+export async function loadPolygonCategory(category, url) {
   const meta = categoryMeta[category];
   const map = getMap();
   try {
     const res = await fetch(url);
-    if(!res.ok) throw new Error(res.status);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    if(!data || !Array.isArray(data.features)) throw new Error('bad geojson');
+    if (!data || !Array.isArray(data.features)) throw new Error('Invalid GeoJSON');
 
-    // Prepare per-name arrays
-    data.features.forEach(f=>{
-      if(!f?.properties) return;
+    // Pre-create containers
+    data.features.forEach(f => {
+      if (!f?.properties) return;
       let raw = f.properties[meta.nameProp];
-      if(typeof raw !== 'string') return;
+      if (typeof raw !== 'string') return;
       raw = raw.trim();
-      if(!raw) return;
+      if (!raw) return;
       const key = raw.toLowerCase();
-      if(!featureLayers[category][key]) featureLayers[category][key] = [];
+      if (!featureLayers[category][key]) featureLayers[category][key] = [];
     });
 
-    // Build GeoJSON WITHOUT attaching to map
+    // Build GeoJSON (NOT added to map yet)
     const tempLayer = L.geoJSON(data, {
       style: meta.styleFn,
       onEachFeature: (feature, layer) => {
-        if(!feature.properties) return;
+        if (!feature.properties) return;
         let raw = feature.properties[meta.nameProp];
-        if(typeof raw !== 'string') raw = 'Unnamed';
+        if (typeof raw !== 'string') raw = 'Unnamed';
         raw = raw.trim();
         const key = raw.toLowerCase();
-        if(!featureLayers[category][key]) featureLayers[category][key] = [];
+        if (!featureLayers[category][key]) featureLayers[category][key] = [];
         featureLayers[category][key].push(layer);
         layer.bindPopup(toTitleCase(raw));
-        // Do not add layer now; it stays detached until user checks box
       }
     });
 
-    // Fit bounds for SES once (even though not showing polygons)
-    if(category === 'ses' && tempLayer?.getBounds){
+    // Fit bounds for SES only (optional)
+    if (category === 'ses' && tempLayer?.getBounds) {
       const b = tempLayer.getBounds();
-      if(b.isValid()) map.fitBounds(b);
+      if (b.isValid()) map.fitBounds(b);
     }
 
-    // Build name lists
+    // Build name arrays
     namesByCategory[category] = Object.keys(featureLayers[category])
       .map(k => toTitleCase(k))
-      .sort((a,b)=>a.localeCompare(b));
+      .sort((a, b) => a.localeCompare(b));
+
     nameToKey[category] = {};
-    Object.keys(featureLayers[category]).forEach(k=>{
+    Object.keys(featureLayers[category]).forEach(k => {
       nameToKey[category][toTitleCase(k)] = k;
     });
 
-    // Sidebar population (all start unchecked)
+    // Populate sidebar (all unchecked)
     const listEl = document.getElementById(meta.listId);
     listEl.innerHTML = '';
-    namesByCategory[category].forEach(displayName=>{
+    namesByCategory[category].forEach(displayName => {
       const key = nameToKey[category][displayName];
-      const checked = !!meta.defaultOn(displayName); // always false now
-      const cb = createCheckbox(`${category}_${key}`, displayName, checked, e=>{
-        const on = e.target.checked;
-        featureLayers[category][key].forEach(l => on ? l.addTo(map) : map.removeLayer(l));
-        if(!on){
-          emphasised[category][key] = false;
-          if(nameLabelMarkers[category][key]){
-            map.removeLayer(nameLabelMarkers[category][key]);
-            nameLabelMarkers[category][key] = null;
-          }
-        }
-        updateActiveList();
-      });
-      listEl.appendChild(cb);
-      // Initial (all false) => ensures nothing added
-      featureLayers[category][key].forEach(l => checked ? l.addTo(map) : map.removeLayer(l));
-    });
-
-    // Group toggle (unchanged)
-    const toggleAll = document.getElementById(meta.toggleAllId);
-    if(toggleAll && !toggleAll._bound){
-      toggleAll._bound = true;
-      toggleAll.addEventListener('change', e=>{
-        const on = e.target.checked;
-        namesByCategory[category].forEach(n=>{
-          const key = nameToKey[category][n];
-          const rowCb = document.getElementById(`${category}_${key}`);
-          if(rowCb){
-            rowCb.checked = on;
-            featureLayers[category][key].forEach(l => on ? l.addTo(map) : map.removeLayer(l));
-            if(!on){
-              emphasised[category][key] = false;
-              if(nameLabelMarkers[category][key]){
-                map.removeLayer(nameLabelMarkers[category][key]);
-                nameLabelMarkers[category][key] = null;
-              }
+      const checked = false; // default off
+      const cb = createCheckbox(
+        `${category}_${key}`,
+        displayName,
+        checked,
+        e => {
+          const on = e.target.checked;
+          featureLayers[category][key].forEach(l => on ? l.addTo(map) : map.removeLayer(l));
+          if (!on) {
+            emphasised[category][key] = false;
+            if (nameLabelMarkers[category][key]) {
+              map.removeLayer(nameLabelMarkers[category][key]);
+              nameLabelMarkers[category][key] = null;
             }
           }
+          updateActiveList();
+        }
+      );
+      listEl.appendChild(cb);
+      // Ensure not added initially
+      featureLayers[category][key].forEach(l => map.removeLayer(l));
+    });
+
+    // Group toggle
+    const toggleAll = document.getElementById(meta.toggleAllId);
+    if (toggleAll && !toggleAll._bound) {
+      toggleAll._bound = true;
+      toggleAll.checked = false;
+      toggleAll.addEventListener('change', e => {
+        const on = e.target.checked;
+        namesByCategory[category].forEach(n => {
+          const key = nameToKey[category][n];
+          const rowCb = document.getElementById(`${category}_${key}`);
+            if (rowCb) {
+              rowCb.checked = on;
+              featureLayers[category][key].forEach(l => on ? l.addTo(map) : map.removeLayer(l));
+              if (!on) {
+                emphasised[category][key] = false;
+                if (nameLabelMarkers[category][key]) {
+                  map.removeLayer(nameLabelMarkers[category][key]);
+                  nameLabelMarkers[category][key] = null;
+                }
+              }
+            }
         });
         updateActiveList();
       });
@@ -105,9 +111,10 @@ export async function loadPolygonCategory(category,url){
 
     setupActiveListSync(category);
     updateActiveList();
+    console.log(`Loaded ${category}:`, namesByCategory[category].length, 'areas');
 
-  } catch(err){
-    console.error('loadPolygonCategory', category, err);
-    alert('Failed to load '+category);
+  } catch (err) {
+    console.error('loadPolygonCategory error', category, err);
+    alert('Failed to load ' + category);
   }
 }
