@@ -114,7 +114,7 @@ function addItems(category,container){
     const emphCb=document.createElement('input');
     emphCb.type='checkbox';
     // Default: all SES polygons emphasised by default
-    emphCb.checked = category === 'ses' && categoryMeta.ses.defaultOn(displayName) ? true : !!emphasised[category][key];
+  emphCb.checked = !!emphasised[category][key];
     emphCb.title='Emphasise';
     emphCb.addEventListener('change',()=> setEmphasis(category,key,emphCb.checked,isPoint));
     emphBox.appendChild(emphCb);
@@ -128,11 +128,7 @@ function addItems(category,container){
     const nameCb=document.createElement('input');
     nameCb.type='checkbox';
     // Default: show name for all specified polygons
-    nameCb.checked = (
-      (category === 'ses' && categoryMeta.ses.defaultOn(displayName)) ||
-      (category === 'lga' && categoryMeta.lga.defaultOn(displayName)) ||
-      (category === 'cfa' && categoryMeta.cfa.defaultOn(displayName))
-    ) ? true : !!nameLabelMarkers[category][key];
+  nameCb.checked = !!nameLabelMarkers[category][key];
     nameCb.title='Show Name';
     nameCb.addEventListener('change',()=>{
       removeLabel(category,key);
