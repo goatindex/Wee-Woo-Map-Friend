@@ -21,9 +21,30 @@ export function updateActiveList(){
 
   const headerRow=document.createElement('div');
   headerRow.style.display='flex'; headerRow.style.alignItems='center'; headerRow.style.marginBottom='4px';
-  const spacer=document.createElement('span'); spacer.style.flex='1'; headerRow.appendChild(spacer);
-  headerRow.appendChild(makeHeaderSpan('‼','Emphasise'));
-  headerRow.appendChild(makeHeaderSpan('⁇','Show Name'));
+  // Name column spacer
+  const spacer=document.createElement('span');
+  spacer.style.flex='1';
+  headerRow.appendChild(spacer);
+  // Emphasise header
+  const emphHeader=document.createElement('span');
+  emphHeader.textContent='‼';
+  emphHeader.title='Emphasise';
+  emphHeader.style.display='flex';
+  emphHeader.style.justifyContent='center';
+  emphHeader.style.alignItems='center';
+  emphHeader.style.width='32px';
+  emphHeader.style.fontWeight='bold';
+  headerRow.appendChild(emphHeader);
+  // Show Name header
+  const nameHeader=document.createElement('span');
+  nameHeader.textContent='⁇';
+  nameHeader.title='Show Name';
+  nameHeader.style.display='flex';
+  nameHeader.style.justifyContent='center';
+  nameHeader.style.alignItems='center';
+  nameHeader.style.width='32px';
+  nameHeader.style.fontWeight='bold';
+  headerRow.appendChild(nameHeader);
   activeList.appendChild(headerRow);
 
   ['ses','lga','cfa','ambulance'].forEach(cat=>addItems(cat,activeList));
@@ -52,26 +73,42 @@ function addItems(category,container){
     }
     const row=document.createElement('div');
     row.style.display='flex'; row.style.alignItems='center'; row.style.marginBottom='2px';
-
+    // Name column
     const nameSpan=document.createElement('span');
     nameSpan.textContent=displayName;
     nameSpan.style.color=outlineColors[category];
     nameSpan.style.fontWeight='bold';
     nameSpan.style.flex='1';
     row.appendChild(nameSpan);
-
-    // Emphasis
-    const emphBox=document.createElement('span'); emphBox.style.margin='0 8px';
+    // Emphasise checkbox column
+    const emphBox=document.createElement('span');
+    emphBox.style.display='flex';
+    emphBox.style.justifyContent='center';
+    emphBox.style.alignItems='center';
+    emphBox.style.width='32px';
     const emphCb=document.createElement('input');
-    emphCb.type='checkbox'; emphCb.checked=!!emphasised[category][key]; emphCb.title='Emphasise';
+    emphCb.type='checkbox';
+    // Default: all SES polygons emphasised by default
+    emphCb.checked = category === 'ses' && categoryMeta.ses.defaultOn(displayName) ? true : !!emphasised[category][key];
+    emphCb.title='Emphasise';
     emphCb.addEventListener('change',()=> setEmphasis(category,key,emphCb.checked,isPoint));
     emphBox.appendChild(emphCb);
     row.appendChild(emphBox);
-
-    // Name label
+    // Show Name checkbox column
     const nameBox=document.createElement('span');
+    nameBox.style.display='flex';
+    nameBox.style.justifyContent='center';
+    nameBox.style.alignItems='center';
+    nameBox.style.width='32px';
     const nameCb=document.createElement('input');
-    nameCb.type='checkbox'; nameCb.checked=!!nameLabelMarkers[category][key]; nameCb.title='Show Name';
+    nameCb.type='checkbox';
+    // Default: show name for all specified polygons
+    nameCb.checked = (
+      (category === 'ses' && categoryMeta.ses.defaultOn(displayName)) ||
+      (category === 'lga' && categoryMeta.lga.defaultOn(displayName)) ||
+      (category === 'cfa' && categoryMeta.cfa.defaultOn(displayName))
+    ) ? true : !!nameLabelMarkers[category][key];
+    nameCb.title='Show Name';
     nameCb.addEventListener('change',()=>{
       removeLabel(category,key);
       if(nameCb.checked){
@@ -81,7 +118,6 @@ function addItems(category,container){
     });
     nameBox.appendChild(nameCb);
     row.appendChild(nameBox);
-
     container.appendChild(row);
   });
 }

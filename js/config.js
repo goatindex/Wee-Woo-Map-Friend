@@ -8,7 +8,12 @@ export const categoryMeta = {
     type: 'polygon',
     nameProp: 'RESPONSE_ZONE_NAME',
     styleFn: sesStyle,
-    defaultOn: () => false,
+    defaultOn: (name) => [
+      'Fawkner',
+      'Essendon',
+      'Sunbury',
+      'Craigieburn'
+    ].includes(name.trim()),
     listId: 'sesList',
     toggleAllId: 'toggleAllSES'
   },
@@ -16,7 +21,10 @@ export const categoryMeta = {
     type: 'polygon',
     nameProp: 'LGA_NAME',
     styleFn: lgaStyle,
-    defaultOn: () => false,
+    defaultOn: (name) => [
+      'Hume City',
+      'Merri-bek City'
+    ].includes(name.trim()),
     listId: 'lgaList',
     toggleAllId: 'toggleAllLGAs'
   },
@@ -24,7 +32,9 @@ export const categoryMeta = {
     type: 'polygon',
     nameProp: 'BRIG_NAME',
     styleFn: cfaStyle,
-    defaultOn: () => false,
+    defaultOn: (name) => [
+      'Bulla'
+    ].includes(name.trim()),
     listId: 'cfaList',
     toggleAllId: 'toggleAllCFA'
   },
