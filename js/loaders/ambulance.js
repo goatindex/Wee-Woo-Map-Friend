@@ -13,7 +13,7 @@ export async function loadAmbulance(){
     if(!res.ok) throw new Error(res.status);
     const data=await res.json();
     ambulanceData = data.features.filter(f =>
-      f?.properties?.facility_state==='Victoria' &&
+      f?.properties?.facility_state?.toLowerCase()==='victoria' &&
       f.properties.facility_lat && f.properties.facility_long
     );
     ambulanceData.forEach(f=>{
