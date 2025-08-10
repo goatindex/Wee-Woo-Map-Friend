@@ -45,8 +45,8 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
       border-radius:8px;padding:4px 12px;font-weight:bold;
       color:${outline};font-size:0.95em;
       box-shadow:0 2px 8px rgba(0,0,0,.10);text-align:center;
-      min-width:60px;max-width:220px;line-height:1.2;hyphens:manual;
-      height:2.6em;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow-wrap:break-word;white-space:normal;">
+      min-width:60px;max-width:340px;line-height:1.2;hyphens:manual;
+      display:inline-block;overflow-wrap:break-word;white-space:normal;">
       <span style="display:block;width:100%;">${text}</span>
     </div>`;
   } else {
