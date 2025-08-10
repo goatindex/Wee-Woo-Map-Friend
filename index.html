@@ -221,10 +221,12 @@
         sesList.innerHTML = '';
         sesNames.forEach(name => {
           const key = sesNameToKey[name];
+          // Default: all off except Fawkner
+          const checked = (name.toLowerCase() === "fawkner");
           const cb = createCheckbox(
             'ses_' + key,
             name,
-            true,
+            checked,
             function (e) {
               sesFeatureLayers[key].forEach(layer => {
                 if (e.target.checked) {
@@ -237,7 +239,18 @@
             }
           );
           sesList.appendChild(cb);
+          // Set initial visibility
+          sesFeatureLayers[key].forEach(layer => {
+            if (checked) {
+              layer.addTo(map);
+            } else {
+              map.removeLayer(layer);
+            }
+          });
         });
+
+        // Set "Show All SES" to unchecked by default
+        document.getElementById('toggleAllSES').checked = false;
 
         document.getElementById('toggleAllSES').addEventListener('change', function (e) {
           const checked = e.target.checked;
@@ -266,11 +279,10 @@
           const x = feature.properties.X_CORD;
           const y = feature.properties.Y_CORD;
           if (unitName && x && y) {
-            // Create a custom div icon for the floating box
             const sesUnitIcon = L.divIcon({
               className: 'ses-unit-marker',
               html: `<div class="ses-unit-label">${toTitleCase(unitName)}</div>`,
-              iconAnchor: [60, 44] // Adjust so pointer is at the marker location
+              iconAnchor: [60, 44]
             });
             L.marker([y, x], { icon: sesUnitIcon, interactive: false }).addTo(map);
           }
@@ -310,10 +322,12 @@
         lgaList.innerHTML = '';
         lgaNames.forEach(name => {
           const key = lgaNameToKey[name];
+          // Default: only Merri Bek and Hume on
+          const checked = (name.toLowerCase() === "merri bek" || name.toLowerCase() === "hume");
           const cb = createCheckbox(
             'lga_' + key,
             name,
-            true,
+            checked,
             function (e) {
               lgaFeatureLayers[key].forEach(layer => {
                 if (e.target.checked) {
@@ -326,7 +340,18 @@
             }
           );
           lgaList.appendChild(cb);
+          // Set initial visibility
+          lgaFeatureLayers[key].forEach(layer => {
+            if (checked) {
+              layer.addTo(map);
+            } else {
+              map.removeLayer(layer);
+            }
+          });
         });
+
+        // Set "Show All LGAs" to unchecked by default
+        document.getElementById('toggleAllLGAs').checked = false;
 
         document.getElementById('toggleAllLGAs').addEventListener('change', function (e) {
           const checked = e.target.checked;
@@ -382,10 +407,12 @@
         cfaList.innerHTML = '';
         cfaNames.forEach(name => {
           const key = cfaNameToKey[name];
+          // Default: all off
+          const checked = false;
           const cb = createCheckbox(
             'cfa_' + key,
             name,
-            true,
+            checked,
             function (e) {
               cfaFeatureLayers[key].forEach(layer => {
                 if (e.target.checked) {
@@ -398,7 +425,18 @@
             }
           );
           cfaList.appendChild(cb);
+          // Set initial visibility
+          cfaFeatureLayers[key].forEach(layer => {
+            if (checked) {
+              layer.addTo(map);
+            } else {
+              map.removeLayer(layer);
+            }
+          });
         });
+
+        // Set "Show All CFA" to unchecked by default
+        document.getElementById('toggleAllCFA').checked = false;
 
         document.getElementById('toggleAllCFA').addEventListener('change', function (e) {
           const checked = e.target.checked;
