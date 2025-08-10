@@ -538,6 +538,9 @@
     // Store emphasised state: {category: {key: true/false}}
     let emphasised = { ses: {}, lga: {}, cfa: {} };
 
+    // Store the current filter for the All Active search box
+    let activeListFilter = "";
+
     // Helper to update the "All Active" section
     function updateActiveList() {
       const activeList = document.getElementById('activeList');
@@ -561,6 +564,9 @@
       emphHeader.style.marginRight = '8px';
       emphHeader.textContent = '‼';
       emphHeader.title = 'Emphasise';
+      emphHeader.style.display = 'flex';
+      emphHeader.style.alignItems = 'center';
+      emphHeader.style.height = '24px'; // match checkbox height
       headerRow.appendChild(emphHeader);
 
       // Name header (??)
@@ -568,6 +574,9 @@
       nameShowHeader.style.fontWeight = 'bold';
       nameShowHeader.textContent = '⁇';
       nameShowHeader.title = 'Show Name';
+      nameShowHeader.style.display = 'flex';
+      nameShowHeader.style.alignItems = 'center';
+      nameShowHeader.style.height = '24px'; // match checkbox height
       headerRow.appendChild(nameShowHeader);
 
       activeList.appendChild(headerRow);
@@ -590,24 +599,55 @@
 
         if (latlngs.length === 0) return layer.getBounds().getCenter();
 
-        // Find widest horizontal (max lng span) and vertical (max lat span)
-        let minLat = latlngs[0].lat, maxLat = latlngs[0].lat;
-        let minLng = latlngs[0].lng, maxLng = latlngs[0].lng;
-        latlngs.forEach(ll => {
-          if (ll.lat < minLat) minLat = ll.lat;
-          if (ll.lat > maxLat) maxLat = ll.lat;
-          if (ll.lng < minLng) minLng = ll.lng;
-          if (ll.lng > maxLng) maxLng = ll.lng;
-        });
-        // Center of widest horizontal and vertical
-        const centerLat = (minLat + maxLat) / 2;
-        const centerLng = (minLng + maxLng) / 2;
-        return L.latLng(centerLat, centerLng);
+        // Find the widest horizontal span (max lng distance) and its midpoint
+        let maxHSpan = 0, hMidLat = 0, hMidLng = 0;
+        for (let i = 0; i < latlngs.length; i++) {
+          for (let j = i + 1; j < latlngs.length; j++) {
+            let span = Math.abs(latlngs[i].lng - latlngs[j].lng);
+            if (span > maxHSpan) {
+              maxHSpan = span;
+              hMidLat = (latlngs[i].lat + latlngs[j].lat) / 2;
+              hMidLng = (latlngs[i].lng + latlngs[j].lng) / 2;
+            }
+          }
+        }
+
+        // Find the widest vertical span (max lat distance) and its midpoint
+        let maxVSpan = 0, vMidLat = 0, vMidLng = 0;
+        for (let i = 0; i < latlngs.length; i++) {
+          for (let j = i + 1; j < latlngs.length; j++) {
+            let span = Math.abs(latlngs[i].lat - latlngs[j].lat);
+            if (span > maxVSpan) {
+              maxVSpan = span;
+              vMidLat = (latlngs[i].lat + latlngs[j].lat) / 2;
+              vMidLng = (latlngs[i].lng + latlngs[j].lng) / 2;
+            }
+          }
+        }
+
+        // The label anchor is at the intersection of the widest horizontal and vertical midlines
+        // So: hMidLat (from horizontal), vMidLng (from vertical)
+        return L.latLng(hMidLat, vMidLng);
       }
 
       // Helper to add items for a category
       function addActiveItems(category, names, nameToKey, featureLayers) {
         names.forEach(name => {
+          // --- FILTER LOGIC: Only show if matches filter ---
+          if (
+            activeListFilter &&
+            !name.toLowerCase().includes(activeListFilter.toLowerCase())
+          ) {
+            // If filter is set and name does not match, skip
+            // Also remove any name label marker if present
+            const key = nameToKey[name];
+            if (window.nameLabelMarkers[category][key]) {
+              map.removeLayer(window.nameLabelMarkers[category][key]);
+              window.nameLabelMarkers[category][key] = null;
+            }
+            return;
+          }
+
           const key = nameToKey[name];
           const cb = document.getElementById(category + '_' + key);
           if (cb && cb.checked) {
