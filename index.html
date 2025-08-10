@@ -49,6 +49,34 @@
       border-radius: 4px;
       box-sizing: border-box;
     }
+    /* Floating SES Unit label */
+    .ses-unit-label {
+      background: #fff;
+      border: 2px solid #FF9900;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 1em;
+      font-weight: bold;
+      color: #333;
+      box-shadow: 0 2px 8px rgba(255,153,0,0.15);
+      position: relative;
+    }
+    .ses-unit-label:after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -14px;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 14px solid #FF9900;
+    }
+    .leaflet-marker-icon.ses-unit-marker {
+      background: transparent;
+      border: none;
+    }
   </style>
 </head>
 <body>
@@ -209,6 +237,23 @@
             label.style.display = text.includes(val) ? '' : 'none';
           });
         });
+
+        // --- SES Unit Floating Box ---
+        data.features.forEach(feature => {
+          const unitName = feature.properties.SES_UNIT_NAME;
+          const x = feature.properties.X_CORD;
+          const y = feature.properties.Y_CORD;
+          if (unitName && x && y) {
+            // Create a custom div icon for the floating box
+            const sesUnitIcon = L.divIcon({
+              className: 'ses-unit-marker',
+              html: `<div class="ses-unit-label">${toTitleCase(unitName)}</div>`,
+              iconAnchor: [60, 44] // Adjust so pointer is at the marker location
+            });
+            L.marker([y, x], { icon: sesUnitIcon, interactive: false }).addTo(map);
+          }
+        });
+        // --- END SES Unit Floating Box ---
       });
 
     // LGAs
