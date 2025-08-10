@@ -1,11 +1,12 @@
 import { categoryMeta } from '../config.js';
-import { featureLayers, namesByCategory, nameToKey } from '../state.js';
+import { featureLayers, namesByCategory, nameToKey, getMap } from '../state.js';
 import { setupActiveListSync, updateActiveList } from '../ui/activeList.js';
 import { toTitleCase, createCheckbox } from '../utils.js';
 import { emphasised, nameLabelMarkers } from '../state.js';
 
 export async function loadPolygonCategory(category,url){
   const meta=categoryMeta[category];
+  const map = getMap();
   try {
     const res=await fetch(url);
     if(!res.ok) throw new Error(res.status);
@@ -31,10 +32,10 @@ export async function loadPolygonCategory(category,url){
         featureLayers[category][key].push(layer);
         layer.bindPopup(toTitleCase(raw));
       }
-    }).addTo(window.L?.mapInstance || window.map);
-    if(category==='ses'){
-      // fit once
-      layerGroup && layerGroup.getBounds && window.map.fitBounds(layerGroup.getBounds());
+    }).addTo(map);
+
+    if(category==='ses' && layerGroup?.getBounds){
+      map.fitBounds(layerGroup.getBounds());
     }
     namesByCategory[category]=Object.keys(featureLayers[category])
       .map(k=>toTitleCase(k)).sort((a,b)=>a.localeCompare(b));

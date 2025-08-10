@@ -9,7 +9,6 @@ import { updateActiveList } from './ui/activeList.js';
 // Map init (uses global Leaflet script)
 const mapInstance = L.map('map').setView([-37.8,144.9],8);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors'}).addTo(mapInstance);
-window.map = mapInstance; // optional global
 setMap(mapInstance);
 
 // Collapsibles

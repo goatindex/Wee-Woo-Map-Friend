@@ -1,5 +1,5 @@
 import { categoryMeta } from '../config.js';
-import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers } from '../state.js';
+import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers, getMap } from '../state.js';
 import { createCheckbox } from '../utils.js';
 import { setupActiveListSync, updateActiveList } from '../ui/activeList.js';
 
@@ -7,6 +7,7 @@ let ambulanceData=[];
 
 export async function loadAmbulance(){
   const category='ambulance', meta=categoryMeta[category];
+  const map = getMap();
   try{
     const res=await fetch('ambulance.geojson');
     if(!res.ok) throw new Error(res.status);
@@ -85,6 +86,7 @@ function createAmbulanceIcon(){
 }
 
 export function showAmbulanceMarker(key){
+  const map = getMap();
   if(featureLayers.ambulance[key]){ map.addLayer(featureLayers.ambulance[key]); return; }
   const feature = ambulanceData.find(f=> f.properties.facility_name.trim().toLowerCase().replace(/\s+/g,'_')===key);
   if(!feature) return;
@@ -96,6 +98,7 @@ export function showAmbulanceMarker(key){
   featureLayers.ambulance[key]=marker;
 }
 export function hideAmbulanceMarker(key){
+  const map = getMap();
   const m=featureLayers.ambulance[key];
   if(m){ map.removeLayer(m); if(m.getElement()) m.getElement().classList.remove('ambulance-emph'); }
 }

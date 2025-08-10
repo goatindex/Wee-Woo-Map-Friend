@@ -1,6 +1,8 @@
+import { getMap } from '../state.js';
 import { toTitleCase } from '../utils.js';
 
 export async function loadSesUnits(){
+  const map = getMap();
   try{
     const res=await fetch('ses.geojson');
     if(!res.ok) return;
@@ -17,8 +19,10 @@ export async function loadSesUnits(){
             html:`<div class="ses-unit-label">${toTitleCase(unitName)}</div>`,
           iconAnchor:[60,44]
         });
-        L.marker([y,x],{ icon, interactive:false }).addTo(map);
+        L.marker([y,x], { icon, interactive:false }).addTo(map);
       }
     });
-  }catch(e){ console.warn('SES units skipped',e); }
+  }catch(e){
+    console.warn('SES units skipped', e);
+  }
 }

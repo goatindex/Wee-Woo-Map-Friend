@@ -5,5 +5,10 @@ export const emphasised = { ses:{}, lga:{}, cfa:{}, ambulance:{} };
 export const nameLabelMarkers = { ses:{}, lga:{}, cfa:{}, ambulance:{} };
 export let activeListFilter = '';
 export function setActiveListFilter(v){ activeListFilter = v; }
+
 export let map = null;
 export function setMap(m){ map = m; }
+export function getMap(){
+  if(!map) throw new Error('Map not initialised yet');
+  return map;
+}
