@@ -166,6 +166,11 @@
       <h4 id="cfaHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>CFA Response Areas</h4>
       <div class="collapsible-list" id="cfaList" style="display: none;"></div>
     </div>
+    <div class="divider"></div>
+    <div>
+      <h4 id="ambulanceHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>Ambulance Stations</h4>
+      <div class="collapsible-list" id="ambulanceList" style="display: none;"></div>
+    </div>
   </div>
   <!-- REMOVE the save as link button below -->
   <!--
@@ -546,7 +551,7 @@
       const activeList = document.getElementById('activeList');
       activeList.innerHTML = '';
 
-      // Header row for Emphasise (!!), Name (??), and Properties (##)
+      // Header row for Emphasise (!!) and Name (??) -- removed Properties (##)
       const headerRow = document.createElement('div');
       headerRow.style.display = 'flex';
       headerRow.style.alignItems = 'center';
@@ -578,17 +583,6 @@
       nameShowHeader.style.alignItems = 'center';
       nameShowHeader.style.height = '24px';
       headerRow.appendChild(nameShowHeader);
-
-      // Properties header (##)
-      const propShowHeader = document.createElement('span');
-      propShowHeader.style.fontWeight = 'bold';
-      propShowHeader.textContent = '##';
-      propShowHeader.title = 'Show Properties';
-      propShowHeader.style.display = 'flex';
-      propShowHeader.style.alignItems = 'center';
-      propShowHeader.style.height = '24px';
-      propShowHeader.style.marginLeft = '8px';
-      headerRow.appendChild(propShowHeader);
 
       activeList.appendChild(headerRow);
 
@@ -717,7 +711,9 @@
                 if (latlng) {
                   let displayName = name;
                   if (name.length > 16) {
-                    const words = name.split(' ');
+                    // Prevent line breaks at hyphens by replacing them with non-breaking hyphens
+                    const safeName = name.replace(/-/g, '\u2011');
+                    const words = safeName.split(' ');
                     let line1 = '', line2 = '';
                     for (let w of words) {
                       if ((line1 + ' ' + w).trim().length <= 16 || line1.length === 0) {
@@ -727,6 +723,9 @@
                       }
                     }
                     displayName = line2 ? `${line1}<br>${line2}` : line1;
+                  } else {
+                    // Also replace hyphens in short names
+                    displayName = name.replace(/-/g, '\u2011');
                   }
                   const labelMarker = L.marker(latlng, {
                     icon: L.divIcon({
@@ -746,6 +745,7 @@
                         word-break:break-word;
                         line-height:1.2;
                         white-space:normal;
+                        hyphens:manual;
                       ">${displayName}</div>`,
                       iconAnchor: [90, 20]
                     }),
@@ -758,20 +758,6 @@
             });
             nameBox.appendChild(nameCb);
             row.appendChild(nameBox);
-
-            // Properties show checkbox (no label, just box under '##')
-            const propBox = document.createElement('span');
-            propBox.style.marginLeft = '8px';
-            const propCb = document.createElement('input');
-            propCb.type = 'checkbox';
-            propCb.checked = !!(window.propDisplayState[category][key]);
-            propCb.title = 'Show Properties';
-            propCb.addEventListener('change', function() {
-              window.propDisplayState[category][key] = propCb.checked;
-              updateActiveList();
-            });
-            propBox.appendChild(propCb);
-            row.appendChild(propBox);
 
             activeList.appendChild(row);
 
@@ -852,6 +838,7 @@
     setupCollapsible('sesHeader', 'sesList');
     setupCollapsible('lgaHeader', 'lgaList');
     setupCollapsible('cfaHeader', 'cfaList');
+    setupCollapsible('ambulanceHeader', 'ambulanceList');
 
     // When toggling group checkboxes, also call updateActiveList();
 
