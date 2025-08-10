@@ -523,6 +523,145 @@
         updateActiveList();
       });
 
+    // --- Ambulance Stations Section ---
+    let ambulanceMarkers = {};
+    let ambulanceNames = [];
+    let ambulanceNameToKey = {};
+    let ambulanceData = [];
+
+    // Fetch and process ambulance.geojson
+    fetch('ambulance.geojson')
+      .then(response => response.json())
+      .then(data => {
+        // Filter for Victoria facilities with valid lat/long
+        ambulanceData = data.features.filter(f =>
+          f.properties &&
+          f.properties.facility_state === 'Victoria' &&
+          f.properties.facility_lat &&
+          f.properties.facility_long
+        );
+
+        // Build name lists and marker storage
+        ambulanceNames = [];
+        ambulanceNameToKey = {};
+        ambulanceMarkers = {};
+        ambulanceData.forEach(feature => {
+          const name = feature.properties.facility_name.trim();
+          const key = name.toLowerCase().replace(/\s+/g, '_');
+          ambulanceNames.push(name);
+          ambulanceNameToKey[name] = key;
+          ambulanceMarkers[key] = null;
+        });
+
+        // Sort names
+        ambulanceNames.sort((a, b) => a.localeCompare(b));
+
+        // Add to sidebar
+        const ambulanceList = document.getElementById('ambulanceList');
+        ambulanceList.innerHTML = '';
+        ambulanceNames.forEach(name => {
+          const key = ambulanceNameToKey[name];
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.id = 'ambulance_' + key;
+          cb.checked = false;
+          cb.addEventListener('change', function(e) {
+            if (e.target.checked) {
+              showAmbulanceMarker(key);
+            } else {
+              hideAmbulanceMarker(key);
+            }
+          });
+          const label = document.createElement('label');
+          label.appendChild(cb);
+          label.appendChild(document.createTextNode(' ' + name));
+          ambulanceList.appendChild(label);
+        });
+
+        // Add group toggle to .group-controls if not already present
+        const groupControls = document.querySelector('.group-controls');
+        if (groupControls && !document.getElementById('toggleAllAmbulance')) {
+          const ambGroupLabel = document.createElement('label');
+          const ambGroupCb = document.createElement('input');
+          ambGroupCb.type = 'checkbox';
+          ambGroupCb.id = 'toggleAllAmbulance';
+          ambGroupCb.checked = false;
+          ambGroupCb.addEventListener('change', function(e) {
+            ambulanceNames.forEach(name => {
+              const key = ambulanceNameToKey[name];
+              const cb = document.getElementById('ambulance_' + key);
+              if (cb) {
+                cb.checked = e.target.checked;
+                if (e.target.checked) {
+                  showAmbulanceMarker(key);
+                } else {
+                  hideAmbulanceMarker(key);
+                }
+              }
+            });
+          });
+          ambGroupLabel.appendChild(ambGroupCb);
+          ambGroupLabel.appendChild(document.createTextNode(' Show All Ambulance Stations'));
+          groupControls.appendChild(ambGroupLabel);
+        }
+      });
+
+    // Ambulance marker icon: white + in red circle
+    function createAmbulanceIcon() {
+      return L.divIcon({
+        className: 'ambulance-marker',
+        html: `<div style="
+          width:28px;height:28px;
+          background:#d32f2f;
+          border-radius:50%;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          border:2px solid #fff;
+          position:relative;
+        ">
+          <div style="
+            position:absolute;left:50%;top:50%;width:16px;height:16px;transform:translate(-50%,-50%);
+            ">
+            <div style="position:absolute;left:7px;top:2px;width:2px;height:12px;background:#fff;border-radius:1px;"></div>
+            <div style="position:absolute;left:2px;top:7px;width:12px;height:2px;background:#fff;border-radius:1px;"></div>
+          </div>
+        </div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        popupAnchor: [0, -14]
+      });
+    }
+
+    function showAmbulanceMarker(key) {
+      if (ambulanceMarkers[key]) {
+        map.addLayer(ambulanceMarkers[key]);
+        return;
+      }
+      const feature = ambulanceData.find(f => {
+        const n = f.properties.facility_name.trim();
+        return ambulanceNameToKey[n] === key;
+      });
+      if (!feature) return;
+      const lat = parseFloat(feature.properties.facility_lat);
+      const lng = parseFloat(feature.properties.facility_long);
+      const name = feature.properties.facility_name;
+      const marker = L.marker([lat, lng], {
+        icon: createAmbulanceIcon()
+      }).addTo(map);
+      marker.bindPopup(name);
+      ambulanceMarkers[key] = marker;
+    }
+
+    function hideAmbulanceMarker(key) {
+      if (ambulanceMarkers[key]) {
+        map.removeLayer(ambulanceMarkers[key]);
+      }
+    }
+
+    // Make Ambulance section collapsible (already present in your code)
+    // setupCollapsible('ambulanceHeader', 'ambulanceList'); // already called at the end
+
     // Outline and fill color mapping for each category
     const outlineColors = {
       ses: '#cc7a00', // 20% darker orange
