@@ -167,9 +167,12 @@
       <div class="collapsible-list" id="cfaList" style="display: none;"></div>
     </div>
   </div>
+  <!-- REMOVE the save as link button below -->
+  <!--
   <div id="saveLinkBtn" title="Save current map as link">
     <span>S<br>A<br>V<br>E<br><br>A<br>S<br><br>L<br>I<br>N<br>K</span>
   </div>
+  -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     var map = L.map('map').setView([-37.8, 144.9], 8);
@@ -539,6 +542,39 @@
     function updateActiveList() {
       const activeList = document.getElementById('activeList');
       activeList.innerHTML = '';
+
+      // Header row for Emphasise (!!) and Name (??)
+      const headerRow = document.createElement('div');
+      headerRow.style.display = 'flex';
+      headerRow.style.alignItems = 'center';
+      headerRow.style.marginBottom = '4px';
+
+      // Empty space for name column
+      const nameHeaderSpacer = document.createElement('span');
+      nameHeaderSpacer.style.flex = '1';
+      headerRow.appendChild(nameHeaderSpacer);
+
+      // Emphasise header (!!)
+      const emphHeader = document.createElement('span');
+      emphHeader.style.fontWeight = 'bold';
+      emphHeader.style.marginLeft = '8px';
+      emphHeader.style.marginRight = '8px';
+      emphHeader.textContent = '‼';
+      emphHeader.title = 'Emphasise';
+      headerRow.appendChild(emphHeader);
+
+      // Name header (??)
+      const nameShowHeader = document.createElement('span');
+      nameShowHeader.style.fontWeight = 'bold';
+      nameShowHeader.textContent = '⁇';
+      nameShowHeader.title = 'Show Name';
+      headerRow.appendChild(nameShowHeader);
+
+      activeList.appendChild(headerRow);
+
+      // Store name label markers for each category/key
+      if (!window.nameLabelMarkers) window.nameLabelMarkers = { ses: {}, lga: {}, cfa: {} };
+
       // Helper to add items for a category
       function addActiveItems(category, names, nameToKey, featureLayers) {
         names.forEach(name => {
@@ -559,12 +595,14 @@
             nameSpan.style.flex = '1';
             row.appendChild(nameSpan);
 
-            // Emphasise checkbox
-            const emphLabel = document.createElement('label');
-            emphLabel.style.marginLeft = '8px';
+            // Emphasise checkbox (no label, just box under '‼')
+            const emphBox = document.createElement('span');
+            emphBox.style.marginLeft = '8px';
+            emphBox.style.marginRight = '8px';
             const emphCb = document.createElement('input');
             emphCb.type = 'checkbox';
             emphCb.checked = emphasised[category][key] || false;
+            emphCb.title = 'Emphasise';
             emphCb.addEventListener('change', function() {
               emphasised[category][key] = emphCb.checked;
               // Update fill opacity for all layers of this item
@@ -574,11 +612,57 @@
                 layer.setStyle({ fillOpacity: opacity });
               });
             });
-            emphLabel.appendChild(emphCb);
-            emphLabel.appendChild(document.createTextNode(' Emphasise'));
-            row.appendChild(emphLabel);
+            emphBox.appendChild(emphCb);
+            row.appendChild(emphBox);
+
+            // Name show checkbox (no label, just box under '⁇')
+            const nameBox = document.createElement('span');
+            const nameCb = document.createElement('input');
+            nameCb.type = 'checkbox';
+            nameCb.checked = !!(window.nameLabelMarkers[category][key]);
+            nameCb.title = 'Show Name';
+            nameCb.addEventListener('change', function() {
+              // Remove any existing label
+              if (window.nameLabelMarkers[category][key]) {
+                map.removeLayer(window.nameLabelMarkers[category][key]);
+                window.nameLabelMarkers[category][key] = null;
+              }
+              if (nameCb.checked) {
+                // Find the center of the polygon(s)
+                let latlng = null;
+                if (featureLayers[key] && featureLayers[key].length > 0) {
+                  // Use the first layer's geometry
+                  const layer = featureLayers[key][0];
+                  if (layer.getBounds) {
+                    latlng = layer.getBounds().getCenter();
+                  } else if (layer.getLatLng) {
+                    latlng = layer.getLatLng();
+                  }
+                }
+                if (latlng) {
+                  const labelMarker = L.marker(latlng, {
+                    icon: L.divIcon({
+                      className: 'name-label-marker',
+                      html: `<div style="background:#fff;border:2px solid ${outlineColors[category]};border-radius:8px;padding:2px 8px;font-weight:bold;color:${outlineColors[category]};font-size:1em;box-shadow:0 2px 8px rgba(0,0,0,0.10);">${name}</div>`,
+                      iconAnchor: [0, 0]
+                    }),
+                    interactive: false
+                  });
+                  labelMarker.addTo(map);
+                  window.nameLabelMarkers[category][key] = labelMarker;
+                }
+              }
+            });
+            nameBox.appendChild(nameCb);
+            row.appendChild(nameBox);
 
             activeList.appendChild(row);
+          } else {
+            // If not checked, remove any name label marker
+            if (window.nameLabelMarkers[category][key]) {
+              map.removeLayer(window.nameLabelMarkers[category][key]);
+              window.nameLabelMarkers[category][key] = null;
+            }
           }
         });
       }
@@ -601,12 +685,16 @@
     // Also call updateActiveList() after initial setup and after any group toggle
 
     // Collapsible logic for All Active and all categories
-    function setupCollapsible(headerId, listId) {
+    function setupCollapsible(headerId, listId, expanded = false) {
       const header = document.getElementById(headerId);
       const list = document.getElementById(listId);
-      // Start collapsed
-      header.classList.add('collapsed');
-      list.style.display = 'none';
+      if (!expanded) {
+        header.classList.add('collapsed');
+        list.style.display = 'none';
+      } else {
+        header.classList.remove('collapsed');
+        list.style.display = '';
+      }
       header.addEventListener('click', function() {
         header.classList.toggle('collapsed');
         if (list.style.display === 'none') {
@@ -616,7 +704,8 @@
         }
       });
     }
-    setupCollapsible('activeHeader', 'activeList');
+    // Expand 'All Active' by default, others collapsed
+    setupCollapsible('activeHeader', 'activeList', true);
     setupCollapsible('sesHeader', 'sesList');
     setupCollapsible('lgaHeader', 'lgaList');
     setupCollapsible('cfaHeader', 'cfaList');
@@ -638,57 +727,6 @@
     // }
 
     // (You may need to adjust the above logic to fit your code structure.)
-
-    document.getElementById('saveLinkBtn').addEventListener('click', function() {
-      // Gather map state
-      const center = map.getCenter();
-      const zoom = map.getZoom();
-
-      // Gather checked items
-      function getChecked(category, names, nameToKey) {
-        return names.filter(name => {
-          const key = nameToKey[name];
-          const cb = document.getElementById(category + '_' + key);
-          return cb && cb.checked;
-        });
-      }
-      const sesChecked = getChecked('ses', sesNames, sesNameToKey);
-      const lgaChecked = getChecked('lga', lgaNames, lgaNameToKey);
-      const cfaChecked = getChecked('cfa', cfaNames, cfaNameToKey);
-
-      // Gather emphasised items
-      function getEmph(category, names, nameToKey) {
-        return names.filter(name => {
-          const key = nameToKey[name];
-          return emphasised[category][key];
-        });
-      }
-      const sesEmph = getEmph('ses', sesNames, sesNameToKey);
-      const lgaEmph = getEmph('lga', lgaNames, lgaNameToKey);
-      const cfaEmph = getEmph('cfa', cfaNames, cfaNameToKey);
-
-      // Build query string
-      const params = new URLSearchParams();
-      params.set('lat', center.lat.toFixed(5));
-      params.set('lng', center.lng.toFixed(5));
-      params.set('zoom', zoom);
-      if (sesChecked.length) params.set('ses', sesChecked.join(','));
-      if (lgaChecked.length) params.set('lga', lgaChecked.join(','));
-      if (cfaChecked.length) params.set('cfa', cfaChecked.join(','));
-      if (sesEmph.length) params.set('sesEmph', sesEmph.join(','));
-      if (lgaEmph.length) params.set('lgaEmph', lgaEmph.join(','));
-      if (cfaEmph.length) params.set('cfaEmph', cfaEmph.join(','));
-
-      // Create the link
-      const link = window.location.origin + window.location.pathname + '?' + params.toString();
-
-      // Show the link (copy to clipboard and/or show prompt)
-      navigator.clipboard.writeText(link).then(() => {
-        alert('Link copied to clipboard:\n' + link);
-      }, () => {
-        prompt('Copy this link:', link);
-      });
-    });
   </script>
 </body>
 </html>
