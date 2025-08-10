@@ -355,7 +355,7 @@
       .then(response => response.json())
       .then(data => {
         data.features.forEach(feature => {
-          let name = feature.properties.CFA_NAME ? feature.properties.CFA_NAME.trim() : "Unnamed CFA";
+          let name = feature.properties.BRIG_NAME ? feature.properties.BRIG_NAME.trim() : "Unnamed CFA";
           let key = name.toLowerCase();
           if (!cfaFeatureLayers[key]) cfaFeatureLayers[key] = [];
         });
@@ -363,7 +363,7 @@
         cfaLayer = L.geoJSON(data, {
           style: cfaStyle,
           onEachFeature: function (feature, layer) {
-            let name = feature.properties.CFA_NAME ? feature.properties.CFA_NAME.trim() : "Unnamed CFA";
+            let name = feature.properties.BRIG_NAME ? feature.properties.BRIG_NAME.trim() : "Unnamed CFA";
             let key = name.toLowerCase();
             cfaFeatureLayers[key].push(layer);
             layer.bindPopup(toTitleCase(name));
