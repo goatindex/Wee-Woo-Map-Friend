@@ -38,16 +38,30 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
   const outline = outlineColors[category];
   // For ambulance stations, offset label 10px below marker, centered
   const iconAnchor = isPoint ? [45, -10] : [90, 20];
+  let html;
+  if(isPoint) {
+    html = `<div style="
+      background:#fff;border:2px solid ${outline};
+      border-radius:8px;padding:4px 12px;font-weight:bold;
+      color:${outline};font-size:0.95em;
+      box-shadow:0 2px 8px rgba(0,0,0,.10);text-align:center;
+      min-width:60px;max-width:220px;line-height:1.2;hyphens:manual;
+      height:2.6em;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow-wrap:break-word;white-space:normal;">
+      <span style="display:block;width:100%;">${text}</span>
+    </div>`;
+  } else {
+    html = `<div style="
+      background:#fff;border:2px solid ${outline};
+      border-radius:8px;padding:4px 12px;font-weight:bold;
+      color:${outline};font-size:1.2em;
+      box-shadow:0 2px 8px rgba(0,0,0,.10);text-align:center;
+      min-width:60px;max-width:180px;line-height:1.2;hyphens:manual;">
+      ${text}</div>`;
+  }
   const marker = L.marker(latlng,{
     icon: L.divIcon({
       className: isPoint ? 'ambulance-name-label':'name-label-marker',
-      html:`<div style="
-        background:#fff;border:2px solid ${outline};
-        border-radius:8px;padding:4px 12px;font-weight:bold;
-        color:${outline};font-size:${isPoint?'0.95em':'1.2em'};
-        box-shadow:0 2px 8px rgba(0,0,0,.10);text-align:center;
-        min-width:60px;max-width:180px;line-height:1.2;hyphens:manual;
-      ">${text}</div>`,
+      html: html,
       iconAnchor: iconAnchor
     }),
     interactive:false
@@ -63,13 +77,19 @@ export function removeLabel(category,key){
 }
 
 function processName(name){
-  if(name.length<=16) return name.replace(/-/g,'\u2011');
+  // Always split into two lines if possible
   const safe = name.replace(/-/g,'\u2011');
   const words = safe.split(' ');
   let l1='',l2='';
   for(const w of words){
     if((l1+' '+w).trim().length<=16 || !l1) l1=(l1+' '+w).trim();
     else l2=(l2+' '+w).trim();
+  }
+  if(!l2 && l1.length>10) {
+    // Force break in middle if only one long word
+    const mid = Math.ceil(l1.length/2);
+    l2 = l1.slice(mid).trim();
+    l1 = l1.slice(0,mid).trim();
   }
   return l2? `${l1}<br>${l2}`:l1;
 }
