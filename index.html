@@ -22,10 +22,15 @@
       max-height: 80vh;
       overflow-y: auto;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      min-width: 260px;
     }
     .layer-menu h4 {
       margin: 8px 0 4px 0;
       font-size: 1em;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
     }
     .layer-menu label {
       display: block;
@@ -42,17 +47,32 @@
     }
     .layer-menu .search-box {
       width: 100%;
-      margin-bottom: 4px;
+      margin-bottom: 8px;
       padding: 2px 6px;
       font-size: 0.95em;
       border: 1px solid #ccc;
       border-radius: 4px;
       box-sizing: border-box;
     }
+    .collapse-arrow {
+      display: inline-block;
+      margin-right: 6px;
+      transition: transform 0.2s;
+      font-size: 1.1em;
+    }
+    .collapsed .collapse-arrow {
+      transform: rotate(-90deg);
+    }
+    .collapsed + .collapsible-list {
+      display: none;
+    }
+    .collapsible-list {
+      margin-bottom: 0;
+    }
     /* Floating SES Unit label */
     .ses-unit-label {
       background: #fff;
-      border: 10px solid #FF9900;
+      border: 2px solid #FF9900;
       border-radius: 8px;
       padding: 6px 14px;
       font-size: 1em;
@@ -82,21 +102,20 @@
 <body>
   <div id="map"></div>
   <div class="layer-menu" id="layerMenu">
+    <input class="search-box" id="globalSearch" type="text" placeholder="Search all areas...">
     <div class="group-controls">
       <label><input type="checkbox" id="toggleAllSES" checked> Show All SES Zones</label>
       <label><input type="checkbox" id="toggleAllLGAs" checked> Show All LGAs</label>
     </div>
     <div class="divider"></div>
     <div>
-      <h4>SES Zones</h4>
-      <input class="search-box" id="sesSearch" type="text" placeholder="Search SES zones...">
-      <div id="sesList"></div>
+      <h4 id="sesHeader"><span class="collapse-arrow">&#9660;</span>SES Zones</h4>
+      <div class="collapsible-list" id="sesList"></div>
     </div>
     <div class="divider"></div>
     <div>
-      <h4>LGAs</h4>
-      <input class="search-box" id="lgaSearch" type="text" placeholder="Search LGAs...">
-      <div id="lgaList"></div>
+      <h4 id="lgaHeader"><span class="collapse-arrow">&#9660;</span>LGAs</h4>
+      <div class="collapsible-list" id="lgaList"></div>
     </div>
   </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -151,6 +170,8 @@
     let sesLayer, lgaLayer;
     let sesFeatureLayers = {}; // {name: [layer, ...]}
     let lgaFeatureLayers = {}; // {name: [layer, ...]}
+    let sesNames = [], lgaNames = [];
+    let sesNameToKey = {}, lgaNameToKey = {};
 
     // SES ZONES
     fetch('ses.geojson')
@@ -175,18 +196,19 @@
         map.fitBounds(sesLayer.getBounds());
 
         // Prepare sorted, unique, title-cased names
-        let sesNames = Object.keys(sesFeatureLayers)
+        sesNames = Object.keys(sesFeatureLayers)
           .map(key => toTitleCase(key))
           .sort((a, b) => a.localeCompare(b));
 
         // Map title-case back to key for toggling
-        let sesNameToKey = {};
+        sesNameToKey = {};
         Object.keys(sesFeatureLayers).forEach(key => {
           sesNameToKey[toTitleCase(key)] = key;
         });
 
         // Populate SES menu
         const sesList = document.getElementById('sesList');
+        sesList.innerHTML = '';
         sesNames.forEach(name => {
           const key = sesNameToKey[name];
           const cb = createCheckbox(
@@ -229,15 +251,6 @@
           document.getElementById('toggleAllSES').checked = allChecked;
         }
 
-        // SES Search
-        document.getElementById('sesSearch').addEventListener('input', function(e) {
-          const val = e.target.value.trim().toLowerCase();
-          Array.from(sesList.children).forEach(label => {
-            const text = label.textContent.trim().toLowerCase();
-            label.style.display = text.includes(val) ? '' : 'none';
-          });
-        });
-
         // --- SES Unit Floating Box ---
         data.features.forEach(feature => {
           const unitName = feature.properties.SES_UNIT_NAME;
@@ -278,18 +291,19 @@
         }).addTo(map);
 
         // Prepare sorted, unique, title-cased names
-        let lgaNames = Object.keys(lgaFeatureLayers)
+        lgaNames = Object.keys(lgaFeatureLayers)
           .map(key => toTitleCase(key))
           .sort((a, b) => a.localeCompare(b));
 
         // Map title-case back to key for toggling
-        let lgaNameToKey = {};
+        lgaNameToKey = {};
         Object.keys(lgaFeatureLayers).forEach(key => {
           lgaNameToKey[toTitleCase(key)] = key;
         });
 
         // Populate LGA menu
         const lgaList = document.getElementById('lgaList');
+        lgaList.innerHTML = '';
         lgaNames.forEach(name => {
           const key = lgaNameToKey[name];
           const cb = createCheckbox(
@@ -331,16 +345,38 @@
           const allChecked = lgaNames.every(name => document.getElementById('lga_' + lgaNameToKey[name]).checked);
           document.getElementById('toggleAllLGAs').checked = allChecked;
         }
-
-        // LGA Search
-        document.getElementById('lgaSearch').addEventListener('input', function(e) {
-          const val = e.target.value.trim().toLowerCase();
-          Array.from(lgaList.children).forEach(label => {
-            const text = label.textContent.trim().toLowerCase();
-            label.style.display = text.includes(val) ? '' : 'none';
-          });
-        });
       });
+
+    // Collapsible logic
+    function setupCollapsible(headerId, listId) {
+      const header = document.getElementById(headerId);
+      const list = document.getElementById(listId);
+      header.addEventListener('click', function() {
+        header.classList.toggle('collapsed');
+        if (list.style.display === 'none') {
+          list.style.display = '';
+        } else {
+          list.style.display = 'none';
+        }
+      });
+    }
+    setupCollapsible('sesHeader', 'sesList');
+    setupCollapsible('lgaHeader', 'lgaList');
+
+    // Global search logic
+    document.getElementById('globalSearch').addEventListener('input', function(e) {
+      const val = e.target.value.trim().toLowerCase();
+      // SES
+      Array.from(document.getElementById('sesList').children).forEach(label => {
+        const text = label.textContent.trim().toLowerCase();
+        label.style.display = text.includes(val) ? '' : 'none';
+      });
+      // LGA
+      Array.from(document.getElementById('lgaList').children).forEach(label => {
+        const text = label.textContent.trim().toLowerCase();
+        label.style.display = text.includes(val) ? '' : 'none';
+      });
+    });
   </script>
 </body>
 </html>
