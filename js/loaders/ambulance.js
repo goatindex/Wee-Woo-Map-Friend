@@ -28,8 +28,12 @@ export async function loadAmbulance(){
     }).sort((a,b)=>a.localeCompare(b));
     nameToKey[category]={};
     namesByCategory[category].forEach(n=> nameToKey[category][n]=n.toLowerCase().replace(/\s+/g,'_'));
-    const listEl=document.getElementById(meta.listId);
-    listEl.innerHTML='';
+    const listEl = document.getElementById('ambulanceList');
+if (!listEl) {
+  console.error('ambulanceList element not found in DOM');
+  return;
+}
+listEl.innerHTML = '';
     namesByCategory[category].forEach(displayName=>{
       const key=nameToKey[category][displayName];
       const checked=meta.defaultOn(displayName);
