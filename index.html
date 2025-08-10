@@ -40,6 +40,15 @@
       border-bottom: 1px solid #ccc;
       margin: 8px 0;
     }
+    .layer-menu .search-box {
+      width: 100%;
+      margin-bottom: 4px;
+      padding: 2px 6px;
+      font-size: 0.95em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
@@ -52,11 +61,13 @@
     <div class="divider"></div>
     <div>
       <h4>SES Zones</h4>
+      <input class="search-box" id="sesSearch" type="text" placeholder="Search SES zones...">
       <div id="sesList"></div>
     </div>
     <div class="divider"></div>
     <div>
       <h4>LGAs</h4>
+      <input class="search-box" id="lgaSearch" type="text" placeholder="Search LGAs...">
       <div id="lgaList"></div>
     </div>
   </div>
@@ -88,10 +99,12 @@
       };
     }
 
-    // Layer and feature storage
-    let sesLayer, lgaLayer;
-    let sesFeatureLayers = {};
-    let lgaFeatureLayers = {};
+    // Helper: Title Case
+    function toTitleCase(str) {
+      return str.replace(/\w\S*/g, function(txt){
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+      });
+    }
 
     // Helper to create a checkbox
     function createCheckbox(id, label, checked, onChange) {
@@ -106,33 +119,60 @@
       return wrapper;
     }
 
-    // Load SES Response Zones
+    // Layer and feature storage
+    let sesLayer, lgaLayer;
+    let sesFeatureLayers = {}; // {name: [layer, ...]}
+    let lgaFeatureLayers = {}; // {name: [layer, ...]}
+
+    // SES ZONES
     fetch('ses.geojson')
       .then(response => response.json())
       .then(data => {
+        // Group features by name (case-insensitive, trimmed)
+        data.features.forEach(feature => {
+          let name = feature.properties.RESPONSE_ZONE_NAME.trim();
+          let key = name.toLowerCase();
+          if (!sesFeatureLayers[key]) sesFeatureLayers[key] = [];
+        });
+
         sesLayer = L.geoJSON(data, {
           style: sesStyle,
           onEachFeature: function (feature, layer) {
-            const name = feature.properties.RESPONSE_ZONE_NAME;
-            sesFeatureLayers[name] = layer;
-            layer.bindPopup(name);
+            let name = feature.properties.RESPONSE_ZONE_NAME.trim();
+            let key = name.toLowerCase();
+            sesFeatureLayers[key].push(layer);
+            layer.bindPopup(toTitleCase(name));
           }
         }).addTo(map);
         map.fitBounds(sesLayer.getBounds());
 
+        // Prepare sorted, unique, title-cased names
+        let sesNames = Object.keys(sesFeatureLayers)
+          .map(key => toTitleCase(key))
+          .sort((a, b) => a.localeCompare(b));
+
+        // Map title-case back to key for toggling
+        let sesNameToKey = {};
+        Object.keys(sesFeatureLayers).forEach(key => {
+          sesNameToKey[toTitleCase(key)] = key;
+        });
+
         // Populate SES menu
         const sesList = document.getElementById('sesList');
-        Object.keys(sesFeatureLayers).forEach(name => {
+        sesNames.forEach(name => {
+          const key = sesNameToKey[name];
           const cb = createCheckbox(
-            'ses_' + name,
+            'ses_' + key,
             name,
             true,
             function (e) {
-              if (e.target.checked) {
-                sesFeatureLayers[name].addTo(map);
-              } else {
-                map.removeLayer(sesFeatureLayers[name]);
-              }
+              sesFeatureLayers[key].forEach(layer => {
+                if (e.target.checked) {
+                  layer.addTo(map);
+                } else {
+                  map.removeLayer(layer);
+                }
+              });
               updateAllSESCheckbox();
             }
           );
@@ -142,49 +182,83 @@
         // "Show All SES" checkbox logic
         document.getElementById('toggleAllSES').addEventListener('change', function (e) {
           const checked = e.target.checked;
-          Object.keys(sesFeatureLayers).forEach(name => {
-            const cb = document.getElementById('ses_' + name);
+          sesNames.forEach(name => {
+            const key = sesNameToKey[name];
+            const cb = document.getElementById('ses_' + key);
             cb.checked = checked;
-            if (checked) {
-              sesFeatureLayers[name].addTo(map);
-            } else {
-              map.removeLayer(sesFeatureLayers[name]);
-            }
+            sesFeatureLayers[key].forEach(layer => {
+              if (checked) {
+                layer.addTo(map);
+              } else {
+                map.removeLayer(layer);
+              }
+            });
           });
         });
 
         function updateAllSESCheckbox() {
-          const allChecked = Object.keys(sesFeatureLayers).every(name => document.getElementById('ses_' + name).checked);
+          const allChecked = sesNames.every(name => document.getElementById('ses_' + sesNameToKey[name]).checked);
           document.getElementById('toggleAllSES').checked = allChecked;
         }
+
+        // SES Search
+        document.getElementById('sesSearch').addEventListener('input', function(e) {
+          const val = e.target.value.trim().toLowerCase();
+          Array.from(sesList.children).forEach(label => {
+            const text = label.textContent.trim().toLowerCase();
+            label.style.display = text.includes(val) ? '' : 'none';
+          });
+        });
       });
 
-    // Load LGAs
+    // LGAs
     fetch('LGAs.geojson')
       .then(response => response.json())
       .then(data => {
+        // Group features by name (case-insensitive, trimmed)
+        data.features.forEach(feature => {
+          let name = feature.properties.LGA_NAME.trim();
+          let key = name.toLowerCase();
+          if (!lgaFeatureLayers[key]) lgaFeatureLayers[key] = [];
+        });
+
         lgaLayer = L.geoJSON(data, {
           style: lgaStyle,
           onEachFeature: function (feature, layer) {
-            const name = feature.properties.LGA_NAME;
-            lgaFeatureLayers[name] = layer;
-            layer.bindPopup(name);
+            let name = feature.properties.LGA_NAME.trim();
+            let key = name.toLowerCase();
+            lgaFeatureLayers[key].push(layer);
+            layer.bindPopup(toTitleCase(name));
           }
         }).addTo(map);
 
+        // Prepare sorted, unique, title-cased names
+        let lgaNames = Object.keys(lgaFeatureLayers)
+          .map(key => toTitleCase(key))
+          .sort((a, b) => a.localeCompare(b));
+
+        // Map title-case back to key for toggling
+        let lgaNameToKey = {};
+        Object.keys(lgaFeatureLayers).forEach(key => {
+          lgaNameToKey[toTitleCase(key)] = key;
+        });
+
         // Populate LGA menu
         const lgaList = document.getElementById('lgaList');
-        Object.keys(lgaFeatureLayers).forEach(name => {
+        lgaNames.forEach(name => {
+          const key = lgaNameToKey[name];
           const cb = createCheckbox(
-            'lga_' + name,
+            'lga_' + key,
             name,
             true,
             function (e) {
-              if (e.target.checked) {
-                lgaFeatureLayers[name].addTo(map);
-              } else {
-                map.removeLayer(lgaFeatureLayers[name]);
-              }
+              lgaFeatureLayers[key].forEach(layer => {
+                if (e.target.checked) {
+                  layer.addTo(map);
+                } else {
+                  map.removeLayer(layer);
+                }
+              });
               updateAllLGACheckbox();
             }
           );
@@ -194,21 +268,33 @@
         // "Show All LGAs" checkbox logic
         document.getElementById('toggleAllLGAs').addEventListener('change', function (e) {
           const checked = e.target.checked;
-          Object.keys(lgaFeatureLayers).forEach(name => {
-            const cb = document.getElementById('lga_' + name);
+          lgaNames.forEach(name => {
+            const key = lgaNameToKey[name];
+            const cb = document.getElementById('lga_' + key);
             cb.checked = checked;
-            if (checked) {
-              lgaFeatureLayers[name].addTo(map);
-            } else {
-              map.removeLayer(lgaFeatureLayers[name]);
-            }
+            lgaFeatureLayers[key].forEach(layer => {
+              if (checked) {
+                layer.addTo(map);
+              } else {
+                map.removeLayer(layer);
+              }
+            });
           });
         });
 
         function updateAllLGACheckbox() {
-          const allChecked = Object.keys(lgaFeatureLayers).every(name => document.getElementById('lga_' + name).checked);
+          const allChecked = lgaNames.every(name => document.getElementById('lga_' + lgaNameToKey[name]).checked);
           document.getElementById('toggleAllLGAs').checked = allChecked;
         }
+
+        // LGA Search
+        document.getElementById('lgaSearch').addEventListener('input', function(e) {
+          const val = e.target.value.trim().toLowerCase();
+          Array.from(lgaList.children).forEach(label => {
+            const text = label.textContent.trim().toLowerCase();
+            label.style.display = text.includes(val) ? '' : 'none';
+          });
+        });
       });
   </script>
 </body>
