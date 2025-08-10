@@ -1,6 +1,6 @@
 import { categoryMeta } from '../config.js';
 import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers, getMap } from '../state.js';
-import { createCheckbox } from '../utils.js';
+import { createCheckbox, toTitleCase } from '../utils.js';
 import { setupActiveListSync, updateActiveList } from '../ui/activeList.js';
 
 let ambulanceData=[];
@@ -34,9 +34,12 @@ if (!listEl) {
   return;
 }
 listEl.innerHTML = '';
-    namesByCategory[category].forEach(displayName=>{
-      const key=nameToKey[category][displayName];
-      const checked=meta.defaultOn(displayName);
+    namesByCategory[category].forEach(fullName=>{
+      const key=nameToKey[category][fullName];
+      const checked=meta.defaultOn(fullName);
+      // Remove 'ambulance station' at end (case-insensitive), trim, and title case for sidebar
+      let displayName = fullName.replace(/\s*ambulance station\s*$/i, '').trim();
+      displayName = toTitleCase(displayName);
       const cb=createCheckbox(`${category}_${key}`,displayName,checked,(e)=>{
         e.target.checked? showAmbulanceMarker(key): hideAmbulanceMarker(key);
         if(!e.target.checked){
