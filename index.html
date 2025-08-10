@@ -72,12 +72,12 @@
     /* Floating SES Unit label */
     .ses-unit-label {
       background: #fff;
-      border: 2px solid #FF9900;
+      border: 2px solid #cc7a00; /* 20% darker orange */
       border-radius: 8px;
       padding: 6px 14px;
       font-size: 1em;
       font-weight: bold;
-      color: #333;
+      color: #cc7a00; /* 20% darker orange */
       box-shadow: 0 2px 8px rgba(255,153,0,0.15);
       position: relative;
     }
@@ -91,7 +91,7 @@
       height: 0;
       border-left: 10px solid transparent;
       border-right: 10px solid transparent;
-      border-top: 14px solid #FF9900;
+      border-top: 14px solid #cc7a00; /* 20% darker orange */
     }
     .leaflet-marker-icon.ses-unit-marker {
       background: transparent;
@@ -147,9 +147,9 @@
     <div class="collapsible-list" id="activeList" style="display: none;"></div>
     <input class="search-box" id="globalSearch" type="text" placeholder="Search all areas...">
     <div class="group-controls">
-      <label><input type="checkbox" id="toggleAllSES" checked> Show All SES Zones</label>
-      <label><input type="checkbox" id="toggleAllLGAs" checked> Show All LGAs</label>
-      <label><input type="checkbox" id="toggleAllCFA" checked> Show All CFA Areas</label>
+      <label><input type="checkbox" id="toggleAllSES" checked> Show All SES Response Areas</label>
+      <label><input type="checkbox" id="toggleAllLGAs" checked> Show All Local Government Areas</label>
+      <label><input type="checkbox" id="toggleAllCFA" checked> Show All CFA Response Areas</label>
     </div>
     <div class="divider"></div>
     <div>
@@ -520,7 +520,7 @@
 
     // Outline and fill color mapping for each category
     const outlineColors = {
-      ses: '#FF9900',
+      ses: '#cc7a00', // 20% darker orange
       lga: 'black',
       cfa: 'red'
     };
@@ -546,7 +546,7 @@
       const activeList = document.getElementById('activeList');
       activeList.innerHTML = '';
 
-      // Header row for Emphasise (!!) and Name (??)
+      // Header row for Emphasise (!!), Name (??), and Properties (##)
       const headerRow = document.createElement('div');
       headerRow.style.display = 'flex';
       headerRow.style.alignItems = 'center';
@@ -566,7 +566,7 @@
       emphHeader.title = 'Emphasise';
       emphHeader.style.display = 'flex';
       emphHeader.style.alignItems = 'center';
-      emphHeader.style.height = '24px'; // match checkbox height
+      emphHeader.style.height = '24px';
       headerRow.appendChild(emphHeader);
 
       // Name header (??)
@@ -576,13 +576,26 @@
       nameShowHeader.title = 'Show Name';
       nameShowHeader.style.display = 'flex';
       nameShowHeader.style.alignItems = 'center';
-      nameShowHeader.style.height = '24px'; // match checkbox height
+      nameShowHeader.style.height = '24px';
       headerRow.appendChild(nameShowHeader);
+
+      // Properties header (##)
+      const propShowHeader = document.createElement('span');
+      propShowHeader.style.fontWeight = 'bold';
+      propShowHeader.textContent = '##';
+      propShowHeader.title = 'Show Properties';
+      propShowHeader.style.display = 'flex';
+      propShowHeader.style.alignItems = 'center';
+      propShowHeader.style.height = '24px';
+      propShowHeader.style.marginLeft = '8px';
+      headerRow.appendChild(propShowHeader);
 
       activeList.appendChild(headerRow);
 
       // Store name label markers for each category/key
       if (!window.nameLabelMarkers) window.nameLabelMarkers = { ses: {}, lga: {}, cfa: {} };
+      // Store property display state for each category/key
+      if (!window.propDisplayState) window.propDisplayState = { ses: {}, lga: {}, cfa: {} };
 
       // Helper to get the center of the widest horizontal and vertical points of a polygon
       function getPolygonLabelAnchor(layer) {
@@ -675,7 +688,6 @@
             emphCb.title = 'Emphasise';
             emphCb.addEventListener('change', function() {
               emphasised[category][key] = emphCb.checked;
-              // Update fill opacity for all layers of this item
               featureLayers[key].forEach(layer => {
                 let opacity = baseOpacities[category];
                 if (emphCb.checked) opacity = Math.min(opacity + 0.15, 1.0);
@@ -692,21 +704,17 @@
             nameCb.checked = !!(window.nameLabelMarkers[category][key]);
             nameCb.title = 'Show Name';
             nameCb.addEventListener('change', function() {
-              // Remove any existing label
               if (window.nameLabelMarkers[category][key]) {
                 map.removeLayer(window.nameLabelMarkers[category][key]);
                 window.nameLabelMarkers[category][key] = null;
               }
               if (nameCb.checked) {
-                // Find the center of the polygon(s) using widest horizontal/vertical
                 let latlng = null;
                 if (featureLayers[key] && featureLayers[key].length > 0) {
-                  // Use the first layer's geometry
                   const layer = featureLayers[key][0];
                   latlng = getPolygonLabelAnchor(layer);
                 }
                 if (latlng) {
-                  // Format name for 1-2 lines: break at spaces if >16 chars
                   let displayName = name;
                   if (name.length > 16) {
                     const words = name.split(' ');
@@ -730,7 +738,7 @@
                         padding:4px 12px;
                         font-weight:bold;
                         color:${outlineColors[category]};
-                        font-size:1em;
+                        font-size:1.2em;
                         box-shadow:0 2px 8px rgba(0,0,0,0.10);
                         text-align:center;
                         min-width:60px;
@@ -739,7 +747,7 @@
                         line-height:1.2;
                         white-space:normal;
                       ">${displayName}</div>`,
-                      iconAnchor: [90, 20] // center horizontally, adjust vertically
+                      iconAnchor: [90, 20]
                     }),
                     interactive: false
                   });
@@ -751,13 +759,53 @@
             nameBox.appendChild(nameCb);
             row.appendChild(nameBox);
 
+            // Properties show checkbox (no label, just box under '##')
+            const propBox = document.createElement('span');
+            propBox.style.marginLeft = '8px';
+            const propCb = document.createElement('input');
+            propCb.type = 'checkbox';
+            propCb.checked = !!(window.propDisplayState[category][key]);
+            propCb.title = 'Show Properties';
+            propCb.addEventListener('change', function() {
+              window.propDisplayState[category][key] = propCb.checked;
+              updateActiveList();
+            });
+            propBox.appendChild(propCb);
+            row.appendChild(propBox);
+
             activeList.appendChild(row);
+
+            // If properties checkbox is checked, show properties below
+            if (window.propDisplayState[category][key]) {
+              // Find the first feature for this key
+              let feature = null;
+              if (featureLayers[key] && featureLayers[key].length > 0 && featureLayers[key][0].feature) {
+                feature = featureLayers[key][0].feature;
+              }
+              if (feature && feature.properties) {
+                const propDiv = document.createElement('div');
+                propDiv.style.margin = '0 0 8px 0';
+                propDiv.style.paddingLeft = '8px';
+                propDiv.style.fontSize = '1.0em';
+                propDiv.style.color = '#333';
+                propDiv.style.whiteSpace = 'pre-line';
+                // List each property line by line
+                Object.entries(feature.properties).forEach(([k, v]) => {
+                  const line = document.createElement('div');
+                  line.textContent = `${k} : ${v}`;
+                  propDiv.appendChild(line);
+                });
+                activeList.appendChild(propDiv);
+              }
+            }
           } else {
             // If not checked, remove any name label marker
             if (window.nameLabelMarkers[category][key]) {
               map.removeLayer(window.nameLabelMarkers[category][key]);
               window.nameLabelMarkers[category][key] = null;
             }
+            // Also clear property display state
+            window.propDisplayState[category][key] = false;
           }
         });
       }
