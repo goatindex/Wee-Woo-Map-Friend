@@ -575,6 +575,36 @@
       // Store name label markers for each category/key
       if (!window.nameLabelMarkers) window.nameLabelMarkers = { ses: {}, lga: {}, cfa: {} };
 
+      // Helper to get the center of the widest horizontal and vertical points of a polygon
+      function getPolygonLabelAnchor(layer) {
+        // Only works for Polygon or MultiPolygon
+        let latlngs = [];
+        if (layer.getLatLngs) {
+          latlngs = layer.getLatLngs();
+        }
+        // Flatten for MultiPolygon
+        function flatten(arr) {
+          return arr.reduce((acc, val) => Array.isArray(val) ? acc.concat(flatten(val)) : acc.concat(val), []);
+        }
+        latlngs = flatten(latlngs);
+
+        if (latlngs.length === 0) return layer.getBounds().getCenter();
+
+        // Find widest horizontal (max lng span) and vertical (max lat span)
+        let minLat = latlngs[0].lat, maxLat = latlngs[0].lat;
+        let minLng = latlngs[0].lng, maxLng = latlngs[0].lng;
+        latlngs.forEach(ll => {
+          if (ll.lat < minLat) minLat = ll.lat;
+          if (ll.lat > maxLat) maxLat = ll.lat;
+          if (ll.lng < minLng) minLng = ll.lng;
+          if (ll.lng > maxLng) maxLng = ll.lng;
+        });
+        // Center of widest horizontal and vertical
+        const centerLat = (minLat + maxLat) / 2;
+        const centerLng = (minLng + maxLng) / 2;
+        return L.latLng(centerLat, centerLng);
+      }
+
       // Helper to add items for a category
       function addActiveItems(category, names, nameToKey, featureLayers) {
         names.forEach(name => {
@@ -628,23 +658,48 @@
                 window.nameLabelMarkers[category][key] = null;
               }
               if (nameCb.checked) {
-                // Find the center of the polygon(s)
+                // Find the center of the polygon(s) using widest horizontal/vertical
                 let latlng = null;
                 if (featureLayers[key] && featureLayers[key].length > 0) {
                   // Use the first layer's geometry
                   const layer = featureLayers[key][0];
-                  if (layer.getBounds) {
-                    latlng = layer.getBounds().getCenter();
-                  } else if (layer.getLatLng) {
-                    latlng = layer.getLatLng();
-                  }
+                  latlng = getPolygonLabelAnchor(layer);
                 }
                 if (latlng) {
+                  // Format name for 1-2 lines: break at spaces if >16 chars
+                  let displayName = name;
+                  if (name.length > 16) {
+                    const words = name.split(' ');
+                    let line1 = '', line2 = '';
+                    for (let w of words) {
+                      if ((line1 + ' ' + w).trim().length <= 16 || line1.length === 0) {
+                        line1 = (line1 + ' ' + w).trim();
+                      } else {
+                        line2 = (line2 + ' ' + w).trim();
+                      }
+                    }
+                    displayName = line2 ? `${line1}<br>${line2}` : line1;
+                  }
                   const labelMarker = L.marker(latlng, {
                     icon: L.divIcon({
                       className: 'name-label-marker',
-                      html: `<div style="background:#fff;border:2px solid ${outlineColors[category]};border-radius:8px;padding:2px 8px;font-weight:bold;color:${outlineColors[category]};font-size:1em;box-shadow:0 2px 8px rgba(0,0,0,0.10);">${name}</div>`,
-                      iconAnchor: [0, 0]
+                      html: `<div style="
+                        background:#fff;
+                        border:2px solid ${outlineColors[category]};
+                        border-radius:8px;
+                        padding:4px 12px;
+                        font-weight:bold;
+                        color:${outlineColors[category]};
+                        font-size:1em;
+                        box-shadow:0 2px 8px rgba(0,0,0,0.10);
+                        text-align:center;
+                        min-width:60px;
+                        max-width:180px;
+                        word-break:break-word;
+                        line-height:1.2;
+                        white-space:normal;
+                      ">${displayName}</div>`,
+                      iconAnchor: [90, 20] // center horizontally, adjust vertically
                     }),
                     interactive: false
                   });
