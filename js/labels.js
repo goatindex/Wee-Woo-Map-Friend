@@ -34,7 +34,12 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
     latlng = getPolygonLabelAnchor(layerOrMarker);
   }
   if(!latlng) return;
-  let text = processName(displayName);
+  let text = displayName;
+  // For ambulance station map labels, remove the word 'station' (case-insensitive, as a word)
+  if (category === 'ambulance' && isPoint) {
+    text = text.replace(/\bstation\b/gi, '').replace(/\s{2,}/g, ' ').trim();
+  }
+  text = processName(text);
   const outline = outlineColors[category];
   // For ambulance stations, offset label 10px below marker, centered
   const iconAnchor = isPoint ? [45, -10] : [90, 20];

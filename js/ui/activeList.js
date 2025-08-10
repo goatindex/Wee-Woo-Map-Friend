@@ -73,9 +73,34 @@ function addItems(category,container){
     }
     const row=document.createElement('div');
     row.style.display='flex'; row.style.alignItems='center'; row.style.marginBottom='2px';
+    // X button
+    const xBtn = document.createElement('button');
+    xBtn.textContent = '✕';
+    xBtn.title = 'Remove from map and active list';
+    xBtn.style.marginRight = '8px';
+    xBtn.style.background = 'none';
+    xBtn.style.border = 'none';
+    xBtn.style.color = '#b00';
+    xBtn.style.fontWeight = 'bold';
+    xBtn.style.cursor = 'pointer';
+    xBtn.style.fontSize = '1.1em';
+    xBtn.addEventListener('click', () => {
+      const baseCb = document.getElementById(`${category}_${key}`);
+      if(baseCb) {
+        baseCb.checked = false;
+        baseCb.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      removeLabel(category, key);
+      updateActiveList();
+    });
+    row.appendChild(xBtn);
     // Name column
+    let shownName = displayName;
+    if(category === 'ambulance') {
+      shownName = shownName.replace(/ambulance station/i, 'Ambo');
+    }
     const nameSpan=document.createElement('span');
-    nameSpan.textContent=displayName;
+    nameSpan.textContent=shownName;
     nameSpan.style.color=outlineColors[category];
     nameSpan.style.fontWeight='bold';
     nameSpan.style.flex='1';
