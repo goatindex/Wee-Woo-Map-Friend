@@ -108,8 +108,35 @@
       padding-bottom: 2px;
     }
     #activeList {
-      /* Ensures the list stays with the header */
-      padding-bottom: 6px;
+      max-height: 30vh;
+      overflow-y: auto;
+    }
+    #saveLinkBtn {
+      position: absolute;
+      left: 0;
+      top: 60px;
+      z-index: 1100;
+      background: #FF9900;
+      color: #fff;
+      font-weight: bold;
+      border-radius: 8px 0 0 8px;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.15);
+      cursor: pointer;
+      padding: 8px 2px 8px 2px;
+      writing-mode: vertical-rl;
+      text-align: center;
+      letter-spacing: 2px;
+      user-select: none;
+      transition: background 0.2s;
+    }
+    #saveLinkBtn:hover {
+      background: #cc7a00;
+    }
+    #saveLinkBtn span {
+      display: block;
+      font-size: 0.9em;
+      line-height: 1.2em;
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -139,6 +166,9 @@
       <h4 id="cfaHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>CFA Response Areas</h4>
       <div class="collapsible-list" id="cfaList" style="display: none;"></div>
     </div>
+  </div>
+  <div id="saveLinkBtn" title="Save current map as link">
+    <span>S<br>A<br>V<br>E<br><br>A<br>S<br><br>L<br>I<br>N<br>K</span>
   </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
@@ -623,6 +653,57 @@
     // }
 
     // (You may need to adjust the above logic to fit your code structure.)
+
+    document.getElementById('saveLinkBtn').addEventListener('click', function() {
+      // Gather map state
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+
+      // Gather checked items
+      function getChecked(category, names, nameToKey) {
+        return names.filter(name => {
+          const key = nameToKey[name];
+          const cb = document.getElementById(category + '_' + key);
+          return cb && cb.checked;
+        });
+      }
+      const sesChecked = getChecked('ses', sesNames, sesNameToKey);
+      const lgaChecked = getChecked('lga', lgaNames, lgaNameToKey);
+      const cfaChecked = getChecked('cfa', cfaNames, cfaNameToKey);
+
+      // Gather emphasised items
+      function getEmph(category, names, nameToKey) {
+        return names.filter(name => {
+          const key = nameToKey[name];
+          return emphasised[category][key];
+        });
+      }
+      const sesEmph = getEmph('ses', sesNames, sesNameToKey);
+      const lgaEmph = getEmph('lga', lgaNames, lgaNameToKey);
+      const cfaEmph = getEmph('cfa', cfaNames, cfaNameToKey);
+
+      // Build query string
+      const params = new URLSearchParams();
+      params.set('lat', center.lat.toFixed(5));
+      params.set('lng', center.lng.toFixed(5));
+      params.set('zoom', zoom);
+      if (sesChecked.length) params.set('ses', sesChecked.join(','));
+      if (lgaChecked.length) params.set('lga', lgaChecked.join(','));
+      if (cfaChecked.length) params.set('cfa', cfaChecked.join(','));
+      if (sesEmph.length) params.set('sesEmph', sesEmph.join(','));
+      if (lgaEmph.length) params.set('lgaEmph', lgaEmph.join(','));
+      if (cfaEmph.length) params.set('cfaEmph', cfaEmph.join(','));
+
+      // Create the link
+      const link = window.location.origin + window.location.pathname + '?' + params.toString();
+
+      // Show the link (copy to clipboard and/or show prompt)
+      navigator.clipboard.writeText(link).then(() => {
+        alert('Link copied to clipboard:\n' + link);
+      }, () => {
+        prompt('Copy this link:', link);
+      });
+    });
   </script>
 </body>
 </html>
