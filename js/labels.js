@@ -36,6 +36,8 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
   if(!latlng) return;
   let text = processName(displayName);
   const outline = outlineColors[category];
+  // For ambulance stations, offset label 10px below marker, centered
+  const iconAnchor = isPoint ? [45, -10] : [90, 20];
   const marker = L.marker(latlng,{
     icon: L.divIcon({
       className: isPoint ? 'ambulance-name-label':'name-label-marker',
@@ -46,10 +48,11 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
         box-shadow:0 2px 8px rgba(0,0,0,.10);text-align:center;
         min-width:60px;max-width:180px;line-height:1.2;hyphens:manual;
       ">${text}</div>`,
-      iconAnchor:[90,20]
+      iconAnchor: iconAnchor
     }),
     interactive:false
   }).addTo(map);
+  if(isPoint && marker._icon) marker._icon.style.marginTop = '10px';
   nameLabelMarkers[category][key]=marker;
 }
 

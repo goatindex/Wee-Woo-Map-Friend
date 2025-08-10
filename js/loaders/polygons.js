@@ -60,14 +60,23 @@ export async function loadPolygonCategory(category, url) {
     listEl.innerHTML = '';
     namesByCategory[category].forEach(displayName => {
       const key = nameToKey[category][displayName];
-      const checked = false; // default off
+      // Use defaultOn to determine checked state
+      const checked = meta.defaultOn(displayName);
       const cb = createCheckbox(
         `${category}_${key}`,
         displayName,
         checked,
         e => {
           const on = e.target.checked;
-          featureLayers[category][key].forEach(l => on ? l.addTo(map) : map.removeLayer(l));
+          featureLayers[category][key].forEach(l => {
+            if (on) {
+              l.addTo(map);
+              // If LGA, bring to front
+              if (category === 'lga' && l.bringToFront) l.bringToFront();
+            } else {
+              map.removeLayer(l);
+            }
+          });
           if (!on) {
             emphasised[category][key] = false;
             if (nameLabelMarkers[category][key]) {
@@ -75,13 +84,32 @@ export async function loadPolygonCategory(category, url) {
               nameLabelMarkers[category][key] = null;
             }
           }
+          // After any change, always bring all LGA polygons to front
+          if (category !== 'lga') {
+            Object.values(featureLayers.lga).flat().forEach(l => l && l.bringToFront && l.bringToFront());
+          }
           updateActiveList();
         }
       );
       listEl.appendChild(cb);
-      // Ensure not added initially
-      featureLayers[category][key].forEach(l => map.removeLayer(l));
+      // Add to map and set emphasis/label if default
+      if (checked) {
+        featureLayers[category][key].forEach(l => {
+          l.addTo(map);
+          if (category === 'lga' && l.bringToFront) l.bringToFront();
+        });
+        if (category === 'ses') {
+          emphasised[category][key] = true;
+        }
+        nameLabelMarkers[category][key] = true;
+      } else {
+        featureLayers[category][key].forEach(l => map.removeLayer(l));
+      }
     });
+    // After all polygons loaded, bring all LGA polygons to front
+    if (category === 'lga') {
+      Object.values(featureLayers.lga).flat().forEach(l => l && l.bringToFront && l.bringToFront());
+    }
 
     // Group toggle
     const toggleAll = document.getElementById(meta.toggleAllId);
