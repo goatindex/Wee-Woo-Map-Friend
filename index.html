@@ -598,11 +598,6 @@
       });
     }
 
-    // After each layer is loaded and checkboxes are created, call:
-    // setupActiveListSync('ses', sesNames, sesNameToKey, sesFeatureLayers);
-    // setupActiveListSync('lga', lgaNames, lgaNameToKey, lgaFeatureLayers);
-    // setupActiveListSync('cfa', cfaNames, cfaNameToKey, cfaFeatureLayers);
-
     // Also call updateActiveList() after initial setup and after any group toggle
 
     // Collapsible logic for All Active and all categories
@@ -625,16 +620,6 @@
     setupCollapsible('sesHeader', 'sesList');
     setupCollapsible('lgaHeader', 'lgaList');
     setupCollapsible('cfaHeader', 'cfaList');
-
-    // In each fetch (after checkboxes are created), add:
-    // setupActiveListSync(...) and updateActiveList();
-
-    // Example for SES:
-    // After sesNames.forEach(...) in SES fetch:
-    setupActiveListSync('ses', sesNames, sesNameToKey, sesFeatureLayers);
-    updateActiveList();
-
-    // Do the same for LGA and CFA after their checkboxes are created.
 
     // When toggling group checkboxes, also call updateActiveList();
 
