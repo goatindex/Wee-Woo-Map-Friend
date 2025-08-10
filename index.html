@@ -106,6 +106,7 @@
     <div class="group-controls">
       <label><input type="checkbox" id="toggleAllSES" checked> Show All SES Zones</label>
       <label><input type="checkbox" id="toggleAllLGAs" checked> Show All LGAs</label>
+      <label><input type="checkbox" id="toggleAllCFA" checked> Show All CFA Areas</label>
     </div>
     <div class="divider"></div>
     <div>
@@ -116,6 +117,11 @@
     <div>
       <h4 id="lgaHeader"><span class="collapse-arrow">&#9660;</span>LGAs</h4>
       <div class="collapsible-list" id="lgaList"></div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <h4 id="cfaHeader"><span class="collapse-arrow">&#9660;</span>CFA Areas</h4>
+      <div class="collapsible-list" id="cfaList"></div>
     </div>
   </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -146,6 +152,16 @@
       };
     }
 
+    // Style for CFA
+    function cfaStyle(feature) {
+      return {
+        color: 'red',
+        weight: 2,
+        fillColor: 'red',
+        fillOpacity: 0.1
+      };
+    }
+
     // Helper: Title Case
     function toTitleCase(str) {
       return str.replace(/\w\S*/g, function(txt){
@@ -167,17 +183,15 @@
     }
 
     // Layer and feature storage
-    let sesLayer, lgaLayer;
-    let sesFeatureLayers = {}; // {name: [layer, ...]}
-    let lgaFeatureLayers = {}; // {name: [layer, ...]}
-    let sesNames = [], lgaNames = [];
-    let sesNameToKey = {}, lgaNameToKey = {};
+    let sesLayer, lgaLayer, cfaLayer;
+    let sesFeatureLayers = {}, lgaFeatureLayers = {}, cfaFeatureLayers = {};
+    let sesNames = [], lgaNames = [], cfaNames = [];
+    let sesNameToKey = {}, lgaNameToKey = {}, cfaNameToKey = {};
 
     // SES ZONES
     fetch('ses.geojson')
       .then(response => response.json())
       .then(data => {
-        // Group features by name (case-insensitive, trimmed)
         data.features.forEach(feature => {
           let name = feature.properties.RESPONSE_ZONE_NAME.trim();
           let key = name.toLowerCase();
@@ -195,18 +209,14 @@
         }).addTo(map);
         map.fitBounds(sesLayer.getBounds());
 
-        // Prepare sorted, unique, title-cased names
         sesNames = Object.keys(sesFeatureLayers)
           .map(key => toTitleCase(key))
           .sort((a, b) => a.localeCompare(b));
-
-        // Map title-case back to key for toggling
         sesNameToKey = {};
         Object.keys(sesFeatureLayers).forEach(key => {
           sesNameToKey[toTitleCase(key)] = key;
         });
 
-        // Populate SES menu
         const sesList = document.getElementById('sesList');
         sesList.innerHTML = '';
         sesNames.forEach(name => {
@@ -229,7 +239,6 @@
           sesList.appendChild(cb);
         });
 
-        // "Show All SES" checkbox logic
         document.getElementById('toggleAllSES').addEventListener('change', function (e) {
           const checked = e.target.checked;
           sesNames.forEach(name => {
@@ -273,7 +282,6 @@
     fetch('LGAs.geojson')
       .then(response => response.json())
       .then(data => {
-        // Group features by name (case-insensitive, trimmed)
         data.features.forEach(feature => {
           let name = feature.properties.LGA_NAME.trim();
           let key = name.toLowerCase();
@@ -290,18 +298,14 @@
           }
         }).addTo(map);
 
-        // Prepare sorted, unique, title-cased names
         lgaNames = Object.keys(lgaFeatureLayers)
           .map(key => toTitleCase(key))
           .sort((a, b) => a.localeCompare(b));
-
-        // Map title-case back to key for toggling
         lgaNameToKey = {};
         Object.keys(lgaFeatureLayers).forEach(key => {
           lgaNameToKey[toTitleCase(key)] = key;
         });
 
-        // Populate LGA menu
         const lgaList = document.getElementById('lgaList');
         lgaList.innerHTML = '';
         lgaNames.forEach(name => {
@@ -324,7 +328,6 @@
           lgaList.appendChild(cb);
         });
 
-        // "Show All LGAs" checkbox logic
         document.getElementById('toggleAllLGAs').addEventListener('change', function (e) {
           const checked = e.target.checked;
           lgaNames.forEach(name => {
@@ -347,6 +350,78 @@
         }
       });
 
+    // CFA AREAS
+    fetch('cfa.geojson')
+      .then(response => response.json())
+      .then(data => {
+        data.features.forEach(feature => {
+          let name = feature.properties.CFA_NAME ? feature.properties.CFA_NAME.trim() : "Unnamed CFA";
+          let key = name.toLowerCase();
+          if (!cfaFeatureLayers[key]) cfaFeatureLayers[key] = [];
+        });
+
+        cfaLayer = L.geoJSON(data, {
+          style: cfaStyle,
+          onEachFeature: function (feature, layer) {
+            let name = feature.properties.CFA_NAME ? feature.properties.CFA_NAME.trim() : "Unnamed CFA";
+            let key = name.toLowerCase();
+            cfaFeatureLayers[key].push(layer);
+            layer.bindPopup(toTitleCase(name));
+          }
+        }).addTo(map);
+
+        cfaNames = Object.keys(cfaFeatureLayers)
+          .map(key => toTitleCase(key))
+          .sort((a, b) => a.localeCompare(b));
+        cfaNameToKey = {};
+        Object.keys(cfaFeatureLayers).forEach(key => {
+          cfaNameToKey[toTitleCase(key)] = key;
+        });
+
+        const cfaList = document.getElementById('cfaList');
+        cfaList.innerHTML = '';
+        cfaNames.forEach(name => {
+          const key = cfaNameToKey[name];
+          const cb = createCheckbox(
+            'cfa_' + key,
+            name,
+            true,
+            function (e) {
+              cfaFeatureLayers[key].forEach(layer => {
+                if (e.target.checked) {
+                  layer.addTo(map);
+                } else {
+                  map.removeLayer(layer);
+                }
+              });
+              updateAllCFACheckbox();
+            }
+          );
+          cfaList.appendChild(cb);
+        });
+
+        document.getElementById('toggleAllCFA').addEventListener('change', function (e) {
+          const checked = e.target.checked;
+          cfaNames.forEach(name => {
+            const key = cfaNameToKey[name];
+            const cb = document.getElementById('cfa_' + key);
+            cb.checked = checked;
+            cfaFeatureLayers[key].forEach(layer => {
+              if (checked) {
+                layer.addTo(map);
+              } else {
+                map.removeLayer(layer);
+              }
+            });
+          });
+        });
+
+        function updateAllCFACheckbox() {
+          const allChecked = cfaNames.every(name => document.getElementById('cfa_' + cfaNameToKey[name]).checked);
+          document.getElementById('toggleAllCFA').checked = allChecked;
+        }
+      });
+
     // Collapsible logic
     function setupCollapsible(headerId, listId) {
       const header = document.getElementById(headerId);
@@ -362,6 +437,7 @@
     }
     setupCollapsible('sesHeader', 'sesList');
     setupCollapsible('lgaHeader', 'lgaList');
+    setupCollapsible('cfaHeader', 'cfaList');
 
     // Global search logic
     document.getElementById('globalSearch').addEventListener('input', function(e) {
@@ -373,6 +449,11 @@
       });
       // LGA
       Array.from(document.getElementById('lgaList').children).forEach(label => {
+        const text = label.textContent.trim().toLowerCase();
+        label.style.display = text.includes(val) ? '' : 'none';
+      });
+      // CFA
+      Array.from(document.getElementById('cfaList').children).forEach(label => {
         const text = label.textContent.trim().toLowerCase();
         label.style.display = text.includes(val) ? '' : 'none';
       });
