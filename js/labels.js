@@ -1,4 +1,4 @@
-import { map } from './state.js';
+import { getMap } from './state.js';
 import { outlineColors } from './config.js';
 import { nameLabelMarkers } from './state.js';
 
@@ -25,6 +25,7 @@ export function getPolygonLabelAnchor(layer){
 }
 
 export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
+  const map = getMap();
   removeLabel(category,key);
   let latlng=null;
   if(isPoint){
@@ -53,6 +54,7 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
 }
 
 export function removeLabel(category,key){
+  const map = getMap();
   const m = nameLabelMarkers[category][key];
   if(m){ map.removeLayer(m); nameLabelMarkers[category][key]=null; }
 }
