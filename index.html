@@ -10,10 +10,56 @@
       height: 100%;
       margin: 0;
     }
+    .layer-menu {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255,255,255,0.95);
+      padding: 12px 16px;
+      border-radius: 8px;
+      z-index: 1000;
+      font-family: sans-serif;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .layer-menu h4 {
+      margin: 8px 0 4px 0;
+      font-size: 1em;
+    }
+    .layer-menu label {
+      display: block;
+      margin: 2px 0;
+      font-size: 0.95em;
+      cursor: pointer;
+    }
+    .layer-menu .group-controls {
+      margin-bottom: 8px;
+    }
+    .layer-menu .divider {
+      border-bottom: 1px solid #ccc;
+      margin: 8px 0;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
+  <div class="layer-menu" id="layerMenu">
+    <div class="group-controls">
+      <label><input type="checkbox" id="toggleAllSES" checked> Show All SES Zones</label>
+      <label><input type="checkbox" id="toggleAllLGAs" checked> Show All LGAs</label>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <h4>SES Zones</h4>
+      <div id="sesList"></div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <h4>LGAs</h4>
+      <div id="lgaList"></div>
+    </div>
+  </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     var map = L.map('map').setView([-37.8, 144.9], 8);
@@ -24,43 +70,145 @@
     // Style for SES Response Zones
     function sesStyle(feature) {
       return {
-        color: '#FF9900',         // outline color
+        color: '#FF9900',         // neon orange outline
         weight: 3,
         fillColor: 'orange',      // fill color
-        fillOpacity: 0.2          // 20% opacity
+        fillOpacity: 0.2
       };
     }
 
     // Style for LGAs
     function lgaStyle(feature) {
       return {
-        color: 'black',           // outline color
-        weight: 1.0,
-        fillColor: 'black',       // fill color
-        fillOpacity: 0.1,         // 10% opacity
-        dashArray: '6 6'          // long dotted line
+        color: 'black',
+        weight: 1.5,
+        fillColor: 'black',
+        fillOpacity: 0.1,
+        dashArray: '8 8'
       };
+    }
+
+    // Layer and feature storage
+    let sesLayer, lgaLayer;
+    let sesFeatureLayers = {};
+    let lgaFeatureLayers = {};
+
+    // Helper to create a checkbox
+    function createCheckbox(id, label, checked, onChange) {
+      const wrapper = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.id = id;
+      cb.checked = checked;
+      cb.addEventListener('change', onChange);
+      wrapper.appendChild(cb);
+      wrapper.appendChild(document.createTextNode(' ' + label));
+      return wrapper;
     }
 
     // Load SES Response Zones
     fetch('ses.geojson')
       .then(response => response.json())
       .then(data => {
-        var sesLayer = L.geoJSON(data, { style: sesStyle }).addTo(map);
+        sesLayer = L.geoJSON(data, {
+          style: sesStyle,
+          onEachFeature: function (feature, layer) {
+            const name = feature.properties.RESPONSE_ZONE_NAME;
+            sesFeatureLayers[name] = layer;
+            layer.bindPopup(name);
+          }
+        }).addTo(map);
         map.fitBounds(sesLayer.getBounds());
 
-        // Load LGAs after SES to ensure both are visible
-        fetch('LGAs.geojson')
-          .then(response => response.json())
-          .then(lgaData => {
-            L.geoJSON(lgaData, { style: lgaStyle }).addTo(map);
-          })
-          .catch(error => {
-            console.error('Error loading LGAs.geojson:', error);
+        // Populate SES menu
+        const sesList = document.getElementById('sesList');
+        Object.keys(sesFeatureLayers).forEach(name => {
+          const cb = createCheckbox(
+            'ses_' + name,
+            name,
+            true,
+            function (e) {
+              if (e.target.checked) {
+                sesFeatureLayers[name].addTo(map);
+              } else {
+                map.removeLayer(sesFeatureLayers[name]);
+              }
+              updateAllSESCheckbox();
+            }
+          );
+          sesList.appendChild(cb);
+        });
+
+        // "Show All SES" checkbox logic
+        document.getElementById('toggleAllSES').addEventListener('change', function (e) {
+          const checked = e.target.checked;
+          Object.keys(sesFeatureLayers).forEach(name => {
+            const cb = document.getElementById('ses_' + name);
+            cb.checked = checked;
+            if (checked) {
+              sesFeatureLayers[name].addTo(map);
+            } else {
+              map.removeLayer(sesFeatureLayers[name]);
+            }
           });
-      })
-      .catch(error => {
-        console.error('Error loading ses.geojson:', error);
+        });
+
+        function updateAllSESCheckbox() {
+          const allChecked = Object.keys(sesFeatureLayers).every(name => document.getElementById('ses_' + name).checked);
+          document.getElementById('toggleAllSES').checked = allChecked;
+        }
+      });
+
+    // Load LGAs
+    fetch('LGAs.geojson')
+      .then(response => response.json())
+      .then(data => {
+        lgaLayer = L.geoJSON(data, {
+          style: lgaStyle,
+          onEachFeature: function (feature, layer) {
+            const name = feature.properties.LGA_NAME;
+            lgaFeatureLayers[name] = layer;
+            layer.bindPopup(name);
+          }
+        }).addTo(map);
+
+        // Populate LGA menu
+        const lgaList = document.getElementById('lgaList');
+        Object.keys(lgaFeatureLayers).forEach(name => {
+          const cb = createCheckbox(
+            'lga_' + name,
+            name,
+            true,
+            function (e) {
+              if (e.target.checked) {
+                lgaFeatureLayers[name].addTo(map);
+              } else {
+                map.removeLayer(lgaFeatureLayers[name]);
+              }
+              updateAllLGACheckbox();
+            }
+          );
+          lgaList.appendChild(cb);
+        });
+
+        // "Show All LGAs" checkbox logic
+        document.getElementById('toggleAllLGAs').addEventListener('change', function (e) {
+          const checked = e.target.checked;
+          Object.keys(lgaFeatureLayers).forEach(name => {
+            const cb = document.getElementById('lga_' + name);
+            cb.checked = checked;
+            if (checked) {
+              lgaFeatureLayers[name].addTo(map);
+            } else {
+              map.removeLayer(lgaFeatureLayers[name]);
+            }
+          });
+        });
+
+        function updateAllLGACheckbox() {
+          const allChecked = Object.keys(lgaFeatureLayers).every(name => document.getElementById('lga_' + name).checked);
+          document.getElementById('toggleAllLGAs').checked = allChecked;
+        }
       });
   </script>
 </body>
