@@ -15,18 +15,52 @@
 <body>
   <div id="map"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/esri-leaflet@3.0.9/dist/esri-leaflet.js"></script>
   <script>
     var map = L.map('map').setView([-37.8, 144.9], 8);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
-    var boundaries = L.esri.featureLayer({
-      url: 'https://maps.ffm.vic.gov.au/arcgis/rest/services/boundaries/MapServer/16'
-    }).addTo(map);
-    boundaries.once('load', function() {
-      map.fitBounds(boundaries.getBounds());
-    });
+
+    // Style for SES Response Zones
+    function sesStyle(feature) {
+      return {
+        color: 'orange',         // outline color
+        weight: 2,
+        fillColor: 'orange',     // fill color
+        fillOpacity: 0.2         // 20% opacity
+      };
+    }
+
+    // Style for LGAs
+    function lgaStyle(feature) {
+      return {
+        color: 'black',          // outline color
+        weight: 2,
+        fillColor: 'black',      // fill color
+        fillOpacity: 0.1         // 10% opacity
+      };
+    }
+
+    // Load SES Response Zones
+    fetch('ses.geojson')
+      .then(response => response.json())
+      .then(data => {
+        var sesLayer = L.geoJSON(data, { style: sesStyle }).addTo(map);
+        map.fitBounds(sesLayer.getBounds());
+
+        // Load LGAs after SES to ensure both are visible
+        fetch('LGAs.geojson')
+          .then(response => response.json())
+          .then(lgaData => {
+            L.geoJSON(lgaData, { style: lgaStyle }).addTo(map);
+          })
+          .catch(error => {
+            console.error('Error loading LGAs.geojson:', error);
+          });
+      })
+      .catch(error => {
+        console.error('Error loading ses.geojson:', error);
+      });
   </script>
 </body>
 </html>
