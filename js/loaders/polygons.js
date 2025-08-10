@@ -107,7 +107,7 @@ export async function loadPolygonCategory(category, url) {
         if (category === 'ses') {
           emphasised[category][key] = true;
         }
-        nameLabelMarkers[category][key] = true;
+        // Do not set nameLabelMarkers[category][key] = true here; let checkbox logic handle label creation
       } else {
         featureLayers[category][key].forEach(l => {
           map.removeLayer(l);

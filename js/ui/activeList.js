@@ -136,7 +136,7 @@ function addItems(category,container){
     nameCb.title='Show Name';
     nameCb.addEventListener('change',()=>{
       removeLabel(category,key);
-      if(nameCb.checked){
+      if(nameCb.checked && !nameLabelMarkers[category][key]){
         const layerOrMarker = isPoint ? featureLayers[category][key] : featureLayers[category][key]?.[0];
         if(layerOrMarker) ensureLabel(category,key,displayName,isPoint,layerOrMarker);
       }
