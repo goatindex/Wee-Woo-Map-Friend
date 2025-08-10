@@ -102,6 +102,8 @@
 <body>
   <div id="map"></div>
   <div class="layer-menu" id="layerMenu">
+    <h4 id="activeHeader"><span class="collapse-arrow">&#9660;</span>All Active</h4>
+    <div class="collapsible-list" id="activeList"></div>
     <input class="search-box" id="globalSearch" type="text" placeholder="Search all areas...">
     <div class="group-controls">
       <label><input type="checkbox" id="toggleAllSES" checked> Show All SES Zones</label>
@@ -460,7 +462,97 @@
         }
       });
 
-    // Collapsible logic
+    // Outline and fill color mapping for each category
+    const outlineColors = {
+      ses: '#FF9900',
+      lga: 'black',
+      cfa: 'red'
+    };
+    const fillColors = {
+      ses: 'orange',
+      lga: 'black',
+      cfa: 'red'
+    };
+    const baseOpacities = {
+      ses: 0.2,
+      lga: 0.1,
+      cfa: 0.1
+    };
+
+    // Store emphasised state: {category: {key: true/false}}
+    let emphasised = { ses: {}, lga: {}, cfa: {} };
+
+    // Helper to update the "All Active" section
+    function updateActiveList() {
+      const activeList = document.getElementById('activeList');
+      activeList.innerHTML = '';
+      // Helper to add items for a category
+      function addActiveItems(category, names, nameToKey, featureLayers) {
+        names.forEach(name => {
+          const key = nameToKey[name];
+          const cb = document.getElementById(category + '_' + key);
+          if (cb && cb.checked) {
+            // Create the active item row
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.alignItems = 'center';
+            row.style.marginBottom = '2px';
+
+            // Name in outline color
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = name;
+            nameSpan.style.color = outlineColors[category];
+            nameSpan.style.fontWeight = 'bold';
+            nameSpan.style.flex = '1';
+            row.appendChild(nameSpan);
+
+            // Emphasise checkbox
+            const emphLabel = document.createElement('label');
+            emphLabel.style.marginLeft = '8px';
+            const emphCb = document.createElement('input');
+            emphCb.type = 'checkbox';
+            emphCb.checked = emphasised[category][key] || false;
+            emphCb.addEventListener('change', function() {
+              emphasised[category][key] = emphCb.checked;
+              // Update fill opacity for all layers of this item
+              featureLayers[key].forEach(layer => {
+                let opacity = baseOpacities[category];
+                if (emphCb.checked) opacity = Math.min(opacity + 0.15, 1.0);
+                layer.setStyle({ fillOpacity: opacity });
+              });
+            });
+            emphLabel.appendChild(emphCb);
+            emphLabel.appendChild(document.createTextNode(' Emphasise'));
+            row.appendChild(emphLabel);
+
+            activeList.appendChild(row);
+          }
+        });
+      }
+      addActiveItems('ses', sesNames, sesNameToKey, sesFeatureLayers);
+      addActiveItems('lga', lgaNames, lgaNameToKey, lgaFeatureLayers);
+      addActiveItems('cfa', cfaNames, cfaNameToKey, cfaFeatureLayers);
+    }
+
+    // Update active list whenever a checkbox is toggled
+    function setupActiveListSync(category, names, nameToKey, featureLayers) {
+      names.forEach(name => {
+        const key = nameToKey[name];
+        const cb = document.getElementById(category + '_' + key);
+        if (cb) {
+          cb.addEventListener('change', updateActiveList);
+        }
+      });
+    }
+
+    // After each layer is loaded and checkboxes are created, call:
+    // setupActiveListSync('ses', sesNames, sesNameToKey, sesFeatureLayers);
+    // setupActiveListSync('lga', lgaNames, lgaNameToKey, lgaFeatureLayers);
+    // setupActiveListSync('cfa', cfaNames, cfaNameToKey, cfaFeatureLayers);
+
+    // Also call updateActiveList() after initial setup and after any group toggle
+
+    // Collapsible logic for All Active
     function setupCollapsible(headerId, listId) {
       const header = document.getElementById(headerId);
       const list = document.getElementById(listId);
@@ -473,29 +565,36 @@
         }
       });
     }
-    setupCollapsible('sesHeader', 'sesList');
-    setupCollapsible('lgaHeader', 'lgaList');
-    setupCollapsible('cfaHeader', 'cfaList');
+    setupCollapsible('activeHeader', 'activeList');
+    // ...existing collapsible setup for other categories...
 
-    // Global search logic
-    document.getElementById('globalSearch').addEventListener('input', function(e) {
-      const val = e.target.value.trim().toLowerCase();
-      // SES
-      Array.from(document.getElementById('sesList').children).forEach(label => {
-        const text = label.textContent.trim().toLowerCase();
-        label.style.display = text.includes(val) ? '' : 'none';
-      });
-      // LGA
-      Array.from(document.getElementById('lgaList').children).forEach(label => {
-        const text = label.textContent.trim().toLowerCase();
-        label.style.display = text.includes(val) ? '' : 'none';
-      });
-      // CFA
-      Array.from(document.getElementById('cfaList').children).forEach(label => {
-        const text = label.textContent.trim().toLowerCase();
-        label.style.display = text.includes(val) ? '' : 'none';
-      });
-    });
+    // In each fetch (after checkboxes are created), add:
+    // setupActiveListSync(...) and updateActiveList();
+
+    // Example for SES:
+    // After sesNames.forEach(...) in SES fetch:
+    setupActiveListSync('ses', sesNames, sesNameToKey, sesFeatureLayers);
+    updateActiveList();
+
+    // Do the same for LGA and CFA after their checkboxes are created.
+
+    // When toggling group checkboxes, also call updateActiveList();
+
+    // When toggling individual checkboxes, also call updateActiveList();
+
+    // When toggling "emphasise", update fillOpacity for that item only.
+
+    // When toggling off an item, reset its fillOpacity to base value:
+    // (Add this in the individual checkbox change handler)
+    // if (!cb.checked) {
+    //   featureLayers[key].forEach(layer => {
+    //     layer.setStyle({ fillOpacity: baseOpacities[category] });
+    //   });
+    //   emphasised[category][key] = false;
+    //   updateActiveList();
+    // }
+
+    // (You may need to adjust the above logic to fit your code structure.)
   </script>
 </body>
 </html>
