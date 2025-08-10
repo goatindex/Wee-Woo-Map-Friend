@@ -2,6 +2,7 @@ import { categoryMeta } from '../config.js';
 import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers } from '../state.js';
 import { setupActiveListSync, updateActiveList } from '../ui/activeList.js';
 import { toTitleCase, createCheckbox } from '../utils.js';
+import { addPolygonPlus, removePolygonPlus } from '../polygonPlus.js';
 import { getMap } from '../state.js';
 
 export async function loadPolygonCategory(category, url) {
@@ -73,8 +74,12 @@ export async function loadPolygonCategory(category, url) {
               l.addTo(map);
               // If LGA, bring to front
               if (category === 'lga' && l.bringToFront) l.bringToFront();
+              // If ambulance, add thick white plus
+              if (category === 'ambulance') addPolygonPlus(map, l);
             } else {
               map.removeLayer(l);
+              // If ambulance, remove thick white plus
+              if (category === 'ambulance') removePolygonPlus(l, map);
             }
           });
           if (!on) {
@@ -97,13 +102,17 @@ export async function loadPolygonCategory(category, url) {
         featureLayers[category][key].forEach(l => {
           l.addTo(map);
           if (category === 'lga' && l.bringToFront) l.bringToFront();
+          if (category === 'ambulance') addPolygonPlus(map, l);
         });
         if (category === 'ses') {
           emphasised[category][key] = true;
         }
         nameLabelMarkers[category][key] = true;
       } else {
-        featureLayers[category][key].forEach(l => map.removeLayer(l));
+        featureLayers[category][key].forEach(l => {
+          map.removeLayer(l);
+          if (category === 'ambulance') removePolygonPlus(l, map);
+        });
       }
     });
     // After all polygons loaded, bring all LGA polygons to front
