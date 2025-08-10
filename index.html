@@ -97,13 +97,27 @@
       background: transparent;
       border: none;
     }
+    #activeHeader, #activeList {
+      position: sticky;
+      top: 0;
+      background: rgba(255,255,255,0.98);
+      z-index: 1010;
+    }
+    #activeHeader {
+      padding-top: 2px;
+      padding-bottom: 2px;
+    }
+    #activeList {
+      /* Ensures the list stays with the header */
+      padding-bottom: 6px;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <div class="layer-menu" id="layerMenu">
-    <h4 id="activeHeader"><span class="collapse-arrow">&#9660;</span>All Active</h4>
-    <div class="collapsible-list" id="activeList"></div>
+    <h4 id="activeHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>All Active</h4>
+    <div class="collapsible-list" id="activeList" style="display: none;"></div>
     <input class="search-box" id="globalSearch" type="text" placeholder="Search all areas...">
     <div class="group-controls">
       <label><input type="checkbox" id="toggleAllSES" checked> Show All SES Zones</label>
@@ -112,18 +126,18 @@
     </div>
     <div class="divider"></div>
     <div>
-      <h4 id="sesHeader"><span class="collapse-arrow">&#9660;</span>SES Zones</h4>
-      <div class="collapsible-list" id="sesList"></div>
+      <h4 id="sesHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>SES Response Areas</h4>
+      <div class="collapsible-list" id="sesList" style="display: none;"></div>
     </div>
     <div class="divider"></div>
     <div>
-      <h4 id="lgaHeader"><span class="collapse-arrow">&#9660;</span>LGAs</h4>
-      <div class="collapsible-list" id="lgaList"></div>
+      <h4 id="lgaHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>Local Government Areas</h4>
+      <div class="collapsible-list" id="lgaList" style="display: none;"></div>
     </div>
     <div class="divider"></div>
     <div>
-      <h4 id="cfaHeader"><span class="collapse-arrow">&#9660;</span>CFA Areas</h4>
-      <div class="collapsible-list" id="cfaList"></div>
+      <h4 id="cfaHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>CFA Response Areas</h4>
+      <div class="collapsible-list" id="cfaList" style="display: none;"></div>
     </div>
   </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -561,10 +575,13 @@
 
     // Also call updateActiveList() after initial setup and after any group toggle
 
-    // Collapsible logic for All Active
+    // Collapsible logic for All Active and all categories
     function setupCollapsible(headerId, listId) {
       const header = document.getElementById(headerId);
       const list = document.getElementById(listId);
+      // Start collapsed
+      header.classList.add('collapsed');
+      list.style.display = 'none';
       header.addEventListener('click', function() {
         header.classList.toggle('collapsed');
         if (list.style.display === 'none') {
@@ -575,7 +592,9 @@
       });
     }
     setupCollapsible('activeHeader', 'activeList');
-    // ...existing collapsible setup for other categories...
+    setupCollapsible('sesHeader', 'sesList');
+    setupCollapsible('lgaHeader', 'lgaList');
+    setupCollapsible('cfaHeader', 'cfaList');
 
     // In each fetch (after checkboxes are created), add:
     // setupActiveListSync(...) and updateActiveList();
