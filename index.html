@@ -25,19 +25,20 @@
     function sesStyle(feature) {
       return {
         color: '#FF9900',         // outline color
-        weight: 2.5,
-        fillColor: 'orange',     // fill color
-        fillOpacity: 0.2         // 20% opacity
+        weight: 3,
+        fillColor: 'orange',      // fill color
+        fillOpacity: 0.2          // 20% opacity
       };
     }
 
     // Style for LGAs
     function lgaStyle(feature) {
       return {
-        color: 'black',          // outline color
+        color: 'black',           // outline color
         weight: 1.5,
-        fillColor: 'black',      // fill color
-        fillOpacity: 0.1         // 10% opacity
+        fillColor: 'black',       // fill color
+        fillOpacity: 0.1,         // 10% opacity
+        dashArray: '8 4'          // long dotted line
       };
     }
 
