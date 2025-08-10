@@ -251,9 +251,7 @@
           });
         });
 
-        // Set "Show All SES" to unchecked by default
         document.getElementById('toggleAllSES').checked = false;
-
         document.getElementById('toggleAllSES').addEventListener('change', function (e) {
           const checked = e.target.checked;
           sesNames.forEach(name => {
@@ -268,6 +266,7 @@
               }
             });
           });
+          updateActiveList(); // <-- ADD THIS
         });
 
         function updateAllSESCheckbox() {
@@ -290,6 +289,10 @@
           }
         });
         // --- END SES Unit Floating Box ---
+
+        // --- ADD THESE TWO LINES ---
+        setupActiveListSync('ses', sesNames, sesNameToKey, sesFeatureLayers);
+        updateActiveList();
       });
 
     // LGAs
@@ -352,9 +355,7 @@
           });
         });
 
-        // Set "Show All LGAs" to unchecked by default
         document.getElementById('toggleAllLGAs').checked = false;
-
         document.getElementById('toggleAllLGAs').addEventListener('change', function (e) {
           const checked = e.target.checked;
           lgaNames.forEach(name => {
@@ -369,12 +370,17 @@
               }
             });
           });
+          updateActiveList(); // <-- ADD THIS
         });
 
         function updateAllLGACheckbox() {
           const allChecked = lgaNames.every(name => document.getElementById('lga_' + lgaNameToKey[name]).checked);
           document.getElementById('toggleAllLGAs').checked = allChecked;
         }
+
+        // --- ADD THESE TWO LINES ---
+        setupActiveListSync('lga', lgaNames, lgaNameToKey, lgaFeatureLayers);
+        updateActiveList();
       });
 
     // CFA AREAS
@@ -437,9 +443,7 @@
           });
         });
 
-        // Set "Show All CFA" to unchecked by default
         document.getElementById('toggleAllCFA').checked = false;
-
         document.getElementById('toggleAllCFA').addEventListener('change', function (e) {
           const checked = e.target.checked;
           cfaNames.forEach(name => {
@@ -454,12 +458,17 @@
               }
             });
           });
+          updateActiveList(); // <-- ADD THIS
         });
 
         function updateAllCFACheckbox() {
           const allChecked = cfaNames.every(name => document.getElementById('cfa_' + cfaNameToKey[name]).checked);
           document.getElementById('toggleAllCFA').checked = allChecked;
         }
+
+        // --- ADD THESE TWO LINES ---
+        setupActiveListSync('cfa', cfaNames, cfaNameToKey, cfaFeatureLayers);
+        updateActiveList();
       });
 
     // Outline and fill color mapping for each category
