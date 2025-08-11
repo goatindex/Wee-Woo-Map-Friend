@@ -9,7 +9,7 @@ export function loadWaterwayCentres() {
       waterwayLayer = L.geoJSON(data, {
         style: {
           color: '#0a2372', // dark blue
-          weight: 2,
+          weight: 3, // match SES border thickness
           fillColor: '#0a2372',
           fillOpacity: 0.7
         }
