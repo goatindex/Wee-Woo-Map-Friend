@@ -7,7 +7,7 @@ html, body, #map { height:100%; margin:0; }
   min-width:260px;
 }
 .layer-menu h4 {
-  display: block;
+  position: sticky;
   background: #fff;
   z-index: 10;
   border-bottom: 1px solid #ddd;
@@ -19,6 +19,12 @@ html, body, #map { height:100%; margin:0; }
   display: flex;
   align-items: center;
 }
+#activeHeader { top: 0; }
+#showAllHeader { top: 40px; }
+#sesHeader { top: 80px; }
+#lgaHeader { top: 120px; }
+#cfaHeader { top: 160px; }
+#ambulanceHeader { top: 200px; }
 .layer-menu label { display:block; margin:2px 0; font-size:0.95em; cursor:pointer; }
 .layer-menu .group-controls { margin-bottom:8px; }
 .layer-menu .divider { border-bottom:1px solid #ccc; margin:8px 0; }
