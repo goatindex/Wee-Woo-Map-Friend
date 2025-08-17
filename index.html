@@ -9,30 +9,34 @@
 </head>
 <body>
   <div id="map"></div>
-  <div class="layer-menu" id="layerMenu">
-    <h4 id="activeHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>All Active</h4>
-    <div class="collapsible-list" id="activeList" style="display: none;"></div>
-    <input class="search-box" id="globalSearch" type="text" placeholder="Search all areas...">
-    <div class="divider"></div>
-    <h4 id="showAllHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>Show All Layers</h4>
-    <div class="collapsible-list" id="showAllList" style="display: none;">
-      <label><input type="checkbox" id="toggleAllSES" checked> Show All SES Response Areas</label>
-      <label><input type="checkbox" id="toggleAllLGAs" checked> Show All Local Government Areas</label>
-      <label><input type="checkbox" id="toggleAllCFA" checked> Show All CFA Response Areas</label>
-      <label><input type="checkbox" id="toggleAllAmbulance"> Show All Ambulance Stations</label>
+  <div class="layer-menu-fixed">
+    <div class="sidebar-headers">
+      <h4 id="activeHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>All Active</h4>
+      <h4 id="showAllHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>Show All Layers</h4>
+      <h4 id="sesHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>SES Response Areas</h4>
+      <h4 id="lgaHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>Local Government Areas</h4>
+      <h4 id="cfaHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>CFA Response Areas</h4>
+      <h4 id="ambulanceHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>Ambulance Stations</h4>
     </div>
-    <div class="divider"></div>
-    <h4 id="sesHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>SES Response Areas</h4>
-    <div class="collapsible-list" id="sesList" style="display: none;"></div>
-    <div class="divider"></div>
-    <h4 id="lgaHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>Local Government Areas</h4>
-    <div class="collapsible-list" id="lgaList" style="display: none;"></div>
-    <div class="divider"></div>
-    <h4 id="cfaHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>CFA Response Areas</h4>
-    <div class="collapsible-list" id="cfaList" style="display: none;"></div>
-    <div class="divider"></div>
-    <h4 id="ambulanceHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>Ambulance Stations</h4>
-    <div class="collapsible-list" id="ambulanceList" style="display: none;"></div>
+    <div class="sidebar-content">
+      <div class="collapsible-list" id="activeList" style="display: none;"></div>
+      <input class="search-box" id="globalSearch" type="text" placeholder="Search all areas...">
+      <div class="divider"></div>
+      <div class="collapsible-list" id="showAllList" style="display: none;">
+        <label><input type="checkbox" id="toggleAllSES" checked> Show All SES Response Areas</label>
+        <label><input type="checkbox" id="toggleAllLGAs" checked> Show All Local Government Areas</label>
+        <label><input type="checkbox" id="toggleAllCFA" checked> Show All CFA Response Areas</label>
+        <label><input type="checkbox" id="toggleAllAmbulance"> Show All Ambulance Stations</label>
+      </div>
+      <div class="divider"></div>
+      <div class="collapsible-list" id="sesList" style="display: none;"></div>
+      <div class="divider"></div>
+      <div class="collapsible-list" id="lgaList" style="display: none;"></div>
+      <div class="divider"></div>
+      <div class="collapsible-list" id="cfaList" style="display: none;"></div>
+      <div class="divider"></div>
+      <div class="collapsible-list" id="ambulanceList" style="display: none;"></div>
+    </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
