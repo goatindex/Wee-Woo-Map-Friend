@@ -11,10 +11,10 @@ export function setupCollapsible(headerId,listId,expanded=false){
   }
 
   header.addEventListener('click', () => {
-    // Exclude 'activeHeader' from auto-closing logic
+    // Only collapse other sections if this is not 'activeHeader'
     if (headerId !== 'activeHeader') {
-      // Find all collapsible headers except 'activeHeader' and the one being clicked
-      const allHeaders = document.querySelectorAll('.sidebar-headers h4');
+      // Collapse all other sections except 'activeHeader' and the one being clicked
+      const allHeaders = document.querySelectorAll('.layer-menu h4');
       allHeaders.forEach(h => {
         if (h.id !== 'activeHeader' && h.id !== headerId) {
           h.classList.add('collapsed');
@@ -27,16 +27,6 @@ export function setupCollapsible(headerId,listId,expanded=false){
     // Toggle this section
     header.classList.toggle('collapsed');
     list.style.display = list.style.display === 'none' ? '' : 'none';
-
-    // Dynamic sticky classes
-    const allHeaders = Array.from(document.querySelectorAll('.sidebar-headers h4'));
-    const expandedIdx = allHeaders.findIndex(h => !h.classList.contains('collapsed'));
-    allHeaders.forEach((h, i) => {
-      h.classList.remove('sticky-top', 'sticky-bottom');
-      if (expandedIdx === -1) return;
-      if (i < expandedIdx) h.classList.add('sticky-top');
-      if (i > expandedIdx) h.classList.add('sticky-bottom');
-    });
   });
   // Initial sticky classes
   setTimeout(() => {
