@@ -24,6 +24,12 @@ html, body, #map { height:100%; margin:0; }
   background: #fff;
   border-bottom: 1px solid #ddd;
 }
+#activeHeader {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+}
 .layer-menu label { display:block; margin:2px 0; font-size:0.95em; cursor:pointer; }
 .layer-menu .group-controls { margin-bottom:8px; }
 .layer-menu .divider { border-bottom:1px solid #ccc; margin:8px 0; }
