@@ -15,16 +15,15 @@ html, body, #map { height:100%; margin:0; }
 }
 .layer-menu h4 {
   margin: 0;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding-top: 2px;
+  padding-bottom: 2px;
   font-size: 1em;
   cursor: pointer;
   user-select: none;
   display: flex;
   align-items: center;
   background: #fff;
-  border-bottom: 1px solid #ddd;
-  padding: 6px 0;
+  border-bottom: none;
   position: sticky;
   top: 0;
   z-index: 10;
