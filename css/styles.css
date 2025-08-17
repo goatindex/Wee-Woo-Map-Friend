@@ -1,23 +1,47 @@
 html, body, #map { height:100%; margin:0; }
-.layer-menu {
-  position:absolute; top:10px; right:10px;
-  background:rgba(255,255,255,0.95); padding:12px 16px;
-  border-radius:8px; z-index:1000; font-family:sans-serif;
-  max-height:80vh; overflow-y:auto; box-shadow:0 2px 8px rgba(0,0,0,0.2);
-  min-width:260px;
+#layerMenu, .layer-menu { display: none; }
+.layer-menu-fixed {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 8px;
+  z-index: 1000;
+  font-family: sans-serif;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  min-width: 260px;
+  display: flex;
+  flex-direction: row;
+  height: 80vh;
 }
-.layer-menu h4 {
-  position: sticky;
-  background: #fff;
-  z-index: 10;
-  border-bottom: 1px solid #ddd;
-  padding: 8px 0 4px 0;
-  margin: 0;
+.sidebar-headers {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px 0 12px 12px;
+  background: rgba(255,255,255,0.98);
+  border-radius: 8px 0 0 8px;
+  min-width: 170px;
+  max-width: 200px;
+  height: 100%;
+  position: relative;
+}
+.sidebar-headers h4 {
+  margin: 0 0 8px 0;
   font-size: 1em;
   cursor: pointer;
   user-select: none;
   display: flex;
   align-items: center;
+  background: none;
+  border: none;
+  padding: 6px 0;
+}
+.sidebar-content {
+  flex: 1;
+  padding: 12px 16px 12px 8px;
+  overflow-y: auto;
+  height: 100%;
 }
 #activeHeader { top: 0; }
 #showAllHeader { top: 40px; }
