@@ -1,0 +1,13 @@
+<div id="lastUpdated" style="position:fixed;left:12px;bottom:8px;font-size:0.95em;color:#444;background:rgba(255,255,255,0.85);padding:4px 10px;border-radius:6px;z-index:2000;pointer-events:none;">
+  Loading last update...
+</div>
+<script>
+fetch('last-updated.txt')
+  .then(r => r.text())
+  .then(txt => {
+    document.getElementById('lastUpdated').textContent = txt.trim();
+  })
+  .catch(() => {
+    document.getElementById('lastUpdated').textContent = 'Last update info unavailable.';
+  });
+</script>
