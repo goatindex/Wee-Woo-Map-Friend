@@ -1,26 +1,12 @@
 import { getMap } from '../state.js';
-
-let waterwayLayer = null;
-
 export function loadWaterwayCentres() {
-  fetch('waterwaycent.geojson')
-    .then(res => res.json())
-    .then(data => {
-      waterwayLayer = L.geoJSON(data, {
-        style: {
-          color: '#0a2372', // dark blue
-          weight: 3, // match SES border thickness
-          fillColor: '#0a2372',
-          fillOpacity: 0.7
-        }
-      });
-    });
+  // Disabled: no operation
 }
 
 export function showWaterwayCentres() {
-  if (waterwayLayer) waterwayLayer.addTo(getMap());
+  // Disabled: no operation
 }
 
 export function hideWaterwayCentres() {
-  if (waterwayLayer) waterwayLayer.remove();
+  // Disabled: no operation
 }

@@ -35,21 +35,5 @@ updateActiveList();
 
 // Add 'Show All Waterways Centreline' checkbox under ambulance in sidebar
 window.addEventListener('DOMContentLoaded', () => {
-	const groupControls = document.querySelector('.group-controls');
-	if (groupControls) {
-		// Find ambulance toggle
-		const amb = document.getElementById('toggleAllAmbulance');
-		const waterwayLabel = document.createElement('label');
-		waterwayLabel.innerHTML = '<input type="checkbox" id="toggleAllWaterways"> Show All Waterways Centreline';
-		if (amb && amb.parentElement && amb.parentElement.nextSibling) {
-			amb.parentElement.parentNode.insertBefore(waterwayLabel, amb.parentElement.nextSibling);
-		} else {
-			groupControls.appendChild(waterwayLabel);
-		}
-		const cb = document.getElementById('toggleAllWaterways');
-		cb.addEventListener('change', e => {
-			if (e.target.checked) showWaterwayCentres();
-			else hideWaterwayCentres();
-		});
-	}
+	// No longer inject 'Show All Waterways Centreline' checkbox
 });
