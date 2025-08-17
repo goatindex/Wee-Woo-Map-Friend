@@ -15,6 +15,8 @@ html, body, #map { height:100%; margin:0; }
 }
 .layer-menu h4 {
   margin: 0;
+  padding-top: 0;
+  padding-bottom: 0;
   font-size: 1em;
   cursor: pointer;
   user-select: none;
