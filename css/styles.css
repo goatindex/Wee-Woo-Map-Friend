@@ -24,6 +24,13 @@ html, body, #map { height:100%; margin:0; }
   background: #fff;
   border-bottom: 1px solid #ddd;
 }
+.collapsible-list {
+  max-height: 30vh;
+  overflow-y: auto;
+  background: #fff;
+  margin-bottom: 8px;
+  border-radius: 0 0 8px 8px;
+}
 #activeHeader {
   position: sticky;
   top: 0;
@@ -61,4 +68,12 @@ html, body, #map { height:100%; margin:0; }
   background:#fff; border:2px solid #d32f2f; border-radius:6px;
   padding:2px 8px; font-weight:bold; color:#d32f2f; font-size:0.95em;
   box-shadow:0 1px 4px rgba(0,0,0,0.15); white-space:nowrap;
+}
+#activeList {
+  position: sticky;
+  top: 42px; /* height of #activeHeader */
+  z-index: 9;
+  background: #fff;
+  max-height: 30vh;
+  overflow-y: auto;
 }
