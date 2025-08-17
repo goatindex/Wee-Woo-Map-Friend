@@ -46,14 +46,13 @@ html, body, #map { height:100%; margin:0; }
 }
 .layer-menu h4 {
   margin: 0;
-  padding: 10px 16px;
   font-size: 1em;
   cursor: pointer;
   user-select: none;
   display: flex;
   align-items: center;
   background: #fff;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #ddd;
 }
 #activeHeader { top: 0; }
 #showAllHeader { top: 40px; }
