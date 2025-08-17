@@ -14,6 +14,7 @@ setMap(mapInstance);
 
 // Collapsibles
 setupCollapsible('activeHeader','activeList',true);
+setupCollapsible('showAllHeader','showAllList');
 setupCollapsible('sesHeader','sesList');
 setupCollapsible('lgaHeader','lgaList');
 setupCollapsible('cfaHeader','cfaList');

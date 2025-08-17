@@ -13,13 +13,15 @@
     <h4 id="activeHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>All Active</h4>
     <div class="collapsible-list" id="activeList" style="display: none;"></div>
     <input class="search-box" id="globalSearch" type="text" placeholder="Search all areas...">
-    <div class="group-controls">
-      <label><input type="checkbox" id="toggleAllSES" checked> Show All SES Response Areas</label>
-      <label><input type="checkbox" id="toggleAllLGAs" checked> Show All Local Government Areas</label>
-      <label><input type="checkbox" id="toggleAllCFA" checked> Show All CFA Response Areas</label>
-      <!-- Ambulance "Show All" injected after load if not present originally;
-           left here so order is fixed even before load -->
-      <label><input type="checkbox" id="toggleAllAmbulance"> Show All Ambulance Stations</label>
+    <div class="divider"></div>
+    <div>
+      <h4 id="showAllHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>Show All Layers</h4>
+      <div class="collapsible-list" id="showAllList" style="display: none;">
+        <label><input type="checkbox" id="toggleAllSES" checked> Show All SES Response Areas</label>
+        <label><input type="checkbox" id="toggleAllLGAs" checked> Show All Local Government Areas</label>
+        <label><input type="checkbox" id="toggleAllCFA" checked> Show All CFA Response Areas</label>
+        <label><input type="checkbox" id="toggleAllAmbulance"> Show All Ambulance Stations</label>
+      </div>
     </div>
     <div class="divider"></div>
     <div>
