@@ -4,14 +4,45 @@ html, body, #map { height:100%; margin:0; }
   top: 10px;
   right: 10px;
   background: rgba(255,255,255,0.95);
-  padding: 12px 16px;
+  padding: 0;
   border-radius: 8px;
   z-index: 1000;
   font-family: sans-serif;
   max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   min-width: 260px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-header-bar {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  left: auto;
+  background: #fff;
+  border-radius: 8px 8px 0 0;
+  z-index: 1100;
+  min-width: 260px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-header-bar h4 {
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 1em;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+}
+.sidebar-scroll-content {
+  margin-top: calc(6 * 42px); /* 6 headers at 42px each */
+  padding: 12px 16px;
+  overflow-y: auto;
+  max-height: calc(80vh - 6 * 42px);
 }
 .layer-menu h4 {
   margin: 0;
