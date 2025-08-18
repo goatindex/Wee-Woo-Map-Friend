@@ -95,7 +95,7 @@ function createAmbulanceIcon(){
         <div style="position:absolute;left:.5px;top:6px;width:17px;height:6px;background:#fff;border-radius:2px;display:flex;align-items:center;justify-content:center;"></div>
       </div>
     </div>`,
-    iconSize:[28,28], iconAnchor:[14,14], popupAnchor:[0,-20]
+    iconSize:[28,28], iconAnchor:[14,14], popupAnchor:[10,-20]
   });
 }
 
