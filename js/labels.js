@@ -1,6 +1,13 @@
 import { getMap } from './state.js';
 import { outlineColors } from './config.js';
 import { nameLabelMarkers } from './state.js';
+import { toTitleCase } from './utils.js';
+
+export function formatAmbulanceName(name) {
+  let text = name.replace(/\bstation\b/gi, '').replace(/\s{2,}/g, ' ').trim();
+  text = text.replace(/\bambulance\b/gi, 'Ambo');
+  return toTitleCase(text);
+}
 
 export function getPolygonLabelAnchor(layer){
   let latlngs = layer.getLatLngs ? layer.getLatLngs() : [];
@@ -37,7 +44,7 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
   let text = displayName;
   // For ambulance station map labels, remove the word 'station' (case-insensitive, as a word)
   if (category === 'ambulance' && isPoint) {
-    text = text.replace(/\bstation\b/gi, '').replace(/\s{2,}/g, ' ').trim();
+    text = formatAmbulanceName(text);
   }
   text = processName(text);
   const outline = outlineColors[category];
@@ -48,7 +55,7 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
     html = `<div style="
       background:#fff;border:2px solid ${outline};
       border-radius:8px;padding:4px 12px;font-weight:bold;
-      color:${outline};font-size:0.95em;
+      color:${outline};font-size:1.2em;
       box-shadow:0 2px 8px rgba(0,0,0,.10);text-align:center;
       min-width:60px;max-width:480px;line-height:1.2;hyphens:manual;
       display:inline-block;overflow-wrap:break-word;white-space:normal;">
@@ -60,7 +67,7 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
       border-radius:8px;padding:4px 12px;font-weight:bold;
       color:${outline};font-size:1.2em;
       box-shadow:0 2px 8px rgba(0,0,0,.10);text-align:center;
-      min-width:60px;max-width:320px;line-height:1.2;hyphens:manual;">
+      min-width:60px;max-width:480px;line-height:1.2;hyphens:manual;">
       ${text}</div>`;
   }
   const marker = L.marker(latlng,{
@@ -71,7 +78,7 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
     }),
     interactive:false
   }).addTo(map);
-  if(isPoint && marker._icon) marker._icon.style.marginTop = '10px';
+  // Removed 10px visual offset for ambulance station labels
   nameLabelMarkers[category][key]=marker;
 }
 

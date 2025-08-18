@@ -1,6 +1,7 @@
 import { ensureLabel, removeLabel } from '../labels.js';
 import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers, activeListFilter } from '../state.js';
 import { categoryMeta, outlineColors } from '../config.js';
+import { formatAmbulanceName } from '../labels.js';
 
 
 export function setupActiveListSync(category){
@@ -74,7 +75,6 @@ function addItems(category, container) {
 		const key = nameToKey[category][name];
 		const cb = document.getElementById(`${category}_${key}`);
 		if (!cb || !cb.checked) return; // Only show checked/visible items
-	// ...existing code...
 		const row = document.createElement('div');
 		row.className = 'active-list-row';
 		row.style.display = 'flex';
@@ -108,8 +108,15 @@ function addItems(category, container) {
 		row.appendChild(removeBtn);
 		// Name
 		const nameSpan = document.createElement('span');
-		nameSpan.textContent = name;
+		// Use formatted name for ambulance
+		if (category === 'ambulance') {
+			nameSpan.textContent = formatAmbulanceName(name);
+		} else {
+			nameSpan.textContent = name;
+		}
 		nameSpan.style.flex = '1';
+		// Set color to match polygon border
+		nameSpan.style.color = outlineColors[category];
 		row.appendChild(nameSpan);
 		// Emphasise toggle
 		const emphCell = document.createElement('span');
