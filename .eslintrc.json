@@ -1,0 +1,23 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:jsdoc/recommended",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "prettier"
+  ],
+  "plugins": ["jsdoc", "import"],
+  "rules": {
+    "no-unused-vars": "warn",
+    "eqeqeq": "error",
+    "no-console": "off",
+    "prefer-const": "error",
+    "curly": "error",
+    "no-undef": "error",
+    "quotes": ["error", "single"]
+  }
+}

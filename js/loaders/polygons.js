@@ -4,11 +4,18 @@ import { setupActiveListSync, updateActiveList } from '../ui/activeList.js';
 import { toTitleCase, createCheckbox } from '../utils.js';
 import { addPolygonPlus, removePolygonPlus } from '../polygonPlus.js';
 import { getMap } from '../state.js';
+import { showSidebarError, isOffline } from '../utils/errorUI.js';
+import { convertMGA94ToLatLon } from '../utils/coordConvert.js';
 
 export async function loadPolygonCategory(category, url) {
   const meta = categoryMeta[category];
   const map = getMap();
   try {
+    if (isOffline()) {
+      showSidebarError(`You are offline. ${category} data cannot be loaded.`);
+      return;
+    }
+
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
@@ -23,6 +30,12 @@ export async function loadPolygonCategory(category, url) {
       if (!raw) return;
       const key = raw.toLowerCase();
       if (!featureLayers[category][key]) featureLayers[category][key] = [];
+      // Add converted coordinates if X_CORD/Y_CORD exist
+      if (f.properties.X_CORD && f.properties.Y_CORD) {
+        const [lon, lat] = convertMGA94ToLatLon(f.properties.X_CORD, f.properties.Y_CORD);
+        f.properties.X_COORD = lon;
+        f.properties.Y_COORD = lat;
+      }
     });
 
     // Build GeoJSON (NOT added to map yet)
@@ -63,6 +76,8 @@ export async function loadPolygonCategory(category, url) {
       const key = nameToKey[category][displayName];
       // Use defaultOn to determine checked state
       const checked = meta.defaultOn(displayName);
+      // Show name label by default for polygons
+      const showName = true;
       const cb = createCheckbox(
         `${category}_${key}`,
         displayName,
@@ -103,11 +118,17 @@ export async function loadPolygonCategory(category, url) {
           l.addTo(map);
           if (category === 'lga' && l.bringToFront) l.bringToFront();
           if (category === 'ambulance') addPolygonPlus(map, l);
+          // Show name label by default for polygons
+          // Only call for polygons (not points)
+          if (meta.type === 'polygon') {
+            import('../labels.js').then(({ ensureLabel }) => {
+              ensureLabel(category, key, displayName, false, l);
+            });
+          }
         });
         if (category === 'ses') {
           emphasised[category][key] = true;
         }
-        // Do not set nameLabelMarkers[category][key] = true here; let checkbox logic handle label creation
       } else {
         featureLayers[category][key].forEach(l => {
           map.removeLayer(l);
@@ -151,7 +172,10 @@ export async function loadPolygonCategory(category, url) {
     console.log(`Loaded ${category}:`, namesByCategory[category].length, 'areas');
 
   } catch (err) {
-    console.error('loadPolygonCategory error', category, err);
-    alert('Failed to load ' + category);
+    // Error handling: show user feedback if loading fails
+    showSidebarError(`Failed to load ${category} data: ${err.message}`);
+    // Log error for developers
+    console.error(`Error loading ${category} from ${url}:`, err);
+    // Graceful degradation: continue running
   }
 }
