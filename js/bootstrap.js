@@ -6,6 +6,7 @@ import { setupCollapsible } from './ui/collapsible.js';
 import { initSearch } from './ui/search.js';
 import { updateActiveList } from './ui/activeList.js';
 import { loadWaterwayCentres, showWaterwayCentres, hideWaterwayCentres } from './loaders/waterwaycent.js';
+import { setupOfflineListener } from './utils/errorUI.js';
 
 // Map init (uses global Leaflet script)
 const mapInstance = L.map('map').setView([-37.8,144.9],8);
@@ -38,3 +39,5 @@ updateActiveList();
 window.addEventListener('DOMContentLoaded', () => {
 	// No longer inject 'Show All Waterways Centreline' checkbox
 });
+
+setupOfflineListener();

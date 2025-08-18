@@ -2,6 +2,7 @@ import { categoryMeta } from '../config.js';
 import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers, getMap } from '../state.js';
 import { createCheckbox, toTitleCase } from '../utils.js';
 import { setupActiveListSync, updateActiveList } from '../ui/activeList.js';
+import { showSidebarError, isOffline } from '../utils/errorUI.js';
 
 let ambulanceData=[];
 
@@ -9,6 +10,10 @@ export async function loadAmbulance(){
   const category='ambulance', meta=categoryMeta[category];
   const map = getMap();
   try{
+    if (isOffline()) {
+      showSidebarError('You are offline. Ambulance data cannot be loaded.');
+      return;
+    }
     const res=await fetch('ambulance.geojson');
     if(!res.ok) throw new Error(res.status);
     const data=await res.json();
@@ -73,8 +78,10 @@ listEl.innerHTML = '';
     setupActiveListSync(category);
     updateActiveList();
   }catch(err){
-    console.error('ambulance load',err);
-    alert('Failed to load ambulance');
+    showSidebarError(`Failed to load ambulance data: ${err.message}`);
+    // Log error for developers
+    console.error(`Error loading ambulance data:`, err);
+    // Graceful degradation: continue running
   }
 }
 
@@ -83,9 +90,9 @@ function createAmbulanceIcon(){
     className:'ambulance-marker',
     html:`<div style="width:28px;height:28px;background:#d32f2f;border-radius:50%;
       display:flex;align-items:center;justify-content:center;border:2px solid #fff;position:relative;">
-      <div style="position:absolute;left:50%;top:50%;width:16px;height:16px;transform:translate(-50%,-50%);">
-        <div style="position:absolute;left:7px;top:2px;width:6px;height:12px;background:#fff;border-radius:2px;"></div>
-        <div style="position:absolute;left:2px;top:7px;width:12px;height:6px;background:#fff;border-radius:2px;"></div>
+      <div style="position:absolute;left:50%;top:50%;width:16px;height:16px;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;">
+        <div style="position:absolute;left:6px;top:.5px;width:6px;height:17px;background:#fff;border-radius:2px;display:flex;align-items:center;justify-content:center;"></div>
+        <div style="position:absolute;left:.5px;top:6px;width:17px;height:6px;background:#fff;border-radius:2px;display:flex;align-items:center;justify-content:center;"></div>
       </div>
     </div>`,
     iconSize:[28,28], iconAnchor:[14,14], popupAnchor:[0,-14]

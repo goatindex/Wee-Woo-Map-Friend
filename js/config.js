@@ -37,3 +37,7 @@ export const categoryMeta = {
     toggleAllId: 'toggleAllAmbulance'
   }
 };
+
+// WillyWeather API key for development only. Do NOT use in production or public repos.
+// Transition to backend proxy for security in future versions.
+export const WILLYWEATHER_API_KEY = "NGMwYjk3YjlhZTIxZjJhMjNmYTFkY2";

@@ -50,7 +50,7 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
       border-radius:8px;padding:4px 12px;font-weight:bold;
       color:${outline};font-size:0.95em;
       box-shadow:0 2px 8px rgba(0,0,0,.10);text-align:center;
-      min-width:60px;max-width:340px;line-height:1.2;hyphens:manual;
+      min-width:60px;max-width:480px;line-height:1.2;hyphens:manual;
       display:inline-block;overflow-wrap:break-word;white-space:normal;">
       <span style="display:block;width:100%;">${text}</span>
     </div>`;
@@ -60,7 +60,7 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
       border-radius:8px;padding:4px 12px;font-weight:bold;
       color:${outline};font-size:1.2em;
       box-shadow:0 2px 8px rgba(0,0,0,.10);text-align:center;
-      min-width:60px;max-width:180px;line-height:1.2;hyphens:manual;">
+      min-width:60px;max-width:320px;line-height:1.2;hyphens:manual;">
       ${text}</div>`;
   }
   const marker = L.marker(latlng,{
@@ -82,19 +82,13 @@ export function removeLabel(category,key){
 }
 
 function processName(name){
-  // Always split into two lines if possible
-  const safe = name.replace(/-/g,'\u2011');
-  const words = safe.split(' ');
-  let l1='',l2='';
-  for(const w of words){
-    if((l1+' '+w).trim().length<=16 || !l1) l1=(l1+' '+w).trim();
-    else l2=(l2+' '+w).trim();
+  // Only break at spaces, never at hyphens or in the middle of words
+  const words = name.split(' ');
+  let l1 = '', l2 = '';
+  for (const w of words) {
+    if ((l1 + ' ' + w).trim().length <= 16 || !l1) l1 = (l1 + ' ' + w).trim();
+    else l2 = (l2 + ' ' + w).trim();
   }
-  if(!l2 && l1.length>10) {
-    // Force break in middle if only one long word
-    const mid = Math.ceil(l1.length/2);
-    l2 = l1.slice(mid).trim();
-    l1 = l1.slice(0,mid).trim();
-  }
-  return l2? `${l1}<br>${l2}`:l1;
+  // Do not force break in the middle of a word
+  return l2 ? `${l1}<br>${l2}` : l1;
 }
