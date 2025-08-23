@@ -35,7 +35,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="c:\Users\Kirk\Desktop\mapexp.github.io\.venv"
+VIRTUAL_ENV="C:\Users\Kirk\Desktop\mapexp.github.io\.venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

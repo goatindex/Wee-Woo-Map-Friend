@@ -207,6 +207,9 @@ function addItems(category, container) {
 				const lat = row.dataset.lat;
 				const lon = row.dataset.lon;
 				if (lat && lon && meta.type === 'polygon') {
+					// Show loading state while fetching
+					weatherBox.innerHTML = '<div style="display:flex;gap:8px;align-items:center"><span>Loading 7/7…</span><span class="spinner" style="width:12px;height:12px;border:2px solid #ccc;border-top-color:#333;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite"></span></div>';
+					weatherBox.style.display = 'block';
 					try {
 						const { forecastData, historyData } = await fetchWeatherData(lat, lon);
 						renderWeatherBox(forecastData, historyData);
@@ -250,27 +253,48 @@ if (!weatherBox) {
   document.body.appendChild(weatherBox);
 }
 
-// Fetch and display 7-day forecast and history when checkbox is checked
-import { WILLYWEATHER_API_KEY } from '../config.js';
-
+// Fetch and display 7-day forecast via backend proxy
 async function fetchWeatherData(lat, lon) {
-  // Replace with actual WillyWeather API endpoints and parameters
-  const forecastUrl = `https://api.willyweather.com.au/v2/${WILLYWEATHER_API_KEY}/locations/${lat},${lon}/weather.json?forecasts=7days`;
-  const historyUrl = `https://api.willyweather.com.au/v2/${WILLYWEATHER_API_KEY}/locations/${lat},${lon}/weather.json?history=7days`;
-  const [forecastRes, historyRes] = await Promise.all([
-    fetch(forecastUrl),
-    fetch(historyUrl)
-  ]);
-  const forecastData = await forecastRes.json();
-  const historyData = await historyRes.json();
-  return { forecastData, historyData };
+	const backendBase = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+		? 'http://127.0.0.1:5000'
+		: '';
+	// Default provider is WillyWeather; allow override via localStorage('weatherProvider').
+	const chosenProvider = (typeof localStorage !== 'undefined' && (localStorage.getItem('weatherProvider') || 'willyweather')) || 'willyweather';
+	const makeUrl = (prov) => `${backendBase}/api/weather?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&days=7&provider=${encodeURIComponent(prov)}`;
+	let data;
+	try {
+		const res = await fetch(makeUrl(chosenProvider));
+		if (!res.ok) throw new Error(`Weather API error ${res.status}`);
+		data = await res.json();
+	} catch (e) {
+		// Fallback: if WillyWeather fails (e.g., quota/key), try Open‑Meteo silently.
+		if (chosenProvider === 'willyweather') {
+			const res2 = await fetch(makeUrl('open-meteo'));
+			if (!res2.ok) throw new Error(`Weather API error ${res2.status}`);
+			data = await res2.json();
+		} else {
+			throw e;
+		}
+	}
+	// Normalize to the structure expected by renderWeatherBox
+	const days = (data.forecast || []).map((d, i) => ({
+		date: `Day ${i + 1}`,
+		summary: d.summary ?? '—',
+		tempMin: d.tempMin,
+		tempMax: d.tempMax
+	}));
+	const forecastData = { days };
+	const historyData = { days: [] };
+	return { forecastData, historyData };
 }
 
 function renderWeatherBox(forecastData, historyData) {
   let html = '<h3>7-Day Weather Forecast</h3>';
   html += '<ul>';
   forecastData.days.forEach(day => {
-    html += `<li>${day.date}: ${day.summary}</li>`;
+	const tmin = (day.tempMin ?? '') === '' ? '' : `, Min ${day.tempMin}°C`;
+	const tmax = (day.tempMax ?? '') === '' ? '' : `, Max ${day.tempMax}°C`;
+	html += `<li>${day.date}: ${day.summary}${tmin}${tmax}</li>`;
   });
   html += '</ul>';
   html += '<h3>Past 7 Days</h3>';
