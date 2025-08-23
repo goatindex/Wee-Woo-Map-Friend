@@ -1,3 +1,7 @@
+"""Write the last Git commit date (AEST) to last-updated.txt.
+
+Usage: run from repo root; requires Git available on PATH.
+"""
 #!/usr/bin/env python3
 import subprocess
 from datetime import datetime, timedelta

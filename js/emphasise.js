@@ -1,6 +1,18 @@
+/**
+ * @module emphasise
+ * Toggle emphasis state for polygons and point markers.
+ */
 import { featureLayers, emphasised, getMap } from './state.js';
 import { categoryMeta } from './config.js';
 
+/**
+ * Set emphasis visual state for a given category/key.
+ * Polygons: adjust fillOpacity; Points: toggle CSS class.
+ * @param {'ses'|'lga'|'cfa'|'ambulance'} category
+ * @param {string} key
+ * @param {boolean} on
+ * @param {boolean} [isPoint]
+ */
 export function setEmphasis(category,key,on,isPoint){
   emphasised[category][key]=on;
   if(isPoint){

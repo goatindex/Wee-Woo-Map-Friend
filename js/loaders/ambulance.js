@@ -1,3 +1,7 @@
+/**
+ * @module loaders/ambulance
+ * Load Ambulance Victoria stations from GeoJSON and manage marker visibility.
+ */
 import { categoryMeta } from '../config.js';
 import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers, getMap } from '../state.js';
 import { createCheckbox, toTitleCase } from '../utils.js';
@@ -6,6 +10,11 @@ import { showSidebarError, isOffline } from '../utils/errorUI.js';
 
 let ambulanceData=[];
 
+/**
+ * Load the ambulance dataset and build the sidebar list.
+ * Skips non‑Victorian entries and those missing coordinates.
+ * @returns {Promise<void>}
+ */
 export async function loadAmbulance(){
   const category='ambulance', meta=categoryMeta[category];
   const map = getMap();
@@ -66,11 +75,14 @@ listEl.innerHTML = '';
         const on=e.target.checked;
         namesByCategory[category].forEach(n=>{
           const key=nameToKey[category][n];
-            const cb=document.getElementById(`${category}_${key}`);
+            const el=document.getElementById(`${category}_${key}`);
+            let cb=null;
+            if(el){
+              cb = el.tagName==='INPUT'? el : el.querySelector('input[type="checkbox"]');
+            }
             if(!cb) return;
             cb.checked=on;
-            on? showAmbulanceMarker(key): hideAmbulanceMarker(key);
-            if(!on) emphasised[category][key]=false;
+            cb.dispatchEvent(new Event('change', { bubbles: true }));
         });
         updateActiveList();
       });
@@ -96,6 +108,10 @@ function createAmbulanceIcon(){
       </div>
     </div>`,
     iconSize:[28,28], iconAnchor:[14,14], popupAnchor:[10,-20]
+    /**
+     * Ensure a marker is present and visible for the ambulance key.
+     * @param {string} key - Normalised key (lowercase, underscores).
+     */
   });
 }
 
@@ -108,6 +124,10 @@ export function showAmbulanceMarker(key){
   const lng=+feature.properties.facility_long;
   if(Number.isNaN(lat)||Number.isNaN(lng)) return;
   const marker=L.marker([lat,lng],{ icon:createAmbulanceIcon() }).addTo(map);
+    /**
+     * Hide marker for the given ambulance key if it exists.
+     * @param {string} key
+     */
   marker.bindPopup(feature.properties.facility_name);
   featureLayers.ambulance[key]=marker;
 }

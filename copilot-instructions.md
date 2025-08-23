@@ -2,7 +2,7 @@
 
 ## Collaboration & Decision-Making Guidelines
 
-1. **Confirm Before Changes**: Always confirm with the user before making any code changes.
+1. **Confirm Before Changes**: Always confirm with the user before making any code changes. Analysis does not require approval. Use the Approval & Change Control policy below (explicit approval phrases + preflight + dry‑run by default).
 2. **Discuss Implementation Options**: Present multiple options for implementing requested changes, explaining the pros, cons, and tradeoffs of each.
 3. **Explain Proposals**: Clearly explain all proposals and code changes to help the user learn and make informed decisions.
 4. **Secure Coding Practices**: Use secure coding practices (e.g., input validation, avoiding eval, using HTTPS for APIs, escaping user input) and mention when/why these are applied.
@@ -10,6 +10,63 @@
 6. **Consistency, Modularity, Extensibility**: Make code consistent in style, modular in structure, and extensible for future features or changes.
 7. **Documentation Standards**: Use clear code comments, JSDoc for functions, and update the README for major changes to improve maintainability and onboarding.
 8. **Performance Considerations**: Optimize for speed and responsiveness, especially for map rendering and data loading. Discuss tradeoffs between code clarity and performance when relevant.
+9. **Learning Mode**: In preflights, include a brief teaching note (what/why, key concepts, trade‑offs). Prefer concrete, project‑specific examples over abstract theory.
+
+---
+
+## Approval & Change Control
+
+Default to read‑only. Do not modify files unless explicitly approved.
+
+- **Small changes are not exempt**: Do not auto‑apply “quick fixes” or “safe” edits without approval.
+- **No state‑changing actions without approval**: Do not run terminal commands, install packages, or create/delete files until approved.
+- **Delta‑only edits**: Only modify lines directly related to the approved scope; avoid unrelated reformatting or drive‑by changes.
+
+- Approval phrases (explicit): “Approved”, “Implement”, “Proceed”, “Go ahead”, “Ship it”, “Apply”, “Make the change”.
+- Non‑approval examples: questions or feedback such as “What do you think?”, “Any suggestions?”, “Can you explain?”, “Review this”, “Demo only”.
+
+Preflight requirement (before any edit, ask to proceed):
+- Summary: what will change and why.
+- Files: exact list of files to touch (add/update/delete).
+- Behavior impact: none or concise note.
+- Risks: 1–2 bullets; Rollback: how to revert.
+- End with “Proceed?” and wait for an explicit approval phrase.
+
+Modes:
+- Dry‑run by default: present plan and expected diffs; do not apply.
+- Apply mode only after approval; apply exactly the approved scope.
+
+Scope control:
+- Only modify the files listed in the approved preflight.
+- If additional changes are discovered, pause and send a new preflight for approval.
+
+Post‑implementation questions are not approval:
+- Treat follow‑up questions/observations as discussion only. Do not make further edits without explicit approval.
+
+Emergency/Hotfix policy:
+- If a just‑made change breaks the build/runtime, immediately auto‑revert that specific change and report. All other fixes still require approval.
+
+PR‑first preference (when VCS is present):
+- Prefer creating a branch and preview/PR over direct edits, unless the user says “commit directly”.
+
+---
+
+### Templates
+
+#### Preflight Checklist (teaching)
+- Goal + assumptions
+- Files to touch (add/update/delete)
+- Proposed changes (bullets) + short teaching note (what/why/trade‑offs)
+- Behavior impact (user‑visible changes)
+- Risks (1–2) + Rollback
+- Test/verify steps (build/lint/runtime)
+- End with “Proceed?” and wait for explicit approval
+
+#### Post‑implementation Report
+- Changes applied (bullet summary)
+- Verification results (build, lint, runtime) and any diffs
+- Human‑readable diff summary (no raw patches)
+- Follow‑ups or deferrals (with suggested next steps)
 
 ---
 

@@ -1,4 +1,39 @@
+/* Sidebar search dropdown styles */
+.sidebar-search-dropdown {
+  position: absolute;
+  top: 38px;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  margin-top: 0;
+  margin-bottom: 8px;
+  z-index: 1100;
+  max-height: 220px;
+  overflow-y: auto;
+  display: none;
+}
+.sidebar-search-dropdown.active {
+  display: block;
+}
+.sidebar-search-dropdown .dropdown-item {
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 0.98em;
+  border-bottom: 1px solid #eee;
+}
+.sidebar-search-dropdown .dropdown-item:last-child {
+  border-bottom: none;
+}
+.sidebar-search-dropdown .dropdown-item:hover, .sidebar-search-dropdown .dropdown-item.active {
+  background: #f0f4fa;
+  color: #1976d2;
+}
 html, body, #map { height:100%; margin:0; }
+/* Prevent horizontal scroll when sidebar is translated */
+html, body { overflow-x: hidden; }
 #layerMenu, .layer-menu {
   position: absolute;
   top: 10px;
@@ -13,7 +48,43 @@ html, body, #map { height:100%; margin:0; }
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   min-width: 260px;
   display: block;
+  transition: transform .2s ease, opacity .2s ease;
 }
+
+/* Minimized state: slide panel off-screen leaving a 44px tab visible */
+.layer-menu.sidebar-minimized {
+  transform: translateX(calc(100% - 44px));
+  opacity: 0.0; /* dim when minimized */
+  pointer-events: none; /* disable mouse/touch interactions inside panel */
+}
+
+/* Toggle button at the top-right of the panel */
+.sidebar-toggle {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 34px;
+  height: 34px;
+  line-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px; /* default */
+  font-weight: 600; /* default (normal) */
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  z-index: 2000; /* ensure always clickable */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.sidebar-toggle:active {
+  transform: scale(0.98);
+}
+
+/* When placed outside the panel, keep it pinned to viewport */
+.sidebar-toggle { position: fixed; top: 12px; right: 12px; }
 .layer-menu h4 {
   margin: 0;
   font-size: 1em;
@@ -23,6 +94,7 @@ html, body, #map { height:100%; margin:0; }
   align-items: center;
   background: #fff;
 }
+.category-header { font-weight: 600; }
 .layer-menu h4:not(:first-child) {
   margin-top: 8px;
 }
@@ -47,7 +119,7 @@ html, body, #map { height:100%; margin:0; }
   width:100%; margin-bottom:8px; padding:2px 6px; font-size:0.95em;
   border:1px solid #ccc; border-radius:4px; box-sizing:border-box;
 }
-.collapse-arrow { display:inline-block; margin-right:6px; transition:transform .2s; font-size:1.1em; }
+.collapse-arrow { display:inline-block; margin-right:6px; transition:transform .2s; font-size:1.3em; position: relative; top: -1px;}
 .collapsed .collapse-arrow { transform:rotate(-90deg); }
 .collapsed + .collapsible-list { display:none; }
 .ses-unit-label {
@@ -67,11 +139,8 @@ html, body, #map { height:100%; margin:0; }
   70% { box-shadow:0 0 0 14px rgba(211,47,47,0); }
   100% { box-shadow:0 0 0 0 rgba(211,47,47,0); }
 }
-.ambulance-name-label {
-  background:#fff; border:2px solid #d32f2f; border-radius:6px;
-  padding:2px 8px; font-weight:bold; color:#d32f2f; font-size:0.95em;
-  box-shadow:0 1px 4px rgba(0,0,0,0.15); white-space:nowrap;
-}
+/* Legacy class for ambulance point labels: kept for compatibility; no visual impact */
+.ambulance-name-label { pointer-events: auto; }
 #activeList {
   position: sticky;
   top: 42px; /* height of #activeHeader */
@@ -79,6 +148,36 @@ html, body, #map { height:100%; margin:0; }
   background: #fff;
   max-height: 30vh;
   overflow-y: auto;
+}
+
+/* All Active: header row underline to separate header from items */
+.active-list-header {
+  position: relative;
+}
+.active-list-header::after {
+  content: "";
+  position: absolute;
+  left: 28px;   /* slightly before "Name" column start (spacer is 32px) */
+  right: 4px;   /* slightly after the last checkbox cell */
+  bottom: -2px; /* small gap below header content */
+  height: .5px;  /* match other horizontal lines */
+  background: #ccc;
+}
+
+/* All Active: header cell for Name */
+.active-list-name-header {
+  font-weight: 750;
+  font-size: 0.95rem;
+  color: #222;
+}
+
+/* All Active: row Name cell */
+.active-list-name {
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Add styles for weatherBox bottom-left info box */
@@ -97,4 +196,29 @@ html, body, #map { height:100%; margin:0; }
 }
 #weatherBox li {
   margin-bottom: 4px;
+}
+
+/* Unified map label styling (polygons and points) */
+.map-label {
+  background: var(--label-bg, #fff);
+  border: 2px solid var(--label-color, #333);
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-weight: bold;
+  color: var(--label-color, #333);
+  font-size: 1.2em;
+  line-height: 1.2;
+  text-align: center;
+  display: inline-block;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  min-width: 60px;
+  max-width: 480px;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+.map-label-wrapper.map-label--point .map-label {
+  font-size: 0.95em;
+  padding: 2px 8px;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }

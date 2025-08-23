@@ -1,6 +1,12 @@
 // Draw a thick white plus sign at the centroid of a polygon on a Leaflet map
 // Usage: import { addPolygonPlus } from './polygonPlus.js'; addPolygonPlus(map, polygonLayer);
 
+/**
+ * Add a non-interactive plus marker at the polygon's bounds center.
+ * Attaches a private _plusMarker reference to the layer for later removal.
+ * @param {import('leaflet').Map} map
+ * @param {import('leaflet').Polygon|import('leaflet').Polyline} polygonLayer
+ */
 export function addPolygonPlus(map, polygonLayer) {
   if (!polygonLayer || !polygonLayer.getBounds) return;
   const center = polygonLayer.getBounds().getCenter();
@@ -21,6 +27,11 @@ export function addPolygonPlus(map, polygonLayer) {
   polygonLayer._plusMarker = marker;
 }
 
+/**
+ * Remove a previously added plus marker associated with the polygon layer.
+ * @param {import('leaflet').Polygon|import('leaflet').Polyline & { _plusMarker?: import('leaflet').Marker|null }} polygonLayer
+ * @param {import('leaflet').Map} map
+ */
 export function removePolygonPlus(polygonLayer, map) {
   if (polygonLayer && polygonLayer._plusMarker) {
     map.removeLayer(polygonLayer._plusMarker);

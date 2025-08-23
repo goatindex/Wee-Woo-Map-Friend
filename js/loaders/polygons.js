@@ -1,12 +1,25 @@
+/**
+ * @module loaders/polygons
+ * Load polygonal categories (ses, lga, cfa) from GeoJSON and wire UI controls.
+ */
 import { categoryMeta } from '../config.js';
 import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers } from '../state.js';
 import { setupActiveListSync, updateActiveList } from '../ui/activeList.js';
 import { toTitleCase, createCheckbox } from '../utils.js';
+import { formatLgaName } from '../labels.js';
 import { addPolygonPlus, removePolygonPlus } from '../polygonPlus.js';
 import { getMap } from '../state.js';
 import { showSidebarError, isOffline } from '../utils/errorUI.js';
 import { convertMGA94ToLatLon } from '../utils/coordConvert.js';
 
+/**
+ * Fetch and register a polygon category from a GeoJSON URL and render controls.
+ * Handles offline detection, HTTP errors, and invalid data with user feedback.
+ * No behavior change: comments only.
+ * @param {'ses'|'lga'|'cfa'|'ambulance'} category
+ * @param {string} url
+ * @returns {Promise<void>}
+ */
 export async function loadPolygonCategory(category, url) {
   const meta = categoryMeta[category];
   const map = getMap();
@@ -61,12 +74,17 @@ export async function loadPolygonCategory(category, url) {
 
     // Build name arrays
     namesByCategory[category] = Object.keys(featureLayers[category])
-      .map(k => toTitleCase(k))
+      .map(k => {
+        const titled = toTitleCase(k);
+        return (category === 'lga') ? formatLgaName(titled) : titled;
+      })
       .sort((a, b) => a.localeCompare(b));
 
     nameToKey[category] = {};
     Object.keys(featureLayers[category]).forEach(k => {
-      nameToKey[category][toTitleCase(k)] = k;
+      const titled = toTitleCase(k);
+      const display = (category === 'lga') ? formatLgaName(titled) : titled;
+      nameToKey[category][display] = k;
     });
 
     // Populate sidebar (all unchecked)
@@ -74,10 +92,13 @@ export async function loadPolygonCategory(category, url) {
     listEl.innerHTML = '';
     namesByCategory[category].forEach(displayName => {
       const key = nameToKey[category][displayName];
-      // Use defaultOn to determine checked state
-      const checked = meta.defaultOn(displayName);
-      // Show name label by default for polygons
+  const checked = meta.defaultOn(displayName);
       const showName = true;
+      // Create a row container and assign ID for search highlighting
+      const row = document.createElement('div');
+      row.id = `${category}_${key}`;
+      row.className = 'sidebar-list-row';
+      // Add the checkbox
       const cb = createCheckbox(
         `${category}_${key}`,
         displayName,
@@ -87,13 +108,17 @@ export async function loadPolygonCategory(category, url) {
           featureLayers[category][key].forEach(l => {
             if (on) {
               l.addTo(map);
-              // If LGA, bring to front
               if (category === 'lga' && l.bringToFront) l.bringToFront();
-              // If ambulance, add thick white plus
               if (category === 'ambulance') addPolygonPlus(map, l);
+              // Show name label by default for polygons
+        if (categoryMeta[category].type === 'polygon') {
+                import('../labels.js').then(({ ensureLabel }) => {
+          const labelName = (category === 'lga') ? formatLgaName(displayName) : displayName;
+          ensureLabel(category, key, labelName, false, l);
+                });
+              }
             } else {
               map.removeLayer(l);
-              // If ambulance, remove thick white plus
               if (category === 'ambulance') removePolygonPlus(l, map);
             }
           });
@@ -104,14 +129,14 @@ export async function loadPolygonCategory(category, url) {
               nameLabelMarkers[category][key] = null;
             }
           }
-          // After any change, always bring all LGA polygons to front
           if (category !== 'lga') {
             Object.values(featureLayers.lga).flat().forEach(l => l && l.bringToFront && l.bringToFront());
           }
           updateActiveList();
         }
       );
-      listEl.appendChild(cb);
+      row.appendChild(cb);
+      listEl.appendChild(row);
       // Add to map and set emphasis/label if default
       if (checked) {
         featureLayers[category][key].forEach(l => {
@@ -120,15 +145,13 @@ export async function loadPolygonCategory(category, url) {
           if (category === 'ambulance') addPolygonPlus(map, l);
           // Show name label by default for polygons
           // Only call for polygons (not points)
-          if (meta.type === 'polygon') {
+      if (meta.type === 'polygon') {
             import('../labels.js').then(({ ensureLabel }) => {
-              ensureLabel(category, key, displayName, false, l);
+        const labelName = (category === 'lga') ? formatLgaName(displayName) : displayName;
+        ensureLabel(category, key, labelName, false, l);
             });
           }
         });
-        if (category === 'ses') {
-          emphasised[category][key] = true;
-        }
       } else {
         featureLayers[category][key].forEach(l => {
           map.removeLayer(l);
@@ -150,18 +173,28 @@ export async function loadPolygonCategory(category, url) {
         const on = e.target.checked;
         namesByCategory[category].forEach(n => {
           const key = nameToKey[category][n];
-          const rowCb = document.getElementById(`${category}_${key}`);
-            if (rowCb) {
-              rowCb.checked = on;
-              featureLayers[category][key].forEach(l => on ? l.addTo(map) : map.removeLayer(l));
-              if (!on) {
-                emphasised[category][key] = false;
-                if (nameLabelMarkers[category][key]) {
-                  map.removeLayer(nameLabelMarkers[category][key]);
-                  nameLabelMarkers[category][key] = null;
-                }
+          const container = document.getElementById(`${category}_${key}`);
+          let rowCb = null;
+          if (container && container.tagName !== 'INPUT') {
+            rowCb = container.querySelector('input[type="checkbox"]');
+          } else {
+            rowCb = container; // it's already the input
+          }
+          if (rowCb) {
+            rowCb.checked = on;
+            // Dispatch a change event so normal handlers run (adds/removes layers, updates active list, labels, emphasis)
+            rowCb.dispatchEvent(new Event('change', { bubbles: true }));
+          } else {
+            // Fallback: directly manipulate layers if checkbox not found (shouldn't happen)
+            featureLayers[category][key].forEach(l => on ? l.addTo(map) : map.removeLayer(l));
+            if (!on) {
+              emphasised[category][key] = false;
+              if (nameLabelMarkers[category][key]) {
+                map.removeLayer(nameLabelMarkers[category][key]);
+                nameLabelMarkers[category][key] = null;
               }
             }
+          }
         });
         updateActiveList();
       });

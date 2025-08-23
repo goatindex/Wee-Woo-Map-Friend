@@ -1,3 +1,7 @@
+/**
+ * @module utils/errorUI
+ * Sidebar error messaging and online/offline notifications.
+ */
 // Utility for showing dismissible error messages in the sidebar
 export function showSidebarError(message) {
   const sidebar = document.getElementById('layerMenu');

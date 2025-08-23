@@ -1,3 +1,7 @@
+"""Extract LGA names from LGAs.geojson into LGAnames.txt.
+
+Run from repo root or any path; uses script directory to locate files.
+"""
 import os
 import json
 

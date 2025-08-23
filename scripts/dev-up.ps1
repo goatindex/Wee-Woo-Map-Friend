@@ -1,3 +1,26 @@
+# .SYNOPSIS
+#   Start or stop local dev backend (Flask) and static frontend server with health checks.
+# .DESCRIPTION
+#   Creates/uses .venv, installs backend requirements (unless -NoInstall), ensures backend .env,
+#   starts Flask on the chosen port and Python http.server for the frontend, then probes /health and /index.html.
+# .PARAMETER BackendPort
+#   Port for the Flask backend (default 5000)
+# .PARAMETER FrontendPort
+#   Port for the static frontend server (default 8000)
+# .PARAMETER BackendHost
+#   Host for the Flask backend (default 127.0.0.1)
+# .PARAMETER VenvPython
+#   Path to python.exe inside .venv (auto-created if missing)
+# .PARAMETER Stop
+#   Stop previously started processes recorded in .dev/run.json
+# .PARAMETER NoInstall
+#   Skip "pip install -r backend/requirements.txt"
+# .EXAMPLE
+#   powershell -ExecutionPolicy Bypass -File scripts/dev-up.ps1
+# .EXAMPLE
+#   powershell -ExecutionPolicy Bypass -File scripts/dev-up.ps1 -BackendPort 5001 -FrontendPort 8001
+# .EXAMPLE
+#   powershell -ExecutionPolicy Bypass -File scripts/dev-up.ps1 -Stop
 # Requires: Windows PowerShell 5.1+
 # Purpose: Spin up local test infrastructure (backend + frontend) with health checks and version checks.
 # Usage examples (run from repo root or any location):
