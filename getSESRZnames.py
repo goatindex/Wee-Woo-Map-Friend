@@ -1,3 +1,7 @@
+"""Extract SES Response Zone names from ses.geojson into SESRZnames.txt.
+
+Run from repo root or any path; uses script directory to locate files.
+"""
 import os
 import json
 

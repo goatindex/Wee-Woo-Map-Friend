@@ -1,3 +1,7 @@
+/**
+ * @module loaders/sesUnits
+ * Render non-interactive SES unit name labels from ses.geojson.
+ */
 import { getMap } from '../state.js';
 import { toTitleCase } from '../utils.js';
 import { showSidebarError, isOffline } from '../utils/errorUI.js';
@@ -6,6 +10,7 @@ import { showSidebarError, isOffline } from '../utils/errorUI.js';
  * Loads SES unit markers from ses.geojson and adds them to the map.
  * Handles errors and offline state with user feedback.
  * @async
+ * @returns {Promise<void>}
  */
 export async function loadSesUnits(){
   const map = getMap();

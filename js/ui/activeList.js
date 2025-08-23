@@ -1,13 +1,39 @@
+/**
+ * @module ui/activeList
+ * Build and maintain the "All Active" sidebar section.
+ */
 import { ensureLabel, removeLabel } from '../labels.js';
 import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers, activeListFilter } from '../state.js';
-import { categoryMeta, outlineColors } from '../config.js';
+import { categoryMeta, outlineColors, labelColorAdjust, adjustHexColor } from '../config.js';
 import { formatAmbulanceName } from '../labels.js';
 
 
+/**
+ * Safely get the actual checkbox element for a given category/key.
+ * Handles cases where the row and the input share the same id (duplicate IDs).
+ * @param {string} category
+ * @param {string} key
+ * @returns {HTMLInputElement|null}
+ */
+function getCategoryCheckbox(category, key){
+	const id = `${category}_${key}`;
+	const el = document.getElementById(id);
+	if (!el) return document.querySelector(`input#${id}`);
+	if (el.tagName === 'INPUT') return /** @type {HTMLInputElement} */ (el);
+	const inside = el.querySelector('input[type="checkbox"]');
+	if (inside) return /** @type {HTMLInputElement} */ (inside);
+	return document.querySelector(`input#${id}`);
+}
+
+
+/**
+ * Attach change listeners to a category's checkboxes so the active list reflects UI state.
+ * @param {'ses'|'lga'|'cfa'|'ambulance'} category
+ */
 export function setupActiveListSync(category){
 	namesByCategory[category].forEach(n=>{
 		const key=nameToKey[category][n];
-		const cb=document.getElementById(`${category}_${key}`);
+	const cb=getCategoryCheckbox(category, key);
 		if(cb && !cb._bound){
 			cb._bound=true;
 			cb.addEventListener('change', updateActiveList);
@@ -15,6 +41,9 @@ export function setupActiveListSync(category){
 	});
 }
 
+/**
+ * Rebuild the active list UI from current checked items in all categories.
+ */
 export function updateActiveList(){
 	const activeList=document.getElementById('activeList');
 	if(!activeList) return;
@@ -22,6 +51,7 @@ export function updateActiveList(){
 
 	// Header row with new columns
 	const headerRow=document.createElement('div');
+	headerRow.className='active-list-header';
 	headerRow.style.display='flex'; headerRow.style.alignItems='center'; headerRow.style.marginBottom='4px';
 	// Spacer for remove button
 	const spacer=document.createElement('span');
@@ -30,6 +60,7 @@ export function updateActiveList(){
 	// Name header
 	const nameHeader=document.createElement('span');
 	nameHeader.textContent='Name';
+	nameHeader.className='active-list-name-header';
 	nameHeader.style.flex='1';
 	nameHeader.style.textAlign='left';
 	headerRow.appendChild(nameHeader);
@@ -68,12 +99,18 @@ export function updateActiveList(){
 	['ses','lga','cfa','ambulance'].forEach(cat=>addItems(cat, activeList));
 }
 
+/**
+ * Append visible items for a given category to the active list container.
+ * Populates row metadata (lat/lon for polygons) used by the weather box feature.
+ * @param {'ses'|'lga'|'cfa'|'ambulance'} category
+ * @param {HTMLElement} container
+ */
 function addItems(category, container) {
 	const meta = categoryMeta[category];
 	if (!namesByCategory[category] || !featureLayers[category]) return;
 	namesByCategory[category].forEach(name => {
 		const key = nameToKey[category][name];
-		const cb = document.getElementById(`${category}_${key}`);
+	const cb = getCategoryCheckbox(category, key);
 		if (!cb || !cb.checked) return; // Only show checked/visible items
 		const row = document.createElement('div');
 		row.className = 'active-list-row';
@@ -108,6 +145,7 @@ function addItems(category, container) {
 		row.appendChild(removeBtn);
 		// Name
 		const nameSpan = document.createElement('span');
+		nameSpan.classList.add('active-list-name');
 		// Use formatted name for ambulance
 		if (category === 'ambulance') {
 			nameSpan.textContent = formatAmbulanceName(name);
@@ -115,8 +153,10 @@ function addItems(category, container) {
 			nameSpan.textContent = name;
 		}
 		nameSpan.style.flex = '1';
-		// Set color to match polygon border
-		nameSpan.style.color = outlineColors[category];
+		// Set color to match polygon border (with optional adjustment)
+		const baseColor = outlineColors[category];
+		const factor = labelColorAdjust[category] ?? 1.0;
+		nameSpan.style.color = adjustHexColor(baseColor, factor);
 		row.appendChild(nameSpan);
 		// Emphasise toggle
 		const emphCell = document.createElement('span');

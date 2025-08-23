@@ -273,3 +273,24 @@ What it does:
 - Ensures `backend/.env` exists (copies from example if present).
 - Starts the Flask backend and checks `GET /health`.
 - Starts a static server and checks `GET /index.html`.
+
+## Documentation conventions
+
+This project uses lightweight, non-invasive documentation that does not affect runtime:
+
+- JavaScript JSDoc
+   - Core typedefs live inline in modules:
+      - `js/config.js`: `CategoryMeta`, style function return types, `categoryMeta` map.
+      - `js/state.js`: shared maps (`FeatureLayersMap`, `NamesByCategoryMap`, `NameToKeyMap`, `EmphasisedMap`, `NameLabelMarkersMap`).
+   - Function JSDoc has been added to exported functions across loaders (`js/loaders/*.js`), UI modules (`js/ui/*.js`), and helpers (`js/labels.js`, `js/emphasise.js`, `js/polygonPlus.js`, `js/utils/*.js`).
+   - Optional static checking: you may enable TypeScript-style checks per file by adding `// @ts-check` at the very top of a module (start with low-risk files like `js/utils.js`, `js/state.js`, `js/config.js`). Address any hints surfaced by your editor over time. This is optional and purely for developer ergonomics.
+
+- Python docstrings
+   - `backend/app.py` includes a module docstring and docstrings for endpoints and helper functions.
+   - Utility scripts (`update-last-updated.py`, `getLGAnames.py`, `getSESRZnames.py`) include concise module docstrings describing purpose and usage.
+
+- PowerShell help
+   - `scripts/dev-up.ps1` includes comment-based help (Synopsis, Description, Parameters, Examples). View in an editor or with `Get-Help` (if your environment is configured for script help).
+
+Notes
+- These additions are comments only—there are no behavior changes, and build/runtime remain unaffected.
