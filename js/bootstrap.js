@@ -91,8 +91,48 @@ loadPolygonCategory('lga','LGAs.geojson');
 loadPolygonCategory('cfa','cfa.geojson');
 loadSesFacilities();
 loadAmbulance();
-loadPolice();
+// Lazy-load Police: load only when needed (expand section or use Show All toggle)
+// Do not load here to keep initial render snappy.
 loadSesUnits();
+
+// Lazy-load triggers for Police
+let _policeLoaded = false;
+async function ensurePoliceLoaded(){
+	if (_policeLoaded) return;
+	try {
+		await loadPolice();
+		_policeLoaded = true;
+	} catch (e) { console.error('Police load failed:', e); }
+}
+
+// 1) When user expands the Police section
+(() => {
+	const header = document.getElementById('policeHeader');
+	const list = document.getElementById('policeList');
+	if (!header || !list) return;
+	header.addEventListener('click', () => {
+		// Run after collapsible toggles display state
+		setTimeout(() => {
+			if (list.style.display !== 'none') ensurePoliceLoaded();
+		}, 0);
+	});
+})();
+
+// 2) When user toggles Show All Police Stations
+(() => {
+	const toggle = document.getElementById('toggleAllPolice');
+	if (!toggle) return;
+	// Prime loader on first interaction, then replay the event so loader's own handler runs
+	const onFirstChange = async (ev) => {
+		toggle.removeEventListener('change', onFirstChange);
+		const desired = toggle.checked;
+		await ensurePoliceLoaded();
+		// Re-dispatch to apply group toggle with loader-bound handler
+		toggle.checked = desired;
+		toggle.dispatchEvent(new Event('change', { bubbles: true }));
+	};
+	toggle.addEventListener('change', onFirstChange);
+})();
 
 // Load waterway centrelines (but don't show by default)
 loadWaterwayCentres();
