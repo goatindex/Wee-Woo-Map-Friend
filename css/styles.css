@@ -335,3 +335,62 @@ html, body { overflow-x: hidden; }
   border-radius: 6px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
+
+/* App overlays and panels (Info modal, Docs drawer) */
+:root {
+  --app-overlay-bg: rgba(0,0,0,0.35);
+  --app-panel-bg: #fff;
+  --app-border: #ccc;
+}
+.app-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--app-overlay-bg);
+  z-index: 3000;
+}
+.app-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3001;
+}
+.app-modal[hidden], .app-overlay[hidden], .docs-drawer[hidden] { display: none !important; }
+.app-modal-content {
+  width: min(680px, 92vw);
+  max-height: min(80vh, 720px);
+  background: var(--app-panel-bg);
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  display: flex;
+  flex-direction: column;
+}
+.app-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--app-border);
+}
+.app-modal-title { margin: 0; font-size: 1.2rem; }
+.app-modal-close { border:1px solid #ccc; background:#f7f7f7; border-radius:6px; cursor:pointer; padding:4px 8px; }
+.app-modal-body { padding: 14px; overflow: auto; }
+
+.docs-drawer {
+  position: fixed; top: 0; right: 0; height: 100vh; width: min(920px, 92vw);
+  background: var(--app-panel-bg); border-left: 1px solid var(--app-border);
+  z-index: 3001; display: flex; flex-direction: column;
+  box-shadow: -6px 0 24px rgba(0,0,0,0.25);
+}
+.docs-header { display:flex; align-items:center; justify-content:space-between; padding: 10px 14px; border-bottom:1px solid var(--app-border); }
+.docs-close { border:1px solid #ccc; background:#f7f7f7; border-radius:6px; cursor:pointer; padding:4px 8px; }
+.docs-body { display:flex; min-height: 0; flex: 1; }
+.docs-toc { width: 240px; border-right:1px solid var(--app-border); padding: 12px; overflow:auto; }
+.docs-toc ul { list-style:none; padding:0; margin:0; }
+.docs-toc li { margin: 6px 0; }
+.docs-toc a { color:#145088; text-decoration:none; }
+.docs-toc a:hover { text-decoration:underline; }
+.docs-content { flex:1; padding: 14px; overflow:auto; }
+
+@media (max-width: 720px) {
+  .docs-toc { display:none; }
+}

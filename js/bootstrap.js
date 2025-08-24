@@ -2,7 +2,7 @@
  * @module bootstrap
  * Initialise Leaflet map, load data sources, and wire UI components.
  */
-import { setMap } from './state.js';
+import { setMap, nameLabelMarkers, emphasised } from './state.js';
 import { loadPolygonCategory } from './loaders/polygons.js';
 import { loadAmbulance } from './loaders/ambulance.js';
 import { loadPolice } from './loaders/police.js';
@@ -10,7 +10,8 @@ import { loadSesUnits } from './loaders/sesUnits.js';
 import { loadSesFacilities } from './loaders/sesFacilities.js';
 import { setupCollapsible } from './ui/collapsible.js';
 import { initSearch } from './ui/search.js';
-import { updateActiveList } from './ui/activeList.js';
+import { updateActiveList, beginActiveListBulk, endActiveListBulk } from './ui/activeList.js';
+import { removeLabel } from './labels.js';
 import { loadWaterwayCentres, showWaterwayCentres, hideWaterwayCentres } from './loaders/waterwaycent.js';
 import { setupOfflineListener } from './utils/errorUI.js';
 import { outlineColors, categoryMeta, headerColorAdjust, adjustHexColor } from './config.js';
@@ -23,6 +24,8 @@ const mapInstance = L.map('map', {
 }).setView([-37.8,144.9],7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors'}).addTo(mapInstance);
 setMap(mapInstance);
+// Capture the default view to support a full UI reset
+const DEFAULT_VIEW = { center: mapInstance.getCenter(), zoom: mapInstance.getZoom() };
 
 // Create panes to control z-order (bottom -> top): LGA, CFA, SES, Ambulance
 (() => {
@@ -196,3 +199,204 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 setupOfflineListener();
+
+// Reset handler: return the UI to a clean default starting state
+window.addEventListener('sidebar-tool-click', async (ev) => {
+	try {
+		const detail = ev?.detail || {};
+		if (detail.index !== 1 && detail.id !== 'sidebarBtn1') return;
+
+		// Enter bulk mode to avoid churn in Active List during mass changes
+		try { beginActiveListBulk(); } catch {}
+
+		// 1) Clear global search and dropdown
+		const input = document.getElementById('globalSidebarSearch');
+		if (input) input.value = '';
+		const dd = document.getElementById('sidebarSearchDropdown');
+		if (dd) { dd.classList.remove('active'); dd.style.display = 'none'; dd.innerHTML = ''; }
+
+		// 2) Hide weather box
+		const wb = document.getElementById('weatherBox');
+		if (wb) { wb.style.display = 'none'; wb.innerHTML = ''; }
+
+		// 3a) Proactively clear all existing labels and emphasis, independent of list state
+		;(['ses','lga','cfa','ambulance','police']).forEach(cat => {
+			const bucket = nameLabelMarkers?.[cat] || {};
+			Object.keys(bucket).forEach(key => {
+				try { removeLabel(cat, key); } catch {}
+				try { emphasised[cat][key] = false; } catch {}
+			});
+		});
+
+		// 3b) Clear all row checkboxes without forcing lazy loads
+			const listIds = ['sesList','lgaList','cfaList','ambulanceList','policeList'];
+			listIds.forEach(listId => {
+				const list = document.getElementById(listId);
+				if (!list) return;
+				list.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+					if (cb.checked) {
+						cb.checked = false;
+						cb.dispatchEvent(new Event('change', { bubbles: true }));
+					}
+				});
+			});
+		// 3c) Reflect group toggles visually as unchecked, but avoid dispatching change
+			['toggleAllSES','toggleAllLGAs','toggleAllCFA','toggleAllAmbulance','toggleAllPolice'].forEach(id => {
+				const el = document.getElementById(id);
+				if (el) el.checked = false;
+			});
+
+		// 4) Clear the All Active UI then collapse sections
+		try { updateActiveList(); } catch {}
+		const sections = ['active','showAll','ses','lga','cfa','ambulance','police'];
+		sections.forEach(key => {
+			const header = document.getElementById(`${key}Header`);
+			const list = document.getElementById(`${key}List`);
+			if (header) header.classList.add('collapsed');
+			if (list) list.style.display = 'none';
+		});
+
+		// 5) Ensure any optional overlays are hidden
+		try { hideWaterwayCentres(); } catch {}
+
+		// 6) Reset map view to default
+		try { mapInstance.setView(DEFAULT_VIEW.center, DEFAULT_VIEW.zoom); } catch {}
+
+		// 7) Ensure sidebar is expanded (default on desktops)
+		try {
+			const menu = document.getElementById('layerMenu');
+			const btn = document.getElementById('sidebarToggle');
+			if (menu && btn) {
+				menu.classList.remove('sidebar-minimized');
+				try { menu.inert = false; } catch {}
+				btn.setAttribute('aria-expanded', 'true');
+				btn.title = 'Hide panel';
+				btn.textContent = '⏩';
+			}
+			localStorage.setItem('sidebarMinimized', '0');
+		} catch {}
+
+		// Exit bulk mode after the bulk of changes are complete
+		try { endActiveListBulk(); } catch {}
+
+		// Final safety sweep after UI settles (handles any late events)
+		setTimeout(() => {
+			try {
+				;(['ses','lga','cfa','ambulance','police']).forEach(cat => {
+					const bucket = nameLabelMarkers?.[cat] || {};
+					Object.keys(bucket).forEach(key => {
+						try { removeLabel(cat, key); } catch {}
+						try { emphasised[cat][key] = false; } catch {}
+					});
+				});
+			} catch {}
+		}, 0);
+
+		console.log('Reset to default starting state complete.');
+	} catch (e) {
+		console.error('Reset to defaults failed:', e);
+	}
+});
+
+// Docs & Info: wiring for buttons #sidebarBtn2 (Docs) and #sidebarBtn3 (Info)
+async function ensureMdDeps() {
+	if (window.marked && window.DOMPurify) return;
+	await Promise.all([
+		new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); }),
+		new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); })
+	]);
+}
+
+async function renderDoc(slug) {
+	try {
+		await ensureMdDeps();
+		const resp = await fetch(`docs/${slug}.md`, { cache: 'no-cache' });
+		const md = await resp.text();
+		const html = window.DOMPurify.sanitize(window.marked.parse(md));
+		const cont = document.getElementById('docsContent');
+		if (cont) cont.innerHTML = html;
+	} catch (e) {
+		const cont = document.getElementById('docsContent');
+		if (cont) cont.innerHTML = '<p style="color:#b00020">Failed to load documentation.</p>';
+	}
+}
+
+function openDocs(slug) {
+	const overlay = document.getElementById('docsOverlay');
+	const drawer = document.getElementById('docsDrawer');
+	if (overlay) overlay.hidden = false;
+	if (drawer) drawer.hidden = false;
+	if (slug) renderDoc(slug);
+	const link = document.querySelector(`.docs-toc a[data-doc="${slug}"]`);
+	if (link) {
+		document.querySelectorAll('.docs-toc a').forEach(a => a.classList.remove('active'));
+		link.classList.add('active');
+	}
+	const content = document.getElementById('docsContent');
+	if (content) content.focus();
+}
+
+function closeDocs() {
+	const overlay = document.getElementById('docsOverlay');
+	const drawer = document.getElementById('docsDrawer');
+	if (overlay) overlay.hidden = true;
+	if (drawer) drawer.hidden = true;
+}
+
+function openInfo() {
+	const overlay = document.getElementById('infoOverlay');
+	const modal = document.getElementById('infoModal');
+	if (overlay) overlay.hidden = false;
+	if (modal) modal.hidden = false;
+	const closeBtn = document.getElementById('infoClose');
+	if (closeBtn) closeBtn.focus();
+}
+
+function closeInfo() {
+	const overlay = document.getElementById('infoOverlay');
+	const modal = document.getElementById('infoModal');
+	if (overlay) overlay.hidden = true;
+	if (modal) modal.hidden = true;
+}
+
+// Button event routing
+window.addEventListener('sidebar-tool-click', (ev) => {
+	const idx = ev?.detail?.index;
+	if (idx === 3) { // Info
+		openInfo();
+	} else if (idx === 2) { // Docs
+		const hash = (location.hash || '').toString();
+		const m = hash.match(/^#docs\/(\w+)/);
+		const slug = m ? m[1] : 'intro';
+		openDocs(slug);
+	}
+});
+
+// Overlay/close buttons and ESC handling
+window.addEventListener('DOMContentLoaded', () => {
+	const iClose = document.getElementById('infoClose');
+	const dClose = document.getElementById('docsClose');
+	const iOv = document.getElementById('infoOverlay');
+	const dOv = document.getElementById('docsOverlay');
+	if (iClose) iClose.addEventListener('click', closeInfo);
+	if (iOv) iOv.addEventListener('click', closeInfo);
+	if (dClose) dClose.addEventListener('click', closeDocs);
+	if (dOv) dOv.addEventListener('click', closeDocs);
+	// TOC clicks
+	document.querySelectorAll('.docs-toc a[data-doc]').forEach(a => {
+		a.addEventListener('click', (e) => {
+			e.preventDefault();
+			const slug = a.getAttribute('data-doc');
+			if (!slug) return;
+			history.replaceState(null, '', `#docs/${slug}`);
+			openDocs(slug);
+		});
+	});
+});
+
+window.addEventListener('keydown', (e) => {
+	if (e.key === 'Escape') {
+		closeInfo();
+		closeDocs();
+	}
+});
