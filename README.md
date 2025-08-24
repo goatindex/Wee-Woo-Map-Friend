@@ -1,296 +1,142 @@
-# mapexp.github.io
+## WeeWoo Map Friend
 
-Demonstration of displaying a polygon layer from the Victorian SES Response Boundaries service using Leaflet and Esri Leaflet.
+An interactive Leaflet.js web map for Victoria emergency layers (SES, LGA, CFA, Ambulance, Police).
 
-Open `index.html` in a browser or publish this repository with GitHub Pages to view the map.
+Open `index.html` locally or publish with GitHub Pages to view the map.
 
-## Setup
+## Features
 
-1. Clone the repository and open the folder in VS Code.
-2. Open `index.html` in your browser, or use GitHub Pages to publish.
-3. Ensure all required GeoJSON files are present in the root directory.
+- Sidebar with collapsible sections for each layer category
+- Global search across all layers
+- “All Active” list with controls:
+  - 📢 Emphasise, 🏷️ Show Name, 🌦️ 7‑day Weather
+- Reset to defaults (♻️)
+- Information (ℹ️) modal and Documentation (📚) drawer with TOC
+- Performance: Leaflet panes and canvas rendering for polygons; lazy‑load Police
 
-## Usage
+## Architecture overview
 
-# mapexp.github.io
+- Entry point: `js/bootstrap.js` — map init, panes, collapsibles, wiring, lazy‑loads
+- State: `js/state.js` — shared maps (layers, names, emphasis, labels)
+- Config: `js/config.js` — styles, category metadata, colors
+- Loaders: `js/loaders/*.js` — fetch/parse data and create sidebar rows
+- UI: `js/ui/*.js` — “All Active”, collapsible behavior, search
+- Labels/Emphasis: `js/labels.js`, `js/emphasise.js`
+- Utils: `js/utils/*.js` — DOM helpers, coord conversion, error UI
+- Docs/Info UI: in `index.html` + styles and handlers in `css/styles.css`, `js/bootstrap.js`
 
-Demonstration of displaying a polygon layer from the Victorian SES Response Boundaries service using Leaflet and Esri Leaflet.
+Event flow (typical):
 
-Open `index.html` in a browser or publish this repository with GitHub Pages to view the map.
+1. Loader builds sidebar rows → 2) User checks a row → 3) Change handler adds/removes layers, labels, emphasis → 4) `updateActiveList()` rebuilds “All Active”.
 
-## Setup
+## Development
 
-1. Clone the repository and open the folder in VS Code.
-2. Open `index.html` in your browser, or use GitHub Pages to publish.
-3. Ensure all required GeoJSON files are present in the root directory.
+Quick start (static front‑end):
 
-## Usage
+1. Serve the folder (e.g., `python -m http.server 8000`)
+2. Open http://127.0.0.1:8000
 
-- The sidebar allows you to toggle SES, LGA, CFA, and Ambulance layers.
-- Use the 'Show Name' and 'Emphasise' checkboxes to control map labels and highlight features.
-- Error messages will appear in the sidebar if data fails to load or you are offline.
+Weather backend (optional): see “Backend proxy” below.
 
-## Troubleshooting
+One‑command dev helper: `scripts/dev-up.ps1` (starts backend + static server with checks).
 
-- If the map or sidebar does not display, check the browser console for errors.
-- Ensure all JS and CSS files are loaded correctly and paths are correct.
-- If you see an offline message, reconnect and reload the page.
+## Docs and Info panels
+
+- ℹ️ Info: single‑page modal; content lives in `index.html` (editable)
+- 📚 Docs: right drawer; Markdown files in `docs/` rendered with Marked + DOMPurify
+- Deep links: `#docs/intro`, `#docs/usage`, `#docs/layers`
+- Add a new page: create `docs/your-page.md`, add a link in the TOC inside `index.html`
+
+## 7/7 Weather box
+
+- The “All Active” list includes a 🌦️ checkbox per item to show a 7‑day forecast via the backend proxy
+- Rows must provide `data-lat` and `data-lon` for polygons; points show forecast only for polygon items
+
+Example row markup:
+
+```html
+<div class="active-list-row" data-lat="-37.8136" data-lon="144.9631">Melbourne …</div>
+```
+
+## Backend proxy (weather)
+
+A minimal Flask proxy is provided in `backend/` to keep API keys out of the frontend.
+
+- Features: CORS, env‑based secrets, mock provider by default, simple cache, timeouts
+- Providers: mock (dev), open‑meteo (no key), willyweather (requires key)
+- Frontend override during dev: `localStorage.setItem('weatherProvider','open-meteo')`
+
+Quick start (Windows PowerShell):
+
+```powershell
+python -m venv .venv; .\.venv\Scripts\Activate.ps1
+pip install -r backend\requirements.txt
+Copy-Item backend\.env.example backend\.env
+python backend/app.py
+```
+
+## Security notes
+
+- Do not expose API keys in the frontend; use the backend proxy
+- Markdown docs are sanitized with DOMPurify before insertion
+- Prefer HTTPS CDNs and pin versions (already pinned); consider local vendoring for offline use
+- CORS: restrict `ALLOWED_ORIGINS` in `backend/.env` for production
+- Consider a Content‑Security‑Policy (CSP) if hosting with custom headers
+
+## Accessibility & usability
+
+- Collapsible headers respond to click; ESC closes Info/Docs
+- Buttons have descriptive titles and ARIA labels
+- The sidebar can be minimized; focus is disabled when minimized (inert)
+- Future improvement: add focus traps inside modals/drawers and return focus to the invoking button
+
+## Testing & preflights
+
+- `scripts/preflight_check_duplicates.py js` — catches duplicate exports
+- `scripts/preflight_active_collapsible.py` — verifies “All Active” collapsible defaults
+- `scripts/preflight_reset_button.py` — verifies ♻️ reset wiring and behavior
 
 ## Contributing
 
-- Follow the coding and documentation standards in `copilot-instructions.md`.
-- Use ESLint and Prettier for code consistency.
-- Add JSDoc comments for new functions and modules.
-- Test changes in the browser and check for errors before committing.
+- Keep functions small with JSDoc; prefer named exports
+- Avoid tight coupling across modules; use `state.js` for shared maps
+- Consider adding `// @ts-check` to new files for editor type hints
+- Coordinate changes to IDs/classes with both HTML and JS modules
 
-## Example Workflow
+## Screenshots / videos (optional)
 
-1. Make code changes in a feature branch.
-2. Run ESLint and Prettier to check formatting.
-3. Test in the browser and verify sidebar/map functionality.
-4. Commit with a descriptive message and open a pull request.
+Add images to `docs/assets/` and reference them in Markdown, for example:
 
-## Weather integration (WillyWeather + alternatives)
-
-Weather is fetched via a backend proxy and normalized for the UI.
-
-- Docs first: https://www.willyweather.com.au/api/docs/index.html
-- For dev without keys, use the mock provider (default) or Open‑Meteo.
-
-Providers
-
-- mock: safe, deterministic data (default in dev)
-- open-meteo: real 7‑day temps/summaries, no key
-- willyweather: real 7‑day daily precis/min/max (requires API key)
-
-Provider selection
-
-- Default via backend `.env`: `WEATHER_PROVIDER=mock|open-meteo|willyweather`
-- Per-request override: add `&provider=open-meteo` or `&provider=willyweather` to the backend URL
-- Frontend dev override: `localStorage.setItem('weatherProvider','open-meteo')` (remove with `localStorage.removeItem('weatherProvider')`)
-
-WillyWeather flow (per docs)
-
-1. Search nearest location by coordinates:
-   - https://www.willyweather.com.au/api/docs/search.html#location-get-search-by-coordinates
-   - `GET /v2/{api key}/search.json` with header `x-payload` JSON: `{ lat, lng, range, units }`
-2. Fetch daily weather for that location id:
-   - https://www.willyweather.com.au/api/docs/weather.html#forecast-get-weather
-   - `GET /v2/{api key}/locations/{location id}/weather.json` with header `x-payload` JSON: `{ forecasts: ["weather"], days }`
-
-Security
-
-- Do NOT expose your WillyWeather API key in the frontend. Use the backend proxy and `.env`.
-
-## 7/7 Checkbox (All Active)
-
-The "All Active" section includes a 7/7 checkbox next to each active item. When checked, the app fetches and displays a 7‑day weather forecast for that location via the backend proxy.
-
-- Each row must include `data-lat` and `data-lon` attributes for coordinates.
-- The info box appears in the bottom-left.
-
-Example
-
-```html
-<div class="active-list-row" data-lat="-37.8136" data-lon="144.9631">Melbourne ...</div>
+```markdown
+![Sidebar showing All Active and Docs](docs/assets/sidebar-all-active.png)
 ```
 
-## Backend proxy (for API keys and weather)
+Short GIFs can be added similarly:
 
-To securely call 3rd‑party APIs (WillyWeather, Open‑Meteo, etc.) without exposing keys in the frontend, a minimal Flask backend is provided in `backend/`.
+```markdown
+![Searching and activating a layer](docs/assets/search-activate.gif)
+```
 
-- Location: `backend/app.py`, `backend/requirements.txt`, `backend/.env.example`.
-- Features: CORS for dev, env‑based secrets, mock responses by default, simple in‑memory cache, request timeouts, provider model (mock, open‑meteo, willyweather).
+Live examples in this repo:
 
-### Quick start (Windows PowerShell)
+![Sidebar showing All Active and Docs](docs/assets/sidebar-all-active.svg)
+
+![Searching and activating a layer](docs/assets/search-activate.svg)
+
+Automated real screenshots
+
+You can capture real PNG screenshots locally (requires Node.js):
 
 ```powershell
-# 1) Create and activate a virtual environment
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-
-# 2) Install backend deps
-pip install -r backend\requirements.txt
-
-# 3) Copy .env example and set your keys
-Copy-Item backend\.env.example backend\.env
-# then edit backend\.env to add WILLYWEATHER_API_KEY (if using it), set USE_MOCK=1 for safe testing
-
-# 4) Run the backend
-$env:FLASK_APP = "backend/app.py"
-python backend/app.py
-# API available at http://127.0.0.1:5000
-
-# 5) Serve the frontend in another terminal (example using Python HTTP server)
-# From repo root:
+# In one terminal: serve the site
 python -m http.server 8000
+
+# In another terminal: install and run the capture
+npm install
+npm run capture
 ```
 
-### Frontend usage
+Outputs:
 
-Call your backend from the frontend instead of third‑party APIs:
-
-```js
-fetch('http://127.0.0.1:5000/api/weather?lat=-37.81&lon=144.96&days=7')
-  .then((r) => r.json())
-  .then((data) => console.log(data));
-// Optional: add &provider=open-meteo or &provider=willyweather for real data in dev
-```
-
-### Notes
-
-- In production, don’t commit `.env`; set real env vars on the host.
-- This backend returns mock data unless `USE_MOCK=0` and/or you pass a real provider via `?provider=...`.
-- WillyWeather provider follows the docs (coordinate search → location id → daily weather).
-
-## Backend proxy configuration (.env) and allowed origins
-
-Use a `.env` file in `backend/` to configure the proxy. Do not commit secrets.
-
-- `WILLYWEATHER_API_KEY`: Your WillyWeather API key (leave empty with `USE_MOCK=1` for safe testing).
-- `ALLOWED_ORIGINS`: Comma‑separated list of frontend origins allowed to call the backend (CORS).
-- `USE_MOCK`: `1` (default) to return mock data, `0` to call real providers by default.
-- `CACHE_TTL_SECONDS`: In‑memory cache TTL in seconds (default 300).
-- `REQUEST_TIMEOUT`: Upstream request timeout in seconds (default 5).
-- `WEATHER_PROVIDER`: Default provider `mock|open-meteo|willyweather`.
-
-Example `.env` configurations
-
-Local development (127.0.0.1)
-
-```env
-WILLYWEATHER_API_KEY=
-ALLOWED_ORIGINS=http://127.0.0.1:8000
-USE_MOCK=1
-CACHE_TTL_SECONDS=300
-REQUEST_TIMEOUT=5
-WEATHER_PROVIDER=mock
-```
-
-Local development (localhost)
-
-```env
-WILLYWEATHER_API_KEY=
-ALLOWED_ORIGINS=http://localhost:8000
-USE_MOCK=1
-CACHE_TTL_SECONDS=300
-REQUEST_TIMEOUT=5
-WEATHER_PROVIDER=mock
-```
-
-Local development (support both 127.0.0.1 and localhost)
-
-```env
-WILLYWEATHER_API_KEY=
-ALLOWED_ORIGINS=http://127.0.0.1:8000,http://localhost:8000
-USE_MOCK=1
-CACHE_TTL_SECONDS=300
-REQUEST_TIMEOUT=5
-WEATHER_PROVIDER=mock
-```
-
-GitHub Pages (production)
-
-```env
-# Use your real key in production
-WILLYWEATHER_API_KEY=YOUR_REAL_KEY
-# Update to your actual site origin
-ALLOWED_ORIGINS=https://mapexp.github.io
-USE_MOCK=0
-CACHE_TTL_SECONDS=600
-REQUEST_TIMEOUT=8
-WEATHER_PROVIDER=willyweather
-```
-
-Custom domain (production)
-
-```env
-WILLYWEATHER_API_KEY=YOUR_REAL_KEY
-ALLOWED_ORIGINS=https://your.domain.example
-USE_MOCK=0
-CACHE_TTL_SECONDS=600
-REQUEST_TIMEOUT=8
-WEATHER_PROVIDER=willyweather
-```
-
-Notes
-
-- CORS checks the full origin (scheme + host + port). Ensure it matches how you open the site (e.g., `http://127.0.0.1:8000` vs `http://localhost:8000`).
-- After changing `.env`, restart the backend (`python backend/app.py`).
-- In dev, the frontend fetches `http://127.0.0.1:5000/api/weather?lat=..&lon=..&days=7` (add `&provider=open-meteo` or `&provider=willyweather`).
-- In production, deploy the backend under the same domain as the frontend (recommended) or configure `ALLOWED_ORIGINS` accordingly.
-
-## Frontend default provider and fallback
-
-- The UI defaults to WillyWeather for the 7/7 forecast box.
-- If WillyWeather is unavailable (key, quota, or network), it automatically falls back to Open‑Meteo so a forecast still appears.
-- To override locally in your browser:
-   - Force WillyWeather: `localStorage.setItem('weatherProvider','willyweather')`
-   - Force Open‑Meteo: `localStorage.setItem('weatherProvider','open-meteo')`
-   - Clear override: `localStorage.removeItem('weatherProvider')`
-
-## Coordinate conversion (proj4)
-
-Some data uses MGA94 Zone 55 (EPSG:28355). The app converts to WGS84 using proj4 in `js/utils/coordConvert.js`.
-
-- Proj4 is included via CDN in `index.html`:
-   - `<script src="https://cdn.jsdelivr.net/npm/proj4@2.9.2/dist/proj4.min.js"></script>`
-- If you see “proj4 library is not loaded…”, hard‑reload (Ctrl+F5). Ensure you’re serving the site (e.g., `python -m http.server 8000`) and opening `http://127.0.0.1:8000`.
-- `convertMGA94ToLatLon(x, y)` returns `[lon, lat]` and logs a helpful error if proj4 is missing.
-
-## UI test tip
-
-After starting the backend and static server, open http://127.0.0.1:8000 and hard‑reload (Ctrl+F5) to make sure all scripts (including proj4) are loaded before testing the 7/7 checkbox.
-
-## Troubleshooting (dev)
-
-- ERR_CONNECTION_REFUSED to `http://127.0.0.1:5000`: start the backend with `python backend/app.py` in another terminal and verify `GET /health`.
-- “proj4 library is not loaded”: the CDN may not have loaded yet—hard‑reload (Ctrl+F5). Make sure you’re serving via `http.server` and not opening the HTML file directly.
-
-## One-command dev setup
-
-Use the PowerShell script `scripts/dev-up.ps1` to spin up the local backend and frontend with version and health checks.
-
-Examples (from repo root):
-
-```powershell
-# Default ports: backend 5000, frontend 8000
-powershell -ExecutionPolicy Bypass -File scripts/dev-up.ps1
-
-# Custom ports
-powershell -ExecutionPolicy Bypass -File scripts/dev-up.ps1 -BackendPort 5001 -FrontendPort 8001
-
-# Skip pip install (faster when deps are already installed)
-powershell -ExecutionPolicy Bypass -File scripts/dev-up.ps1 -NoInstall
-
-# Stop previously started processes
-powershell -ExecutionPolicy Bypass -File scripts/dev-up.ps1 -Stop
-```
-
-What it does:
-- Ensures `.venv` exists (creates it if missing) and prints Python/pip/package versions.
-- Installs backend requirements (unless `-NoInstall`).
-- Ensures `backend/.env` exists (copies from example if present).
-- Starts the Flask backend and checks `GET /health`.
-- Starts a static server and checks `GET /index.html`.
-
-## Documentation conventions
-
-This project uses lightweight, non-invasive documentation that does not affect runtime:
-
-- JavaScript JSDoc
-   - Core typedefs live inline in modules:
-      - `js/config.js`: `CategoryMeta`, style function return types, `categoryMeta` map.
-      - `js/state.js`: shared maps (`FeatureLayersMap`, `NamesByCategoryMap`, `NameToKeyMap`, `EmphasisedMap`, `NameLabelMarkersMap`).
-   - Function JSDoc has been added to exported functions across loaders (`js/loaders/*.js`), UI modules (`js/ui/*.js`), and helpers (`js/labels.js`, `js/emphasise.js`, `js/polygonPlus.js`, `js/utils/*.js`).
-   - Optional static checking: you may enable TypeScript-style checks per file by adding `// @ts-check` at the very top of a module (start with low-risk files like `js/utils.js`, `js/state.js`, `js/config.js`). Address any hints surfaced by your editor over time. This is optional and purely for developer ergonomics.
-
-- Python docstrings
-   - `backend/app.py` includes a module docstring and docstrings for endpoints and helper functions.
-   - Utility scripts (`update-last-updated.py`, `getLGAnames.py`, `getSESRZnames.py`) include concise module docstrings describing purpose and usage.
-
-- PowerShell help
-   - `scripts/dev-up.ps1` includes comment-based help (Synopsis, Description, Parameters, Examples). View in an editor or with `Get-Help` (if your environment is configured for script help).
-
-Notes
-- These additions are comments only—there are no behavior changes, and build/runtime remain unaffected.
+- docs/assets/sidebar-all-active.png
+- docs/assets/search-activate.png

@@ -1,0 +1,13 @@
+{
+  "name": "mapexp-screenshots",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Helper tooling to capture screenshots of WeeWoo Map Friend",
+  "license": "MIT",
+  "scripts": {
+    "capture": "node scripts/capture.js"
+  },
+  "devDependencies": {
+    "puppeteer": "^22.10.0"
+  }
+}

@@ -13,9 +13,9 @@
   <div class="search-sticky">
   <div id="sidebarTitle" class="sidebar-title"><span class="title-emojis">🚨🗺️🫶</span> | WeeWoo Map Friend </div>
     <div class="sidebar-tools" aria-label="Quick tools">
-  <button id="sidebarBtn1" class="sidebar-tool-btn" type="button" title="Tool 1">♻️</button>
-  <button id="sidebarBtn2" class="sidebar-tool-btn" type="button" title="Tool 2">📚</button>
-  <button id="sidebarBtn3" class="sidebar-tool-btn" type="button" title="Tool 3">ℹ️</button>
+  <button id="sidebarBtn3" class="sidebar-tool-btn" type="button" title="Information" aria-label="Information">ℹ️</button>
+  <button id="sidebarBtn2" class="sidebar-tool-btn" type="button" title="Documentation" aria-label="Documentation">📚</button>
+  <button id="sidebarBtn1" class="sidebar-tool-btn" type="button" title="Reset to default" aria-label="Reset to default">♻️</button>
     </div>
     <div class="search-box-wrap">
       <input type="text" class="search-box" id="globalSidebarSearch" placeholder="Search all layers..." autocomplete="off" />
@@ -61,6 +61,47 @@
   <div id="lastUpdated" style="position:fixed;left:12px;bottom:8px;font-size:0.95em;color:#444;background:rgba(255,255,255,0.85);padding:4px 10px;border-radius:6px;z-index:2000;pointer-events:none;">
     <!--#include file="last-updated.txt" -->
   </div>
+
+  <!-- Information Modal -->
+  <div id="infoOverlay" class="app-overlay" hidden></div>
+  <div id="infoModal" class="app-modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle" hidden>
+    <div class="app-modal-content">
+      <div class="app-modal-header">
+        <h2 id="infoTitle" class="app-modal-title">Information</h2>
+        <button id="infoClose" class="app-modal-close" type="button" aria-label="Close">✖</button>
+      </div>
+      <div class="app-modal-body">
+        <p>Welcome to WeeWoo Map Friend. This single-page panel provides a quick overview of the app and handy tips:</p>
+        <ul>
+          <li>Use the sidebar search to find SES, LGA, CFA, Ambulance, and Police items.</li>
+          <li>“All Active” shows your current selections with controls for emphasise, label, and weather.</li>
+          <li>The ♻️ button resets the page to a clean starting state.</li>
+        </ul>
+        <p>For full documentation, open 📚 Docs.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Docs Drawer -->
+  <div id="docsOverlay" class="app-overlay" hidden></div>
+  <aside id="docsDrawer" class="docs-drawer" aria-labelledby="docsTitle" hidden>
+    <header class="docs-header">
+      <h2 id="docsTitle">Documentation</h2>
+      <button id="docsClose" class="docs-close" aria-label="Close">✖</button>
+    </header>
+    <div class="docs-body">
+      <nav class="docs-toc" aria-label="Table of contents">
+        <ul>
+          <li><a href="#docs/intro" data-doc="intro">Welcome</a></li>
+          <li><a href="#docs/usage" data-doc="usage">Using the App</a></li>
+          <li><a href="#docs/layers" data-doc="layers">Layers & Categories</a></li>
+        </ul>
+      </nav>
+      <main id="docsContent" class="docs-content" tabindex="0" aria-live="polite">
+        <p>Choose a topic from the left.</p>
+      </main>
+    </div>
+  </aside>
 
 </body>
 </html>
