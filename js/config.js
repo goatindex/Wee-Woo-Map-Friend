@@ -15,12 +15,12 @@
 
 /** @typedef {Object<string, string>} OutlineColorsMap */
 
-export const outlineColors = { ses:'#cc7a00', lga:'black', cfa:'red', ambulance:'#d32f2f' };
+export const outlineColors = { ses:'#cc7a00', lga:'black', cfa:'red', ambulance:'#d32f2f', police:'#145088' };
 export const baseOpacities = { ses:0.2, lga:0.1, cfa:0.1 };
 /** UI color adjustment factor per category (1 = no change). Lower darkens. */
-export const labelColorAdjust = { ses: 0.85, lga: 1.0, cfa: 1.0, ambulance: 1.0 };
+export const labelColorAdjust = { ses: 0.85, lga: 1.0, cfa: 1.0, ambulance: 1.0, police: 1.0 };
 /** Header color adjustment factor per category (1 = no change). Lower darkens. */
-export const headerColorAdjust = { ses: 0.85, lga: 1.0, cfa: 0.9, ambulance: 1.0 };
+export const headerColorAdjust = { ses: 0.85, lga: 1.0, cfa: 0.9, ambulance: 1.0, police: 0.95 };
 /**
  * Darken/lighten a #RRGGBB hex by factor (0.9 = 10% darker, 1.1 = 10% lighter).
  * Returns the original string if parsing fails.
@@ -79,6 +79,14 @@ export const categoryMeta = {
     defaultOn: () => false,
     listId: 'ambulanceList',
     toggleAllId: 'toggleAllAmbulance'
+  },
+  police: {
+    type: 'point',
+    nameProp: 'place_name',
+    styleFn: null,
+    defaultOn: () => false,
+    listId: 'policeList',
+    toggleAllId: 'toggleAllPolice'
   }
 };
 

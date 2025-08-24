@@ -5,7 +5,7 @@
 import { ensureLabel, removeLabel } from '../labels.js';
 import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers, activeListFilter } from '../state.js';
 import { categoryMeta, outlineColors, labelColorAdjust, adjustHexColor } from '../config.js';
-import { formatAmbulanceName } from '../labels.js';
+import { formatAmbulanceName, formatPoliceName } from '../labels.js';
 
 // Bulk update guard to avoid repeatedly rebuilding the list on mass toggles
 let _bulkActive = false;
@@ -113,7 +113,7 @@ export function updateActiveList(){
 	activeList.appendChild(headerRow);
 
 	// Populate rows
-	['ses','lga','cfa','ambulance'].forEach(cat=>addItems(cat, activeList));
+	['ses','lga','cfa','ambulance','police'].forEach(cat=>addItems(cat, activeList));
 
 	// If no rows, remove header to reduce visual noise
 	if (activeList.children.length === 1) { // only header present
@@ -169,8 +169,10 @@ function addItems(category, container) {
 		const nameSpan = document.createElement('span');
 		nameSpan.classList.add('active-list-name');
 		// Use formatted name for ambulance
-		if (category === 'ambulance') {
+				if (category === 'ambulance') {
 			nameSpan.textContent = formatAmbulanceName(name);
+				} else if (category === 'police') {
+					nameSpan.textContent = formatPoliceName(name);
 		} else {
 			nameSpan.textContent = name;
 		}
@@ -194,7 +196,7 @@ function addItems(category, container) {
 		emphCb.style.height = '18px';
 		emphCb.style.margin = '0';
 		emphCb.addEventListener('change', e => {
-			setEmphasis(category, key, e.target.checked);
+		setEmphasis(category, key, e.target.checked, categoryMeta[category]?.type === 'point');
 			updateActiveList();
 		});
 		emphCell.appendChild(emphCb);
