@@ -104,8 +104,8 @@ function createAmbulanceIcon(){
     html:`<div style="width:28px;height:28px;background:#d32f2f;border-radius:50%;
       display:flex;align-items:center;justify-content:center;border:2px solid #fff;position:relative;">
       <div style="position:absolute;left:50%;top:50%;width:16px;height:16px;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;">
-        <div style="position:absolute;left:6px;top:.5px;width:6px;height:17px;background:#fff;border-radius:2px;display:flex;align-items:center;justify-content:center;"></div>
-        <div style="position:absolute;left:.5px;top:6px;width:17px;height:6px;background:#fff;border-radius:2px;display:flex;align-items:center;justify-content:center;"></div>
+        <div style="position:absolute;left:4.2px;top:-1.6px;width:8px;height:20px;background:#fff;border-radius:2px;display:flex;align-items:center;justify-content:center;"></div>
+        <div style="position:absolute;left:-1.6px;top:4.0px;width:20px;height:8px;background:#fff;border-radius:2px;display:flex;align-items:center;justify-content:center;"></div>
       </div>
     </div>`,
     iconSize:[28,28], iconAnchor:[14,14], popupAnchor:[10,-20]
