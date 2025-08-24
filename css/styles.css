@@ -1,4 +1,28 @@
 /* Sidebar search dropdown styles */
+.search-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 1001; /* above section headers */
+  background: #fff;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #ddd;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+}
+/* Ensure dropdown is positioned relative to the input wrapper */
+.search-box-wrap { position: relative; }
+/* Sidebar title above the search bar */
+.sidebar-title {
+  height: var(--sidebar-title-height, 34px);
+  line-height: var(--sidebar-title-height, 34px);
+  font-size: var(--sidebar-title-font-size, 18px);
+  font-weight: var(--sidebar-title-font-weight, 700);
+  color: var(--sidebar-title-color, #222);
+  background: var(--sidebar-title-bg, #fff);
+  padding: 0 var(--sidebar-title-padding-x, 6px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .sidebar-search-dropdown {
   position: absolute;
   top: 38px;
@@ -34,6 +58,16 @@
 html, body, #map { height:100%; margin:0; }
 /* Prevent horizontal scroll when sidebar is translated */
 html, body { overflow-x: hidden; }
+/* Sidebar title and toggle shared sizing */
+:root {
+  --sidebar-toggle-size: 34px; /* keep in sync with .sidebar-toggle */
+  --sidebar-title-height: var(--sidebar-toggle-size);
+  --sidebar-title-font-size: 18px;
+  --sidebar-title-font-weight: 700;
+  --sidebar-title-color: #222;
+  --sidebar-title-bg: #fff;
+  --sidebar-title-padding-x: 6px;
+}
 #layerMenu, .layer-menu {
   position: absolute;
   top: 10px;
@@ -63,8 +97,8 @@ html, body { overflow-x: hidden; }
   position: absolute;
   top: 6px;
   right: 6px;
-  width: 34px;
-  height: 34px;
+  width: var(--sidebar-toggle-size, 34px);
+  height: var(--sidebar-toggle-size, 34px);
   line-height: 30px;
   display: inline-flex;
   align-items: center;
