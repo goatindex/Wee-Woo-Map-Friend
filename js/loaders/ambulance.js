@@ -5,7 +5,7 @@
 import { categoryMeta } from '../config.js';
 import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers, getMap } from '../state.js';
 import { createCheckbox, toTitleCase } from '../utils.js';
-import { setupActiveListSync, updateActiveList } from '../ui/activeList.js';
+import { setupActiveListSync, updateActiveList, beginActiveListBulk, endActiveListBulk } from '../ui/activeList.js';
 import { showSidebarError, isOffline } from '../utils/errorUI.js';
 
 let ambulanceData=[];
@@ -73,6 +73,7 @@ listEl.innerHTML = '';
       toggleAll._bound=true;
       toggleAll.addEventListener('change',e=>{
         const on=e.target.checked;
+        beginActiveListBulk();
         namesByCategory[category].forEach(n=>{
           const key=nameToKey[category][n];
             const el=document.getElementById(`${category}_${key}`);
@@ -84,7 +85,7 @@ listEl.innerHTML = '';
             cb.checked=on;
             cb.dispatchEvent(new Event('change', { bubbles: true }));
         });
-        updateActiveList();
+        endActiveListBulk();
       });
     }
     setupActiveListSync(category);

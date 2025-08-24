@@ -6,6 +6,7 @@ import { setMap } from './state.js';
 import { loadPolygonCategory } from './loaders/polygons.js';
 import { loadAmbulance } from './loaders/ambulance.js';
 import { loadSesUnits } from './loaders/sesUnits.js';
+import { loadSesFacilities } from './loaders/sesFacilities.js';
 import { setupCollapsible } from './ui/collapsible.js';
 import { initSearch } from './ui/search.js';
 import { updateActiveList } from './ui/activeList.js';
@@ -16,10 +17,25 @@ import { outlineColors, categoryMeta, headerColorAdjust, adjustHexColor } from '
 // Map init (uses global Leaflet script)
 const mapInstance = L.map('map', {
 	zoomSnap: 0.333,
-	zoomDelta: 0.333
+	zoomDelta: 0.333,
+	preferCanvas: true
 }).setView([-37.8,144.9],7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors'}).addTo(mapInstance);
 setMap(mapInstance);
+
+// Create panes to control z-order (bottom -> top): LGA, CFA, SES, Ambulance
+(() => {
+	const panes = [
+		['lga', 400],
+		['cfa', 410],
+		['ses', 420],
+		['ambulance', 430]
+	];
+	panes.forEach(([name, z]) => {
+		mapInstance.createPane(name);
+		mapInstance.getPane(name).style.zIndex = String(z);
+	});
+})();
 
 // Collapsibles
 setupCollapsible('activeHeader','activeList',true);
@@ -69,6 +85,7 @@ setupCollapsible('ambulanceHeader','ambulanceList');
 loadPolygonCategory('ses','ses.geojson');
 loadPolygonCategory('lga','LGAs.geojson');
 loadPolygonCategory('cfa','cfa.geojson');
+loadSesFacilities();
 loadAmbulance();
 loadSesUnits();
 

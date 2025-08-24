@@ -147,11 +147,11 @@ if (-not (Test-Path $envFile)) {
 # Start backend
 if (Port-InUse -port $BackendPort) { Write-Warn "Port $BackendPort already in use. Will only run health check."; $backendProc = $null }
 else {
-  Write-Info "Starting backend on http://$BackendHost:$BackendPort ..."
+  Write-Info "Starting backend on http://${BackendHost}:${BackendPort} ..."
   $backendProc = Start-Process -FilePath $VenvPython -ArgumentList (Join-Path $repoRoot 'backend\app.py') -WorkingDirectory $repoRoot -PassThru
 }
 
-$healthUrl = "http://$BackendHost:$BackendPort/health"
+$healthUrl = "http://${BackendHost}:${BackendPort}/health"
 if (Wait-HttpOk -url $healthUrl -timeoutSec 12) { Write-Ok "Backend healthy at $healthUrl" } else { Write-Err "Backend failed health check at $healthUrl" }
 
 # Start frontend
@@ -169,7 +169,7 @@ Ensure-Directory (Join-Path $repoRoot '.dev')
 $runInfo = [ordered]@{
   startedAt = (Get-Date).ToString('s')
   repoRoot  = $repoRoot
-  backend   = "http://$BackendHost:$BackendPort"
+  backend   = "http://${BackendHost}:${BackendPort}"
   frontend  = "http://127.0.0.1:$FrontendPort"
   backendPid  = ($backendProc.Id  | ForEach-Object { $_ })
   frontendPid = ($frontendProc.Id | ForEach-Object { $_ })
