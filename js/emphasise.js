@@ -19,7 +19,8 @@ export function setEmphasis(category,key,on,isPoint){
     const map = getMap(); // ensures map initialised; not used directly but safe
     const marker=featureLayers[category][key];
     if(marker && marker.getElement()){
-      marker.getElement().classList.toggle('ambulance-emph', !!on);
+      const cls = `${category}-emph`;
+      marker.getElement().classList.toggle(cls, !!on);
     }
   } else {
     const layers=featureLayers[category][key];

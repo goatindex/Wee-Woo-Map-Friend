@@ -12,7 +12,7 @@ import { toTitleCase } from './utils.js';
  * - Polygons: prefer layer options (stroke color, then fillColor).
  * - Points (divIcon markers): inspect the marker DOM for a background color.
  * Falls back to category outline color.
- * @param {'ses'|'lga'|'cfa'|'ambulance'} category
+ * @param {'ses'|'lga'|'cfa'|'ambulance'|'police'} category
  * @param {boolean} isPoint
  * @param {any} layerOrMarker
  * @returns {string}
@@ -47,6 +47,30 @@ function resolveLabelColor(category, isPoint, layerOrMarker){
 export function formatAmbulanceName(name) {
   let text = name.replace(/\bstation\b/gi, '').replace(/\s{2,}/g, ' ').trim();
   text = text.replace(/\bambulance\b/gi, 'Ambo');
+  return toTitleCase(text);
+}
+
+/**
+ * Condense and title-case police station names for UI labels.
+ * Removes the trailing word 'Police Station' and trims whitespace.
+ * @param {string} name
+ * @returns {string}
+ */
+export function formatPoliceName(name) {
+  const text = (name || '').replace(/\bpolice\s+station\b/gi, '').replace(/\s{2,}/g, ' ').trim();
+  return toTitleCase(text);
+}
+
+/**
+ * Condense and title-case police station names for UI labels.
+ * @param {string} name
+ * @returns {string}
+ */
+export function formatPoliceName(name) {
+  let text = (name || '')
+    .replace(/\spolice station\s*$/i, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
   return toTitleCase(text);
 }
 
@@ -100,7 +124,7 @@ export function getPolygonLabelAnchor(layer){
 /**
  * Ensure a single visible label exists for a category/key at the given layer/marker.
  * Replaces any existing label for that key.
- * @param {'ses'|'lga'|'cfa'|'ambulance'} category
+ * @param {'ses'|'lga'|'cfa'|'ambulance'|'police'} category
  * @param {string} key
  * @param {string} displayName
  * @param {boolean} isPoint
@@ -117,9 +141,10 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
   }
   if(!latlng) return;
   let text = displayName;
-  // For ambulance station map labels, remove the word 'station' (case-insensitive, as a word)
-  if (category === 'ambulance' && isPoint) {
-    text = formatAmbulanceName(text);
+  // For ambulance/police station map labels, tidy names
+  if (isPoint) {
+    if (category === 'ambulance') text = formatAmbulanceName(text);
+    if (category === 'police') text = formatPoliceName(text);
   }
   // For LGA polygon labels, remove 'Unincorporated' markers from the name
   if (category === 'lga' && !isPoint) {

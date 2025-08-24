@@ -5,6 +5,7 @@
 import { setMap } from './state.js';
 import { loadPolygonCategory } from './loaders/polygons.js';
 import { loadAmbulance } from './loaders/ambulance.js';
+import { loadPolice } from './loaders/police.js';
 import { loadSesUnits } from './loaders/sesUnits.js';
 import { loadSesFacilities } from './loaders/sesFacilities.js';
 import { setupCollapsible } from './ui/collapsible.js';
@@ -29,7 +30,8 @@ setMap(mapInstance);
 		['lga', 400],
 		['cfa', 410],
 		['ses', 420],
-		['ambulance', 430]
+		['ambulance', 430],
+		['police', 440]
 	];
 	panes.forEach(([name, z]) => {
 		mapInstance.createPane(name);
@@ -43,6 +45,7 @@ setupCollapsible('showAllHeader','showAllList');
 setupCollapsible('sesHeader','sesList');
 setupCollapsible('lgaHeader','lgaList');
 setupCollapsible('cfaHeader','cfaList');
+setupCollapsible('policeHeader','policeList');
 setupCollapsible('ambulanceHeader','ambulanceList');
 
 // Harden: align outlineColors with each category's styleFn color (prevents drift)
@@ -66,7 +69,8 @@ setupCollapsible('ambulanceHeader','ambulanceList');
 		sesHeader: 'ses',
 		lgaHeader: 'lga',
 		cfaHeader: 'cfa',
-		ambulanceHeader: 'ambulance'
+		ambulanceHeader: 'ambulance',
+		policeHeader: 'police'
 	};
 		Object.entries(headerToCategory).forEach(([id, cat]) => {
 		const el = document.getElementById(id);
@@ -87,6 +91,7 @@ loadPolygonCategory('lga','LGAs.geojson');
 loadPolygonCategory('cfa','cfa.geojson');
 loadSesFacilities();
 loadAmbulance();
+loadPolice();
 loadSesUnits();
 
 // Load waterway centrelines (but don't show by default)
