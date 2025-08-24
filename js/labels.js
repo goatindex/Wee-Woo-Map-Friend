@@ -52,17 +52,6 @@ export function formatAmbulanceName(name) {
 
 /**
  * Condense and title-case police station names for UI labels.
- * Removes the trailing word 'Police Station' and trims whitespace.
- * @param {string} name
- * @returns {string}
- */
-export function formatPoliceName(name) {
-  const text = (name || '').replace(/\bpolice\s+station\b/gi, '').replace(/\s{2,}/g, ' ').trim();
-  return toTitleCase(text);
-}
-
-/**
- * Condense and title-case police station names for UI labels.
  * @param {string} name
  * @returns {string}
  */
