@@ -7,6 +7,21 @@ import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers
 import { categoryMeta, outlineColors, labelColorAdjust, adjustHexColor } from '../config.js';
 import { formatAmbulanceName } from '../labels.js';
 
+// Bulk update guard to avoid repeatedly rebuilding the list on mass toggles
+let _bulkActive = false;
+let _bulkPending = false;
+
+export function beginActiveListBulk(){
+	_bulkActive = true;
+}
+
+export function endActiveListBulk(){
+	_bulkActive = false;
+	const pending = _bulkPending;
+	_bulkPending = false;
+	if (pending) updateActiveList();
+}
+
 
 /**
  * Safely get the actual checkbox element for a given category/key.
@@ -45,6 +60,7 @@ export function setupActiveListSync(category){
  * Rebuild the active list UI from current checked items in all categories.
  */
 export function updateActiveList(){
+	if (_bulkActive) { _bulkPending = true; return; }
 	const activeList=document.getElementById('activeList');
 	if(!activeList) return;
 	activeList.innerHTML='';
@@ -96,7 +112,13 @@ export function updateActiveList(){
 	headerRow.appendChild(sevenHeader);
 	activeList.appendChild(headerRow);
 
+	// Populate rows
 	['ses','lga','cfa','ambulance'].forEach(cat=>addItems(cat, activeList));
+
+	// If no rows, remove header to reduce visual noise
+	if (activeList.children.length === 1) { // only header present
+		activeList.innerHTML = '';
+	}
 }
 
 /**

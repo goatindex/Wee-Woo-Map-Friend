@@ -28,6 +28,12 @@ export let activeListFilter = '';
  */
 export function setActiveListFilter(v){ activeListFilter = v; }
 
+// SES facility chevrons: coords and cached markers
+/** @type {Record<string, {lat:number, lng:number}>} */
+export const sesFacilityCoords = {};
+/** @type {Record<string, import('leaflet').Marker|null>} */
+export const sesFacilityMarkers = {};
+
 export let map = null;
 /**
  * Store the Leaflet map instance.

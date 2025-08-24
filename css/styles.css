@@ -142,17 +142,19 @@ html, body { overflow-x: hidden; }
 /* Legacy class for ambulance point labels: kept for compatibility; no visual impact */
 .ambulance-name-label { pointer-events: auto; }
 #activeList {
-  position: sticky;
-  top: 42px; /* height of #activeHeader */
-  z-index: 9;
-  background: #fff;
+  /* Scrollable container for All Active items */
   max-height: 30vh;
   overflow-y: auto;
+  background: #fff;
 }
 
 /* All Active: header row underline to separate header from items */
 .active-list-header {
-  position: relative;
+  /* Freeze header while the list scrolls */
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #fff;
 }
 .active-list-header::after {
   content: "";
