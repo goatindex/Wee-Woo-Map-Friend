@@ -82,42 +82,52 @@ export function updateActiveList(){
 	headerRow.appendChild(nameHeader);
 	// Emphasise header
 	const emphHeader=document.createElement('span');
-	emphHeader.textContent='‼';
+	emphHeader.textContent='📢';
 	emphHeader.title='Emphasise';
 	emphHeader.style.display='flex';
 	emphHeader.style.justifyContent='center';
 	emphHeader.style.alignItems='center';
 	emphHeader.style.width='32px';
 	emphHeader.style.fontWeight='bold';
+	emphHeader.classList.add('active-list-icon-header');
 	headerRow.appendChild(emphHeader);
 	// Show Name header
 	const nameLabelHeader=document.createElement('span');
-	nameLabelHeader.textContent='⁇';
+	nameLabelHeader.textContent='🏷️';
 	nameLabelHeader.title='Show Name';
 	nameLabelHeader.style.display='flex';
 	nameLabelHeader.style.justifyContent='center';
 	nameLabelHeader.style.alignItems='center';
 	nameLabelHeader.style.width='32px';
 	nameLabelHeader.style.fontWeight='bold';
+	nameLabelHeader.classList.add('active-list-icon-header');
 	headerRow.appendChild(nameLabelHeader);
 	// 7/7 header
 	const sevenHeader=document.createElement('span');
-	sevenHeader.textContent='7/7';
-	sevenHeader.title='7-day forecast/history';
+	sevenHeader.textContent='🌦️';
+	sevenHeader.title='7-day weather';
 	sevenHeader.style.display='flex';
 	sevenHeader.style.justifyContent='center';
 	sevenHeader.style.alignItems='center';
 	sevenHeader.style.width='32px';
 	sevenHeader.style.fontWeight='bold';
+	sevenHeader.classList.add('active-list-icon-header');
 	headerRow.appendChild(sevenHeader);
 	activeList.appendChild(headerRow);
 
 	// Populate rows
 	['ses','lga','cfa','ambulance','police'].forEach(cat=>addItems(cat, activeList));
 
-	// If no rows, remove header to reduce visual noise
+	// If no rows, remove header to reduce visual noise and keep collapsed
+	const headerEl = document.getElementById('activeHeader');
 	if (activeList.children.length === 1) { // only header present
 		activeList.innerHTML = '';
+		if (headerEl) headerEl.classList.add('collapsed');
+		activeList.style.display = 'none';
+	} else {
+		// There are items; ensure section is expanded
+		if (headerEl) headerEl.classList.remove('collapsed');
+		activeList.style.display = '';
 	}
 }
 
@@ -250,7 +260,7 @@ function addItems(category, container) {
 				});
 			}
 		}
-		// 7/7 Weather checkbox (inline, right of ??)
+		// 7/7 Weather checkbox (inline, right of label toggle)
 		const sevenCell = document.createElement('span');
 		sevenCell.style.display = 'flex';
 		sevenCell.style.justifyContent = 'center';
@@ -259,7 +269,7 @@ function addItems(category, container) {
 		const sevenCb = document.createElement('input');
 		sevenCb.type = 'checkbox';
 		sevenCb.className = 'sevenSevenCheckbox';
-		sevenCb.title = 'Show 7-day forecast/history';
+	sevenCb.title = 'Show 7-day weather';
 		sevenCb.style.width = '18px';
 		sevenCb.style.height = '18px';
 		sevenCb.style.margin = '0';
@@ -272,7 +282,7 @@ function addItems(category, container) {
 				const lon = row.dataset.lon;
 				if (lat && lon && meta.type === 'polygon') {
 					// Show loading state while fetching
-					weatherBox.innerHTML = '<div style="display:flex;gap:8px;align-items:center"><span>Loading 7/7…</span><span class="spinner" style="width:12px;height:12px;border:2px solid #ccc;border-top-color:#333;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite"></span></div>';
+					weatherBox.innerHTML = '<div style="display:flex;gap:8px;align-items:center"><span>Loading weather…</span><span class="spinner" style="width:12px;height:12px;border:2px solid #ccc;border-top-color:#333;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite"></span></div>';
 					weatherBox.style.display = 'block';
 					try {
 						const { forecastData, historyData } = await fetchWeatherData(lat, lon);

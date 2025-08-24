@@ -26,6 +26,7 @@ Default to read‑only. Do not modify files unless explicitly approved.
 - Non‑approval examples: questions or feedback such as “What do you think?”, “Any suggestions?”, “Can you explain?”, “Review this”, “Demo only”.
 
 Preflight requirement (before any edit, ask to proceed):
+
 - Summary: what will change and why.
 - Files: exact list of files to touch (add/update/delete).
 - Behavior impact: none or concise note.
@@ -33,20 +34,25 @@ Preflight requirement (before any edit, ask to proceed):
 - End with “Proceed?” and wait for an explicit approval phrase.
 
 Modes:
+
 - Dry‑run by default: present plan and expected diffs; do not apply.
 - Apply mode only after approval; apply exactly the approved scope.
 
 Scope control:
+
 - Only modify the files listed in the approved preflight.
 - If additional changes are discovered, pause and send a new preflight for approval.
 
 Post‑implementation questions are not approval:
+
 - Treat follow‑up questions/observations as discussion only. Do not make further edits without explicit approval.
 
 Emergency/Hotfix policy:
+
 - If a just‑made change breaks the build/runtime, immediately auto‑revert that specific change and report. All other fixes still require approval.
 
 PR‑first preference (when VCS is present):
+
 - Prefer creating a branch and preview/PR over direct edits, unless the user says “commit directly”.
 
 ---
@@ -54,6 +60,7 @@ PR‑first preference (when VCS is present):
 ### Templates
 
 #### Preflight Checklist (teaching)
+
 - Goal + assumptions
 - Files to touch (add/update/delete)
 - Proposed changes (bullets) + short teaching note (what/why/trade‑offs)
@@ -63,6 +70,7 @@ PR‑first preference (when VCS is present):
 - End with “Proceed?” and wait for explicit approval
 
 #### Post‑implementation Report
+
 - Changes applied (bullet summary)
 - Verification results (build, lint, runtime) and any diffs
 - Human‑readable diff summary (no raw patches)

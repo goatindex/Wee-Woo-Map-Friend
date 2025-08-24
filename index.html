@@ -11,39 +11,45 @@
   <div id="map"></div>
   <div class="layer-menu" id="layerMenu">
   <div class="search-sticky">
-    <div id="sidebarTitle" class="sidebar-title">WeeWoo Map Friend 🚨</div>
+  <div id="sidebarTitle" class="sidebar-title"><span class="title-emojis">🚨🗺️🫶</span> | WeeWoo Map Friend </div>
+    <div class="sidebar-tools" aria-label="Quick tools">
+  <button id="sidebarBtn1" class="sidebar-tool-btn" type="button" title="Tool 1">♻️</button>
+  <button id="sidebarBtn2" class="sidebar-tool-btn" type="button" title="Tool 2">📚</button>
+  <button id="sidebarBtn3" class="sidebar-tool-btn" type="button" title="Tool 3">ℹ️</button>
+    </div>
     <div class="search-box-wrap">
       <input type="text" class="search-box" id="globalSidebarSearch" placeholder="Search all layers..." autocomplete="off" />
       <div id="sidebarSearchDropdown" class="sidebar-search-dropdown"></div>
     </div>
   </div>
-  <h4 id="activeHeader"><span class="collapse-arrow">&#9660;</span>All Active</h4>
-  <div class="collapsible-list" id="activeList" style="display: block;"></div>
+  <h4 id="activeHeader"><span class="collapse-arrow">&#9660;</span>📌 All Active</h4>
+  <div class="collapsible-list" id="activeList" style="display: none;"></div>
     
     <div class="divider"></div>
-    <h4 id="showAllHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>Show All</h4>
+  <h4 id="showAllHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>🧾 Show All</h4>
     <div class="collapsible-list" id="showAllList" style="display: none;">
-      <label><input type="checkbox" id="toggleAllSES" checked> SES Response Areas</label>
-      <label><input type="checkbox" id="toggleAllLGAs" checked> Local Government Areas</label>
-      <label><input type="checkbox" id="toggleAllCFA" checked> CFA Response Areas</label>
-      <label><input type="checkbox" id="toggleAllAmbulance"> Ambulance Stations</label>
-        <label><input type="checkbox" id="toggleAllPolice"> Police Stations</label>
+  <label><input type="checkbox" id="toggleAllSES" checked> 👷 SES Response Areas</label>
+  <label><input type="checkbox" id="toggleAllLGAs" checked> 🏛️ Local Government Areas</label>
+  <label><input type="checkbox" id="toggleAllCFA" checked> 🔥 CFA Response Areas</label>
+  <label><input type="checkbox" id="toggleAllAmbulance"> 🚑 Ambulance Stations</label>
+  <label><input type="checkbox" id="toggleAllPolice"> 👮 Police Stations</label>
     </div>
     <div class="divider"></div>
-    <h4 id="sesHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>SES Response Areas</h4>
+  <h4 id="sesHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>👷 SES Response Areas</h4>
     <div class="collapsible-list" id="sesList" style="display: none;"></div>
     <div class="divider"></div>
-    <h4 id="lgaHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>Local Government Areas</h4>
+  <h4 id="lgaHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>🏛️ Local Government Areas</h4>
     <div class="collapsible-list" id="lgaList" style="display: none;"></div>
   <div class="divider"></div>
-  <h4 id="cfaHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>CFA Response Areas</h4>
+  <h4 id="cfaHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>🔥 CFA Response Areas</h4>
   <div class="collapsible-list" id="cfaList" style="display: none;"></div>
   <div class="divider"></div>
-  <h4 id="ambulanceHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>Ambulance Stations</h4>
+  <h4 id="ambulanceHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>🚑 Ambulance Stations</h4>
   <div class="collapsible-list" id="ambulanceList" style="display: none;"></div>
   <div class="divider"></div>
-  <h4 id="policeHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>Police Stations</h4>
+  <h4 id="policeHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>👮 Police Stations</h4>
   <div class="collapsible-list" id="policeList" style="display: none;"></div>
+  <div class="divider"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"></script>

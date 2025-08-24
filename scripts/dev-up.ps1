@@ -42,10 +42,10 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Write-Info($msg){ Write-Host "[INFO ] $msg" -ForegroundColor Cyan }
-function Write-Ok($msg){ Write-Host "[ OK  ] $msg" -ForegroundColor Green }
-function Write-Warn($msg){ Write-Host "[WARN ] $msg" -ForegroundColor Yellow }
-function Write-Err($msg){ Write-Host "[FAIL ] $msg" -ForegroundColor Red }
+function Write-Info($msg) { Write-Host "[INFO ] $msg" -ForegroundColor Cyan }
+function Write-Ok($msg) { Write-Host "[ OK  ] $msg" -ForegroundColor Green }
+function Write-Warn($msg) { Write-Host "[WARN ] $msg" -ForegroundColor Yellow }
+function Write-Err($msg) { Write-Host "[FAIL ] $msg" -ForegroundColor Red }
 
 function Get-RepoRoot {
   # scripts/ is one level below repo root
@@ -62,7 +62,8 @@ function Wait-HttpOk($url, [int]$timeoutSec = 10) {
     try {
       $resp = Invoke-WebRequest -UseBasicParsing -Uri $url -TimeoutSec 3
       if ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 500) { return $true }
-    } catch { }
+    }
+    catch { }
     Start-Sleep -Milliseconds 300
   }
   return $false
@@ -72,20 +73,23 @@ function Port-InUse([int]$port) {
   try {
     $probe = Test-NetConnection -ComputerName '127.0.0.1' -Port $port -WarningAction SilentlyContinue
     return [bool]$probe.TcpTestSucceeded
-  } catch { return $false }
+  }
+  catch { return $false }
 }
 
 function Show-PythonVersions($pythonExe) {
   try { & $pythonExe --version } catch { Write-Warn "Python not available at $pythonExe" }
   try { & $pythonExe -m pip --version } catch { Write-Warn "pip not available (yet)" }
-  foreach($pkg in @('Flask','requests','python-dotenv')){
+  foreach ($pkg in @('Flask', 'requests', 'python-dotenv')) {
     try {
       $info = & $pythonExe -m pip show $pkg 2>$null
       if ($LASTEXITCODE -eq 0 -and $info) {
         $ver = ($info | Select-String '^Version:' | ForEach-Object { $_.ToString().Split(':')[1].Trim() })
         if ($ver) { Write-Host "$pkg $ver" } else { Write-Host "$pkg (installed)" }
-      } else { Write-Host "$pkg (not installed)" }
-    } catch { Write-Host "$pkg (not installed)" }
+      }
+      else { Write-Host "$pkg (not installed)" }
+    }
+    catch { Write-Host "$pkg (not installed)" }
   }
 }
 
@@ -95,7 +99,7 @@ function Stop-Previous {
   $pidsFile = Get-PidsFile
   if (-not (Test-Path $pidsFile)) { Write-Warn "No PID file found ($pidsFile). Nothing to stop."; return }
   $data = Get-Content $pidsFile -Raw | ConvertFrom-Json
-  foreach($p in @($data.backendPid, $data.frontendPid)){
+  foreach ($p in @($data.backendPid, $data.frontendPid)) {
     if ($p -and $p -gt 0) {
       try { Stop-Process -Id $p -Force -ErrorAction SilentlyContinue; Write-Ok "Stopped PID $p" } catch { Write-Warn "Could not stop PID $p" }
     }
@@ -114,7 +118,8 @@ if (-not (Test-Path $VenvPython)) {
   Write-Info "Attempting to create virtual environment (.venv) using system Python..."
   try {
     python --version | Out-Null
-  } catch {
+  }
+  catch {
     Write-Err "System Python not found in PATH. Install Python or adjust -VenvPython path."
     exit 1
   }
@@ -139,7 +144,8 @@ if (-not (Test-Path $envFile)) {
   if (Test-Path $example) {
     Copy-Item $example $envFile -Force
     Write-Warn "Created backend\\.env from example. Edit it to set WILLYWEATHER_API_KEY and ALLOWED_ORIGINS as needed."
-  } else {
+  }
+  else {
     Write-Warn "No backend\\.env or example found. Proceeding with default envs."
   }
 }
@@ -167,10 +173,10 @@ if (Wait-HttpOk -url $indexUrl -timeoutSec 8) { Write-Ok "Frontend serving $inde
 # Record PIDs for easy teardown
 Ensure-Directory (Join-Path $repoRoot '.dev')
 $runInfo = [ordered]@{
-  startedAt = (Get-Date).ToString('s')
-  repoRoot  = $repoRoot
-  backend   = "http://${BackendHost}:${BackendPort}"
-  frontend  = "http://127.0.0.1:$FrontendPort"
+  startedAt   = (Get-Date).ToString('s')
+  repoRoot    = $repoRoot
+  backend     = "http://${BackendHost}:${BackendPort}"
+  frontend    = "http://127.0.0.1:$FrontendPort"
   backendPid  = ($backendProc.Id  | ForEach-Object { $_ })
   frontendPid = ($frontendProc.Id | ForEach-Object { $_ })
 }

@@ -4,7 +4,7 @@
   top: 0;
   z-index: 1001; /* above section headers */
   background: #fff;
-  padding-bottom: 6px;
+  padding-bottom: var(--sidebar-tools-vpad, 8px);
   border-bottom: 1px solid #ddd;
   box-shadow: 0 1px 0 rgba(0,0,0,0.06);
 }
@@ -19,10 +19,14 @@
   color: var(--sidebar-title-color, #222);
   background: var(--sidebar-title-bg, #fff);
   padding: 0 var(--sidebar-title-padding-x, 6px);
+  border-bottom: var(--sidebar-title-divider-width, 2px) solid var(--sidebar-title-divider-color, #ddd);
+  margin-bottom: var(--gap-below-title, 24px);
+  margin-top: 0px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.sidebar-title .title-emojis { letter-spacing: var(--title-emoji-gap, -5px); }
 .sidebar-search-dropdown {
   position: absolute;
   top: 38px;
@@ -33,7 +37,7 @@
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   margin-top: 0;
-  margin-bottom: 8px;
+  margin-bottom: 0px;
   z-index: 1100;
   max-height: 220px;
   overflow-y: auto;
@@ -67,13 +71,44 @@ html, body { overflow-x: hidden; }
   --sidebar-title-color: #222;
   --sidebar-title-bg: #fff;
   --sidebar-title-padding-x: 6px;
+  /* Divider under the title */
+  --sidebar-title-divider-color: #ddd;
+  --sidebar-title-divider-width: 2px;
+  /* Gap under the title equals the minimize button height */
+  --gap-below-title: 0px;
+  /* Horizontal clearance for the minimize button (toggle size + small gap) */
+  --sidebar-right-gap: 6px;
+  --sidebar-right-pad-for-toggle: calc(var(--sidebar-toggle-size) + var(--sidebar-right-gap));
+  /* Controls the gap between the 'All Active' title and the 'Name' header */
+  --active-list-top-gap: 8px;
+  /* Unify emoji/icon font size across sidebar buttons */
+  --sidebar-button-emoji-size: 27px;
+  /* Adjustable darken factor for button backgrounds */
+  --sidebar-button-bg-base: #ffffff;           /* starting color to darken */
+  --sidebar-button-darken-factor: 3%;         /* adjust this to change darkness */
+  --sidebar-button-hover-extra: 6%;            /* extra darkness on hover */
+  /* Computed backgrounds (modern browsers). Fallbacks exist where used. */
+  --sidebar-button-bg: color-mix(in srgb,
+    var(--sidebar-button-bg-base) calc(100% - var(--sidebar-button-darken-factor)),
+    black var(--sidebar-button-darken-factor)
+  );
+  --sidebar-button-bg-hover: color-mix(in srgb,
+    var(--sidebar-button-bg-base) calc(100% - calc(var(--sidebar-button-darken-factor) + var(--sidebar-button-hover-extra))),
+    black calc(var(--sidebar-button-darken-factor) + var(--sidebar-button-hover-extra))
+  );
+  /* Equal vertical padding above/below the sidebar buttons (divider gap and search gap) */
+  --sidebar-tools-vpad: 8px;
+  /* All Active header emoji size */
+  --active-list-icon-size: 24px;
+  /* Spacing between title emojis; negative values tighten */
+  --title-emoji-gap: -2px;
 }
 #layerMenu, .layer-menu {
   position: absolute;
   top: 10px;
   right: 10px;
   background: rgba(255,255,255,0.95);
-  padding: 12px 16px;
+  padding:  6px 16px;
   border-radius: 8px;
   z-index: 1000;
   font-family: sans-serif;
@@ -103,22 +138,51 @@ html, body { overflow-x: hidden; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 34px; /* default */
+  font-size: var(--sidebar-button-emoji-size, 18px);
   font-weight: 600; /* default (normal) */
   border: 1px solid #ccc;
   border-radius: 6px;
-  background: #fff;
+  background: var(--sidebar-button-bg, #f7f7f7);
   color: #333;
   cursor: pointer;
   z-index: 2000; /* ensure always clickable */
   box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
+.sidebar-toggle:hover { background: var(--sidebar-button-bg-hover, #f0f0f0); }
 .sidebar-toggle:active {
   transform: scale(0.98);
 }
 
 /* When placed outside the panel, keep it pinned to viewport */
-.sidebar-toggle { position: fixed; top: 12px; right: 12px; }
+.sidebar-toggle { position: fixed; top: 59px; right: 33px; }
+
+/* Inline tool buttons inside the sidebar (below title, above search) */
+.sidebar-tools {
+  display: flex;
+  gap: 6px;
+  padding-left: var(--sidebar-title-padding-x, 6px);
+  padding-right: var(--sidebar-title-padding-x, 6px);
+  padding-top: var(--sidebar-tools-vpad, 8px);
+  padding-bottom: var(--sidebar-tools-vpad, 8px);
+}
+.sidebar-tool-btn {
+  width: var(--sidebar-toggle-size, 34px);
+  height: var(--sidebar-toggle-size, 34px);
+  line-height: calc(var(--sidebar-toggle-size, 34px) - 4px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--sidebar-button-emoji-size, 18px);
+  font-weight: 700;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: var(--sidebar-button-bg, #f7f7f7);
+  color: #333;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.sidebar-tool-btn:hover { background: var(--sidebar-button-bg-hover, #f0f0f0); }
+.sidebar-tool-btn:active { transform: scale(0.98); }
 .layer-menu h4 {
   margin: 0;
   font-size: 1em;
@@ -136,9 +200,9 @@ html, body { overflow-x: hidden; }
   max-height: 30vh;
   overflow-y: auto;
   background: #fff;
-  margin-bottom: 24px;
+  margin-bottom: 0px;
   border-radius: 0 0 8px 8px;
-  padding-bottom: 8px;
+  padding-bottom: 0px;
 }
 #activeHeader {
   position: sticky;
@@ -150,7 +214,7 @@ html, body { overflow-x: hidden; }
 .layer-menu .group-controls { margin-bottom:8px; }
 .layer-menu .divider { border-bottom:1px solid #ccc; margin:8px 0; }
 .layer-menu .search-box {
-  width:100%; margin-bottom:8px; padding:2px 6px; font-size:0.95em;
+  width:100%; margin-bottom:0; padding:2px 6px; font-size:0.95em;
   border:1px solid #ccc; border-radius:4px; box-sizing:border-box;
 }
 .collapse-arrow { display:inline-block; margin-right:6px; transition:transform .2s; font-size:1.3em; position: relative; top: -1px;}
@@ -187,6 +251,8 @@ html, body { overflow-x: hidden; }
   max-height: 30vh;
   overflow-y: auto;
   background: #fff;
+  /* Space above the 'Name' row for visual separation from the 'All Active' title */
+  padding-top: var(--active-list-top-gap, 8px);
 }
 
 /* All Active: header row underline to separate header from items */
@@ -196,6 +262,10 @@ html, body { overflow-x: hidden; }
   top: 0;
   z-index: 5;
   background: #fff;
+}
+.active-list-icon-header {
+  font-size: 18px;
+  line-height: 1;
 }
 .active-list-header::after {
   content: "";

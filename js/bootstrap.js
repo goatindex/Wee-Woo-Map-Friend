@@ -40,7 +40,8 @@ setMap(mapInstance);
 })();
 
 // Collapsibles
-setupCollapsible('activeHeader','activeList',true);
+// Start All Active collapsed; it will auto-expand when the first item is added
+setupCollapsible('activeHeader','activeList',false);
 setupCollapsible('showAllHeader','showAllList');
 setupCollapsible('sesHeader','sesList');
 setupCollapsible('lgaHeader','lgaList');
@@ -154,7 +155,7 @@ window.addEventListener('DOMContentLoaded', () => {
 			btn.setAttribute('aria-controls', 'layerMenu');
 			btn.setAttribute('aria-expanded', 'true');
 			btn.title = 'Hide panel';
-			btn.textContent = '»';
+			btn.textContent = '⏩';
 			// Append to body so transforms on the sidebar don't affect it
 			document.body.appendChild(btn);
 		}
@@ -168,7 +169,7 @@ window.addEventListener('DOMContentLoaded', () => {
 				try { menu.inert = true; } catch {}
 			btn.setAttribute('aria-expanded', 'false');
 			btn.title = 'Show panel';
-			btn.textContent = '«';
+			btn.textContent = '⏪';
 		}
 	} catch {}
 	btn.addEventListener('click', () => {
@@ -178,8 +179,19 @@ window.addEventListener('DOMContentLoaded', () => {
 			try { menu.inert = minimized; } catch {}
 		btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
 		btn.title = expanded ? 'Hide panel' : 'Show panel';
-		btn.textContent = expanded ? '»' : '«';
+		btn.textContent = expanded ? '⏩' : '⏪';
 		try { localStorage.setItem('sidebarMinimized', minimized ? '1' : '0'); } catch {}
+	});
+
+	// Attach inert click handlers to sidebar tool buttons (1, 2, 3)
+	['sidebarBtn1','sidebarBtn2','sidebarBtn3'].forEach((id, idx) => {
+		const el = document.getElementById(id);
+		if (!el || el._bound) return;
+		el._bound = true;
+		el.addEventListener('click', () => {
+			console.log(`Sidebar tool ${idx + 1} clicked`);
+			window.dispatchEvent(new CustomEvent('sidebar-tool-click', { detail: { index: idx + 1, id } }));
+		});
 	});
 });
 
