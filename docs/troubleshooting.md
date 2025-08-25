@@ -59,7 +59,7 @@ Having trouble with WeeWoo Map Friend? Here are solutions to common issues:
 - **Try zooming your browser** (Ctrl/Cmd + or -) if text is too small or large
 - **Check your screen resolution** - the app is designed for desktop and tablet screens
 
-## Data Issues
+## 📊 Data Issues
 
 ### Information Seems Outdated
 - **This is expected** - emergency service boundaries and station locations change over time
@@ -71,7 +71,7 @@ Having trouble with WeeWoo Map Friend? Here are solutions to common issues:
 - **Try searching for nearby areas** which might include your location
 - **Browse the category lists** to see what's available
 
-## Still Having Problems?
+## 🆘 Still Having Problems?
 
 If none of these solutions help:
 
