@@ -2,9 +2,7 @@
  * @module loaders/sesFacilities
  * Load SES facility point coordinates and map them to SES polygon keys.
  */
-import { sesFacilityCoords } from '../state.js';
-import { convertMGA94ToLatLon } from '../utils/coordConvert.js';
-import { categoryMeta } from '../config.js';
+// ...existing code...
 
 function normaliseKey(name){
   let s = (name||'').trim();
@@ -18,7 +16,7 @@ function normaliseKey(name){
 /**
  * Load sesbld.geojson and build a name->coord map keyed like SES polygons.
  */
-export async function loadSesFacilities(){
+window.loadSesFacilities = async function(){
   try{
     const res = await fetch('sesbld.geojson');
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -53,5 +51,21 @@ export async function loadSesFacilities(){
     console.log(`SES facilities loaded: ${loaded} (unique keys: ${Object.keys(sesFacilityCoords).length})`);
   }catch(err){
     console.error('Failed to load sesbld.geojson:', err);
+  }
+}
+
+/**
+ * Returns SES facility features as a Promise for preloader batching.
+ */
+window.getSESFacilities = async function() {
+  try {
+    const res = await fetch('sesbld.geojson');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data || !Array.isArray(data.features)) throw new Error('Invalid GeoJSON');
+    return data.features;
+  } catch (err) {
+    console.error('Error loading SES facility features:', err);
+    return [];
   }
 }

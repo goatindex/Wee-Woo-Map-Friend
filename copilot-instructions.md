@@ -115,6 +115,30 @@ This project is a Leaflet.js-based web map for visualizing SES, LGA, CFA, and Am
 - If sidebar controls do not work, check for missing event listeners or DOM element IDs.
 - If syntax errors occur, use Copilot to clean up braces and imports.
 
+### ⚠️ Critical: HTML File Corruption Prevention
+
+**BEFORE declaring files "corrupted" or making wholesale replacements:**
+
+1. **STOP and investigate systematically** - layout issues are often single malformed tags
+2. **Check meta tags first** - especially viewport tag which controls layout scaling
+3. **Look for misplaced content** - string replacements can insert content in wrong locations
+4. **Make minimal, targeted fixes** rather than wholesale file replacements
+
+**Common "corruption" patterns that are actually simple fixes:**
+
+- **Layout broken/everything tiny**: Usually corrupted viewport meta tag
+  - Fix: Restore `<meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no" />`
+- **Content in wrong places**: String replacement boundaries were too broad
+  - Fix: Remove misplaced content and restore proper tag structure
+
+**Loop prevention rules:**
+- If user says "it's not corrupted" - STOP making changes and investigate the specific issue
+- Make one small change at a time, not multiple rapid attempts
+- Ask user to confirm symptoms before assuming solutions
+- Never replace entire files without explicit user permission
+
+**Emergency recovery**: If stuck in a loop, stop all changes and ask user for clarification of actual symptoms.
+
 ## File Structure Reference
 
 - `index.html`: Main HTML structure and sidebar.

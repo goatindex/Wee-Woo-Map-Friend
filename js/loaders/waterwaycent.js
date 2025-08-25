@@ -2,15 +2,15 @@
  * @module loaders/waterwaycent
  * Placeholder no-op module for future waterway centreline features.
  */
-import { getMap } from '../state.js';
-export function loadWaterwayCentres() {
+// ...existing code...
+window.loadWaterwayCentres = function() {
   // Disabled: no operation
 }
 
-export function showWaterwayCentres() {
+window.showWaterwayCentres = function() {
   // Disabled: no operation
 }
 
-export function hideWaterwayCentres() {
+window.hideWaterwayCentres = function() {
   // Disabled: no operation
 }

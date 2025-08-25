@@ -2,9 +2,7 @@
  * @module loaders/sesUnits
  * Render non-interactive SES unit name labels from ses.geojson.
  */
-import { getMap } from '../state.js';
-import { toTitleCase } from '../utils.js';
-import { showSidebarError, isOffline } from '../utils/errorUI.js';
+// ...existing code...
 
 /**
  * Loads SES unit markers from ses.geojson and adds them to the map.
@@ -12,8 +10,8 @@ import { showSidebarError, isOffline } from '../utils/errorUI.js';
  * @async
  * @returns {Promise<void>}
  */
-export async function loadSesUnits(){
-  const map = getMap();
+window.loadSesUnits = async function(){
+  const map = window.getMap();
   // Check offline status before attempting fetch
   if (isOffline()) {
     showSidebarError('You are offline. SES units data cannot be loaded.');
@@ -33,14 +31,14 @@ export async function loadSesUnits(){
       if(unitName && x && y){
         const icon=L.divIcon({
           className:'ses-unit-marker',
-          html:`<div class="ses-unit-label">${toTitleCase(unitName)}</div>`,
+          html:`<div class="ses-unit-label">${window.toTitleCase(unitName)}</div>`,
           iconAnchor:[60,44]
         });
         L.marker([y,x], { icon, interactive:false }).addTo(map);
       }
     });
   }catch(e){
-    showSidebarError(`Failed to load SES units: ${e.message}`);
+  window.showSidebarError(`Failed to load SES units: ${e.message}`);
     console.error('Error loading SES units:', e);
   }
 }

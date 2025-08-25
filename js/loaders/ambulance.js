@@ -2,20 +2,36 @@
  * @module loaders/ambulance
  * Load Ambulance Victoria stations from GeoJSON and manage marker visibility.
  */
-import { categoryMeta } from '../config.js';
-import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers, getMap } from '../state.js';
-import { createCheckbox, toTitleCase } from '../utils.js';
-import { setupActiveListSync, updateActiveList, beginActiveListBulk, endActiveListBulk } from '../ui/activeList.js';
-import { showSidebarError, isOffline } from '../utils/errorUI.js';
+// ...existing code...
 
 let ambulanceData=[];
+
+/**
+ * Returns ambulance features as a Promise for preloader batching.
+ */
+window.getAmbulanceFeatures = async function() {
+  if (ambulanceData.length) return ambulanceData;
+  try {
+    const res = await fetch('ambulance.geojson');
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    ambulanceData = data.features.filter(f =>
+      f?.properties?.facility_state?.toLowerCase() === 'victoria' &&
+      f.properties.facility_lat && f.properties.facility_long
+    );
+    return ambulanceData;
+  } catch (err) {
+    console.error('Error loading ambulance features:', err);
+    return [];
+  }
+}
 
 /**
  * Load the ambulance dataset and build the sidebar list.
  * Skips non‑Victorian entries and those missing coordinates.
  * @returns {Promise<void>}
  */
-export async function loadAmbulance(){
+window.loadAmbulance = async function(){
   const category='ambulance', meta=categoryMeta[category];
   const map = getMap();
   try{
@@ -53,7 +69,7 @@ listEl.innerHTML = '';
       const checked=meta.defaultOn(fullName);
       // Remove 'ambulance station' at end (case-insensitive), trim, and title case for sidebar
       let displayName = fullName.replace(/\s*ambulance station\s*$/i, '').trim();
-      displayName = toTitleCase(displayName);
+      displayName = window.toTitleCase(displayName);
       const cb=createCheckbox(`${category}_${key}`,displayName,checked,(e)=>{
         e.target.checked? showAmbulanceMarker(key): hideAmbulanceMarker(key);
         if(!e.target.checked){
@@ -116,7 +132,7 @@ function createAmbulanceIcon(){
   });
 }
 
-export function showAmbulanceMarker(key){
+window.showAmbulanceMarker = function(key){
   const map = getMap();
   if(featureLayers.ambulance[key]){ map.addLayer(featureLayers.ambulance[key]); return; }
   const feature = ambulanceData.find(f=> f.properties.facility_name.trim().toLowerCase().replace(/\s+/g,'_')===key);
@@ -132,7 +148,7 @@ export function showAmbulanceMarker(key){
   marker.bindPopup(feature.properties.facility_name);
   featureLayers.ambulance[key]=marker;
 }
-export function hideAmbulanceMarker(key){
+window.hideAmbulanceMarker = function(key){
   const map = getMap();
   const m=featureLayers.ambulance[key];
   if(m){ map.removeLayer(m); if(m.getElement()) m.getElement().classList.remove('ambulance-emph'); }

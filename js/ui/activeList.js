@@ -2,20 +2,17 @@
  * @module ui/activeList
  * Build and maintain the "All Active" sidebar section.
  */
-import { ensureLabel, removeLabel } from '../labels.js';
-import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers, activeListFilter } from '../state.js';
-import { categoryMeta, outlineColors, labelColorAdjust, adjustHexColor } from '../config.js';
-import { formatAmbulanceName, formatPoliceName } from '../labels.js';
+// ...existing code...
 
 // Bulk update guard to avoid repeatedly rebuilding the list on mass toggles
 let _bulkActive = false;
 let _bulkPending = false;
 
-export function beginActiveListBulk(){
+window.beginActiveListBulk = function(){
 	_bulkActive = true;
 }
 
-export function endActiveListBulk(){
+window.endActiveListBulk = function(){
 	_bulkActive = false;
 	const pending = _bulkPending;
 	_bulkPending = false;
@@ -43,9 +40,9 @@ function getCategoryCheckbox(category, key){
 
 /**
  * Attach change listeners to a category's checkboxes so the active list reflects UI state.
- * @param {'ses'|'lga'|'cfa'|'ambulance'} category
+ * @param {'ses'|'lga'|'cfa'|'ambulance'|'police'|'frv'} category
  */
-export function setupActiveListSync(category){
+window.setupActiveListSync = function(category){
 	namesByCategory[category].forEach(n=>{
 		const key=nameToKey[category][n];
 	const cb=getCategoryCheckbox(category, key);
@@ -59,7 +56,7 @@ export function setupActiveListSync(category){
 /**
  * Rebuild the active list UI from current checked items in all categories.
  */
-export function updateActiveList(){
+window.updateActiveList = function(){
 	if (_bulkActive) { _bulkPending = true; return; }
 	const activeList=document.getElementById('activeList');
 	if(!activeList) return;
@@ -116,7 +113,7 @@ export function updateActiveList(){
 	activeList.appendChild(headerRow);
 
 	// Populate rows
-	['ses','lga','cfa','ambulance','police'].forEach(cat=>addItems(cat, activeList));
+	['ses','lga','cfa','ambulance','police','frv'].forEach(cat=>addItems(cat, activeList));
 
 	// If no rows, remove header to reduce visual noise and keep collapsed
 	const headerEl = document.getElementById('activeHeader');
@@ -134,7 +131,7 @@ export function updateActiveList(){
 /**
  * Append visible items for a given category to the active list container.
  * Populates row metadata (lat/lon for polygons) used by the weather box feature.
- * @param {'ses'|'lga'|'cfa'|'ambulance'} category
+ * @param {'ses'|'lga'|'cfa'|'ambulance'|'police'|'frv'} category
  * @param {HTMLElement} container
  */
 function addItems(category, container) {
@@ -234,13 +231,9 @@ function addItems(category, container) {
 				} else {
 					layerOrMarker = featureLayers[category][key] && featureLayers[category][key][0];
 				}
-				import('../labels.js').then(({ ensureLabel }) => {
-					ensureLabel(category, key, name, isPoint, layerOrMarker);
-				});
+				window.ensureLabel(category, key, name, isPoint, layerOrMarker);
 			} else {
-				import('../labels.js').then(({ removeLabel }) => {
-					removeLabel(category, key);
-				});
+				window.removeLabel(category, key);
 			}
 		});
 		labelCell.appendChild(labelCb);
@@ -255,9 +248,7 @@ function addItems(category, container) {
 				layerOrMarker = featureLayers[category][key] && featureLayers[category][key][0];
 			}
 			if (layerOrMarker) {
-				import('../labels.js').then(({ ensureLabel }) => {
-					ensureLabel(category, key, name, isPoint, layerOrMarker);
-				});
+				window.ensureLabel(category, key, name, isPoint, layerOrMarker);
 			}
 		}
 		// 7/7 Weather checkbox (inline, right of label toggle)
@@ -382,4 +373,4 @@ function renderWeatherBox(forecastData, historyData) {
 }
 
 // Listen for checkbox changes
-import { setEmphasis } from '../emphasise.js';
+// ...existing code...

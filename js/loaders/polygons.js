@@ -1,62 +1,42 @@
 /**
  * @module loaders/polygons
- * Load polygonal categories (ses, lga, cfa) from GeoJSON and wire UI controls.
+ * Load polygonal categories (ses, lga, cfa, frv) from GeoJSON and wire UI controls.
  */
-import { categoryMeta } from '../config.js';
-import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers, sesFacilityCoords, sesFacilityMarkers } from '../state.js';
-import { setupActiveListSync, updateActiveList, beginActiveListBulk, endActiveListBulk } from '../ui/activeList.js';
-import { toTitleCase, createCheckbox } from '../utils.js';
-import { formatLgaName } from '../labels.js';
-import { addPolygonPlus, removePolygonPlus } from '../polygonPlus.js';
-import { getMap } from '../state.js';
-import { showSidebarError, isOffline } from '../utils/errorUI.js';
-import { convertMGA94ToLatLon } from '../utils/coordConvert.js';
-import { outlineColors } from '../config.js';
+// Converted to window pattern for vanilla JS compatibility
 
 function makeSesChevronIcon(){
-  const color = outlineColors.ses || '#FF9900';
+  const color = window.outlineColors.ses || '#FF9900';
   const size = 14; // height of triangle
   const half = 8;  // half width of base
   const html = `<div style="width:0;height:0;border-left:${half}px solid transparent;border-right:${half}px solid transparent;border-top:${size}px solid ${color};"></div>`;
   return L.divIcon({
     className: 'ses-chevron',
     html,
-    iconSize: [half*2, size],
-    iconAnchor: [half, 0], // tip at the marker point
-    pane: 'ses'
+    iconSize: [16, 14],
+    iconAnchor: [8, 14]
   });
 }
 
-function showSesChevron(key, map){
-  const coord = sesFacilityCoords[key];
-  if(!coord){
-    console.warn(`SES facility coordinates missing for key: ${key}`);
-    return;
-  }
-  if(sesFacilityMarkers[key]){
-    try { map.addLayer(sesFacilityMarkers[key]); } catch {}
-    return;
-  }
-  const m = L.marker([coord.lat, coord.lng], { icon: makeSesChevronIcon(), interactive: false, pane: 'ses' });
-  sesFacilityMarkers[key] = m.addTo(map);
+function showSesChevron(key, map) {
+  if (window.sesFacilityMarkers[key]) return;
+  const coordData = window.sesFacilityCoords[key.toLowerCase()];
+  if (!coordData) return;
+  const icon = makeSesChevronIcon();
+  const marker = L.marker([coordData.lat, coordData.lng], { icon, pane: 'ses' }).addTo(map);
+  window.sesFacilityMarkers[key] = marker;
 }
 
-function hideSesChevron(key, map){
-  const m = sesFacilityMarkers[key];
-  if(m){ try { map.removeLayer(m); } catch {} }
+function hideSesChevron(key, map) {
+  const marker = window.sesFacilityMarkers[key];
+  if (marker) {
+    map.removeLayer(marker);
+    delete window.sesFacilityMarkers[key];
+  }
 }
 
-/**
- * Fetch and register a polygon category from a GeoJSON URL and render controls.
- * Handles offline detection, HTTP errors, and invalid data with user feedback.
- * No behavior change: comments only.
- * @param {'ses'|'lga'|'cfa'|'ambulance'} category
- * @param {string} url
- * @returns {Promise<void>}
- */
-export async function loadPolygonCategory(category, url) {
-  const meta = categoryMeta[category];
-  const map = getMap();
+window.loadPolygonCategory = async function(category, url) {
+  const meta = window.categoryMeta[category];
+  const map = window.getMap();
   // Normalise SES names to match facilities: strip "VIC SES"/"VICSES"/"SES" prefixes, trim, lowercase
   const normaliseSes = (s)=> (s||'')
     .replace(/^VIC\s*SES\s+/i, '')
@@ -65,193 +45,271 @@ export async function loadPolygonCategory(category, url) {
     .trim()
     .toLowerCase();
   try {
-    if (isOffline()) {
-      showSidebarError(`You are offline. ${category} data cannot be loaded.`);
+    if (window.isOffline()) {
+      window.showSidebarError(`You are offline. ${category} data cannot be loaded.`);
       return;
     }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (!data || !Array.isArray(data.features)) throw new Error('Invalid GeoJSON');
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch ${category}: ${response.status}`);
+    const geojson = await response.json();
 
-    // Pre-create containers
-    data.features.forEach(f => {
-      if (!f?.properties) return;
-  let raw = f.properties[meta.nameProp];
-      if (typeof raw !== 'string') return;
-  raw = raw.trim();
-      if (!raw) return;
-  const key = (category==='ses') ? normaliseSes(raw) : raw.toLowerCase();
-      if (!featureLayers[category][key]) featureLayers[category][key] = [];
-      // Add converted coordinates if X_CORD/Y_CORD exist
-      if (f.properties.X_CORD && f.properties.Y_CORD) {
-        const [lon, lat] = convertMGA94ToLatLon(f.properties.X_CORD, f.properties.Y_CORD);
-        f.properties.X_COORD = lon;
-        f.properties.Y_COORD = lat;
+    // Store features by clean name as key
+    geojson.features.forEach(feature => {
+      let rawName = feature.properties[meta.nameProp];
+      if (!rawName) return;
+      
+      // For coordinates: handle different projection systems
+      if (feature.geometry.type === 'Point' && category !== 'ambulance') {
+        const coords = feature.geometry.coordinates;
+        if (coords.length >= 2 && coords[0] > 1000) {
+          // Looks like MGA94/UTM coordinates, convert to lat/lng
+          try {
+            const latLng = window.convertMGA94ToLatLon(coords[0], coords[1]);
+            feature.geometry.coordinates = [latLng.lng, latLng.lat];
+          } catch (e) {
+            console.warn(`Failed to convert coordinates for ${rawName}:`, e);
+          }
+        }
+      }
+      
+      const cleanName = rawName.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+      const key = cleanName.toLowerCase().replace(/\s+/g, '_');
+      
+      if (window.featureLayers[category][key]) {
+        window.featureLayers[category][key].push(feature);
+      } else {
+        window.featureLayers[category][key] = [feature];
+      }
+      
+      // Store SES facility coordinates for chevron display
+      if (category === 'ses') {
+        const normalizedName = normaliseSes(cleanName);
+        if (normalizedName && !window.sesFacilityCoords[normalizedName]) {
+          // Calculate centroid for chevron placement if not available from facilities
+          if (feature.geometry.type === 'Point') {
+            window.sesFacilityCoords[normalizedName] = {
+              lat: feature.geometry.coordinates[1],
+              lng: feature.geometry.coordinates[0]
+            };
+          }
+        }
       }
     });
 
-    // Build GeoJSON (NOT added to map yet)
-    const tempLayer = L.geoJSON(data, {
-      style: meta.styleFn,
-      pane: category, // use panes defined in bootstrap.js
-      renderer: L.canvas(),
-      onEachFeature: (feature, layer) => {
-        if (!feature.properties) return;
-  let raw = feature.properties[meta.nameProp];
-        if (typeof raw !== 'string') raw = 'Unnamed';
-        raw = raw.trim();
-  const key = (category==='ses') ? normaliseSes(raw) : raw.toLowerCase();
-        if (!featureLayers[category][key]) featureLayers[category][key] = [];
-        featureLayers[category][key].push(layer);
-        layer.bindPopup(toTitleCase(raw));
-      }
+    // Create layers
+    Object.keys(window.featureLayers[category]).forEach(key => {
+      window.featureLayers[category][key] = window.featureLayers[category][key].map(feature => {
+        const style = meta.styleFn ? meta.styleFn() : {};
+        return L.geoJSON(feature, {
+          style,
+          pane: category
+        });
+      });
     });
 
-    // Fit bounds for SES only (optional)
-    if (category === 'ses' && tempLayer?.getBounds) {
-      const b = tempLayer.getBounds();
-      if (b.isValid()) map.fitBounds(b);
-    }
-
-    // Build name arrays
-  namesByCategory[category] = Object.keys(featureLayers[category])
+    // Populate namesByCategory for sidebar display
+    window.namesByCategory[category] = Object.keys(window.featureLayers[category])
       .map(k => {
-        const titled = toTitleCase(k);
-        return (category === 'lga') ? formatLgaName(titled) : titled;
+        const titled = window.toTitleCase(k);
+        if (category === 'lga') return window.formatLgaName(titled);
+        if (category === 'frv') return window.formatFrvName(titled);
+        return titled;
       })
       .sort((a, b) => a.localeCompare(b));
 
-    nameToKey[category] = {};
-    Object.keys(featureLayers[category]).forEach(k => {
-      const titled = toTitleCase(k);
-      const display = (category === 'lga') ? formatLgaName(titled) : titled;
-      nameToKey[category][display] = k;
+    window.nameToKey[category] = {};
+    Object.keys(window.featureLayers[category]).forEach(k => {
+      const titled = window.toTitleCase(k);
+      const display = (category === 'lga') ? window.formatLgaName(titled) : 
+                      (category === 'frv') ? window.formatFrvName(titled) : titled;
+      window.nameToKey[category][display] = k;
     });
 
     // Populate sidebar (all unchecked)
     const listEl = document.getElementById(meta.listId);
     listEl.innerHTML = '';
-    namesByCategory[category].forEach(displayName => {
-      const key = nameToKey[category][displayName];
-  const checked = meta.defaultOn(displayName);
+    window.namesByCategory[category].forEach(displayName => {
+      const key = window.nameToKey[category][displayName];
+      const checked = meta.defaultOn(displayName);
       const showName = true;
       // Create a row container and assign ID for search highlighting
       const row = document.createElement('div');
-      row.id = `${category}_${key}`;
       row.className = 'sidebar-list-row';
-      // Add the checkbox
-      const cb = createCheckbox(
-        `${category}_${key}`,
-        displayName,
-        checked,
+      row.id = `${category}_${key}`;
+      
+      const cb = window.createCheckbox(`${category}_${key}_checkbox`, displayName, checked, 
         e => {
           const on = e.target.checked;
-      featureLayers[category][key].forEach(l => {
+          window.featureLayers[category][key].forEach(l => {
             if (on) {
               l.addTo(map);
-              if (category === 'ambulance') addPolygonPlus(map, l);
-        if (category === 'ses') { showSesChevron(key, map); }
+              if (category === 'ambulance') window.addPolygonPlus(map, l);
+              if (category === 'ses') { showSesChevron(key, map); }
               // Show name label by default for polygons
-        if (categoryMeta[category].type === 'polygon') {
-                import('../labels.js').then(({ ensureLabel }) => {
-          const labelName = (category === 'lga') ? formatLgaName(displayName) : displayName;
-          ensureLabel(category, key, labelName, false, l);
-                });
+              if (window.categoryMeta[category].type === 'polygon') {
+                const labelName = (category === 'lga') ? window.formatLgaName(displayName) : 
+                                  (category === 'frv') ? window.formatFrvName(displayName) : displayName;
+                if (window.isBulkOperation) {
+                  // Defer label creation during bulk operations
+                  window.pendingLabels.push({category, key, labelName, isPoint: false, layer: l});
+                } else {
+                  window.ensureLabel(category, key, labelName, false, l);
+                }
               }
             } else {
               map.removeLayer(l);
-              if (category === 'ambulance') removePolygonPlus(l, map);
-        if (category === 'ses') { hideSesChevron(key, map); }
+              if (category === 'ambulance') window.removePolygonPlus(l, map);
+              if (category === 'ses') { hideSesChevron(key, map); }
+              // Clean up emphasis and labels
+              window.emphasised[category][key] = false;
+              if (window.nameLabelMarkers[category][key]) {
+                map.removeLayer(window.nameLabelMarkers[category][key]);
+                window.nameLabelMarkers[category][key] = null;
+              }
             }
           });
-          if (!on) {
-            emphasised[category][key] = false;
-            if (nameLabelMarkers[category][key]) {
-              map.removeLayer(nameLabelMarkers[category][key]);
-              nameLabelMarkers[category][key] = null;
-            }
-          }
-          if (category !== 'lga') {
-            Object.values(featureLayers.lga).flat().forEach(l => l && l.bringToFront && l.bringToFront());
-          }
-          updateActiveList();
+          window.updateActiveList();
         }
       );
       row.appendChild(cb);
-      listEl.appendChild(row);
-      // Add to map and set emphasis/label if default
+
+      // Auto-check if defaultOn
       if (checked) {
-        featureLayers[category][key].forEach(l => {
+        window.featureLayers[category][key].forEach(l => {
           l.addTo(map);
-          if (category === 'ambulance') addPolygonPlus(map, l);
+          if (category === 'ambulance') window.addPolygonPlus(map, l);
           if (category === 'ses') { showSesChevron(key, map); }
-          // Show name label by default for polygons
-          // Only call for polygons (not points)
-      if (meta.type === 'polygon') {
-            import('../labels.js').then(({ ensureLabel }) => {
-        const labelName = (category === 'lga') ? formatLgaName(displayName) : displayName;
-        ensureLabel(category, key, labelName, false, l);
-            });
+          if (meta.type === 'polygon') {
+            const labelName = (category === 'lga') ? window.formatLgaName(displayName) : 
+                              (category === 'frv') ? window.formatFrvName(displayName) : displayName;
+            if (window.isBulkOperation) {
+              // Defer label creation during bulk operations
+              window.pendingLabels.push({category, key, labelName, isPoint: false, layer: l});
+            } else {
+              window.ensureLabel(category, key, labelName, false, l);
+            }
           }
         });
-      } else {
-        featureLayers[category][key].forEach(l => {
-          map.removeLayer(l);
-          if (category === 'ambulance') removePolygonPlus(l, map);
-        });
       }
+      
+      listEl.appendChild(row);
     });
-    // After all polygons loaded, bring all LGA polygons to front
-  // No per-layer bringToFront calls; panes manage ordering
+
+    // Set up active list sync for this category
+    window.setupActiveListSync(category);
 
     // Group toggle
     const toggleAll = document.getElementById(meta.toggleAllId);
     if (toggleAll && !toggleAll._bound) {
       toggleAll._bound = true;
       toggleAll.checked = false;
-      toggleAll.addEventListener('change', e => {
+      toggleAll.addEventListener('change', async e => {
         const on = e.target.checked;
-        beginActiveListBulk();
-        namesByCategory[category].forEach(n => {
-          const key = nameToKey[category][n];
-          const container = document.getElementById(`${category}_${key}`);
-          let rowCb = null;
-          if (container && container.tagName !== 'INPUT') {
-            rowCb = container.querySelector('input[type="checkbox"]');
-          } else {
-            rowCb = container; // it's already the input
-          }
-          if (rowCb) {
-            rowCb.checked = on;
-            // Dispatch a change event so normal handlers run (adds/removes layers, updates active list, labels, emphasis)
-            rowCb.dispatchEvent(new Event('change', { bubbles: true }));
-          } else {
-            // Fallback: directly manipulate layers if checkbox not found (shouldn't happen)
-            featureLayers[category][key].forEach(l => on ? l.addTo(map) : map.removeLayer(l));
-            if (!on) {
-              emphasised[category][key] = false;
-              if (nameLabelMarkers[category][key]) {
-                map.removeLayer(nameLabelMarkers[category][key]);
-                nameLabelMarkers[category][key] = null;
+        const items = window.namesByCategory[category];
+        
+        // Optimistic UI: disable toggle and show loading state
+        toggleAll.disabled = true;
+        toggleAll.title = `${on ? 'Loading' : 'Unloading'} ${items.length} ${category} items...`;
+        
+        // Begin bulk operation for performance
+        window.beginBulkOperation();
+        window.beginActiveListBulk();
+        
+        try {
+          // Category-specific batch sizes for optimal performance
+          const batchSizes = {
+            'ses': 15,
+            'lga': 8,
+            'cfa': 12,
+            'frv': 5,
+            'ambulance': 20,
+            'police': 20
+          };
+          const batchSize = batchSizes[category] || 10;
+          for (let i = 0; i < items.length; i += batchSize) {
+            const batch = items.slice(i, i + batchSize);
+            
+            // Process current batch - direct layer manipulation for performance
+            batch.forEach(n => {
+              const key = window.nameToKey[category][n];
+              const container = document.getElementById(`${category}_${key}`);
+              let rowCb = null;
+              if (container && container.tagName !== 'INPUT') {
+                rowCb = container.querySelector('input[type="checkbox"]');
+              } else {
+                rowCb = container; // it's already the input
               }
+              
+              // Update checkbox state
+              if (rowCb) {
+                rowCb.checked = on;
+              }
+              
+              // Direct layer manipulation (bypass change event for performance)
+              window.featureLayers[category][key].forEach(l => {
+                if (on) {
+                  l.addTo(map);
+                  if (category === 'ambulance') window.addPolygonPlus(map, l);
+                  if (category === 'ses') { showSesChevron(key, map); }
+                  // Defer label creation during bulk operation
+                  if (window.categoryMeta[category].type === 'polygon') {
+                    const labelName = (category === 'lga') ? window.formatLgaName(n) : 
+                                      (category === 'frv') ? window.formatFrvName(n) : n;
+                    if (window.isBulkOperation) {
+                      window.pendingLabels.push({category, key, labelName, isPoint: false, layer: l});
+                    } else {
+                      window.ensureLabel(category, key, labelName, false, l);
+                    }
+                  }
+                } else {
+                  map.removeLayer(l);
+                  if (category === 'ambulance') window.removePolygonPlus(l, map);
+                  if (category === 'ses') { hideSesChevron(key, map); }
+                  // Clean up emphasis and labels
+                  window.emphasised[category][key] = false;
+                  if (window.nameLabelMarkers[category][key]) {
+                    map.removeLayer(window.nameLabelMarkers[category][key]);
+                    window.nameLabelMarkers[category][key] = null;
+                  }
+                }
+              });
+            });
+            
+            // Yield control after each batch with progress feedback
+            const processed = Math.min(i + batchSize, items.length);
+            // Update toggle title with progress
+            if (toggleAll) {
+              toggleAll.title = `${on ? 'Loading' : 'Unloading'} ${processed}/${items.length} ${category} items...`;
             }
+            
+            // Progressive yielding: smaller batches get shorter delays
+            const yieldDelay = batchSize <= 8 ? 8 : 
+                              batchSize <= 12 ? 12 : 16;
+            
+            await new Promise(resolve => {
+              requestAnimationFrame(() => {
+                setTimeout(resolve, yieldDelay);
+              });
+            });
           }
-        });
-        endActiveListBulk();
+        } catch (error) {
+          console.error(`Error during ${category} bulk ${on ? 'loading' : 'unloading'}:`, error);
+        } finally {
+          // End bulk operations and process deferred items
+          window.endBulkOperation();
+          window.endActiveListBulk();
+          
+          // Restore toggle state
+          toggleAll.disabled = false;
+          toggleAll.title = `Toggle all ${category} items`;
+        }
       });
     }
 
-    setupActiveListSync(category);
-    updateActiveList();
-    console.log(`Loaded ${category}:`, namesByCategory[category].length, 'areas');
-
-  } catch (err) {
-    // Error handling: show user feedback if loading fails
-    showSidebarError(`Failed to load ${category} data: ${err.message}`);
-    // Log error for developers
-    console.error(`Error loading ${category} from ${url}:`, err);
-    // Graceful degradation: continue running
+    console.log(`Loaded ${geojson.features.length} ${category} features`);
+  } catch (error) {
+    console.error(`Error loading ${category}:`, error);
+    window.showSidebarError(`Failed to load ${category} data. Please try again.`);
   }
-}
+};

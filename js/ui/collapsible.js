@@ -2,7 +2,7 @@
  * @module ui/collapsible
  * Adds expand/collapse behavior to sidebar sections with sticky header classes.
  */
-export function setupCollapsible(headerId,listId,expanded=false){
+window.setupCollapsible = function(headerId,listId,expanded=false){
   const header = document.getElementById(headerId);
   const list = document.getElementById(listId);
   if (!header || !list) return;

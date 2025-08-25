@@ -2,13 +2,10 @@
  * @module ui/search
  * Debounced filter input for the active list section.
  */
-import { setActiveListFilter } from '../state.js';
-import { namesByCategory, nameToKey } from '../state.js';
-import { updateActiveList } from './activeList.js';
-import { outlineColors, labelColorAdjust, adjustHexColor } from '../config.js';
+// ...existing code...
 
 /** Initialize the global search input if present. */
-export function initSearch(){
+window.initSearch = function(){
   const box = document.getElementById('globalSidebarSearch');
   const dropdown = document.getElementById('sidebarSearchDropdown');
   if (!box || !dropdown) return;

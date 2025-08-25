@@ -2,19 +2,37 @@
  * @module loaders/police
  * Load Victoria Police stations from GeoJSON and manage marker visibility.
  */
-import { categoryMeta } from '../config.js';
-import { featureLayers, namesByCategory, nameToKey, emphasised, nameLabelMarkers, getMap } from '../state.js';
-import { createCheckbox, toTitleCase } from '../utils.js';
-import { setupActiveListSync, updateActiveList, beginActiveListBulk, endActiveListBulk } from '../ui/activeList.js';
-import { showSidebarError, isOffline } from '../utils/errorUI.js';
+// ...existing code...
 
 let policeData = [];
+
+/**
+ * Returns police features as a Promise for preloader batching.
+ */
+window.getPoliceFeatures = async function() {
+  if (policeData.length) return policeData;
+  try {
+    const res = await fetch('police.geojson');
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    policeData = (data.features || []).filter(f => {
+      if (!f || !f.geometry || f.geometry.type !== 'Point') return false;
+      if (!f.properties || (f.properties.feature || '').toUpperCase() !== 'POLICE STATION') return false;
+      const coords = f.geometry.coordinates;
+      return Array.isArray(coords) && coords.length >= 2 && Number.isFinite(+coords[0]) && Number.isFinite(+coords[1]);
+    });
+    return policeData;
+  } catch (err) {
+    console.error('Error loading police features:', err);
+    return [];
+  }
+}
 
 /**
  * Load the police stations dataset and build the sidebar list.
  * Keeps only Point features with usable coordinates.
  */
-export async function loadPolice(){
+window.loadPolice = async function(){
   const category='police', meta=categoryMeta[category];
   const map = getMap();
   try{
@@ -53,7 +71,7 @@ export async function loadPolice(){
       const checked = meta.defaultOn(fullName);
   // Remove 'Police Station' at end (case-insensitive), trim, and title case for sidebar
   let displayName = fullName.replace(/\s*police station\s*$/i, '').trim();
-  displayName = toTitleCase(displayName);
+  displayName = window.toTitleCase(displayName);
       const cb = createCheckbox(`${category}_${key}`, displayName, checked, (e) => {
         e.target.checked? showPoliceMarker(key): hidePoliceMarker(key);
         if(!e.target.checked){
@@ -111,7 +129,7 @@ function createPoliceIcon(){
   });
 }
 
-export function showPoliceMarker(key){
+window.showPoliceMarker = function(key){
   const map = getMap();
   if(featureLayers.police[key]){ map.addLayer(featureLayers.police[key]); return; }
   const feature = policeData.find(f=> (f.properties?.place_name||'').trim().toLowerCase().replace(/\s+/g,'_')===key);
@@ -121,11 +139,11 @@ export function showPoliceMarker(key){
   if(Number.isNaN(lat)||Number.isNaN(lng)) return;
   const marker=L.marker([lat,lng],{ icon:createPoliceIcon() }).addTo(map);
   const popupName = (feature.properties.place_name||'Police Station');
-  marker.bindPopup(toTitleCase(popupName.toLowerCase()));
+  marker.bindPopup(window.toTitleCase(popupName.toLowerCase()));
   featureLayers.police[key]=marker;
 }
 
-export function hidePoliceMarker(key){
+window.hidePoliceMarker = function(key){
   const map = getMap();
   const m=featureLayers.police[key];
   if(m){ map.removeLayer(m); if(m.getElement()) m.getElement().classList.remove('police-emph'); }

@@ -15,19 +15,19 @@
 
 /** @typedef {Object<string, string>} OutlineColorsMap */
 
-export const outlineColors = { ses:'#cc7a00', lga:'black', cfa:'red', ambulance:'#d32f2f', police:'#145088' };
-export const baseOpacities = { ses:0.2, lga:0.1, cfa:0.1 };
+window.outlineColors = { ses:'#cc7a00', lga:'black', cfa:'#FF0000', ambulance:'#d32f2f', police:'#145088', frv:'#DC143C' };
+window.baseOpacities = { ses:0.2, lga:0.1, cfa:0.1, frv:0.1 };
 /** UI color adjustment factor per category (1 = no change). Lower darkens. */
-export const labelColorAdjust = { ses: 0.85, lga: 1.0, cfa: 1.0, ambulance: 1.0, police: 1.0 };
+window.labelColorAdjust = { ses: 0.85, lga: 1.0, cfa: 1.0, ambulance: 1.0, police: 1.0, frv: 1.0 };
 /** Header color adjustment factor per category (1 = no change). Lower darkens. */
-export const headerColorAdjust = { ses: 0.85, lga: 1.0, cfa: 0.9, ambulance: 1.0, police: 0.95 };
+window.headerColorAdjust = { ses: 0.85, lga: 1.0, cfa: 0.9, ambulance: 1.0, police: 0.95, frv: 0.9 };
 /**
  * Darken/lighten a #RRGGBB hex by factor (0.9 = 10% darker, 1.1 = 10% lighter).
  * Returns the original string if parsing fails.
  * @param {string} hex
  * @param {number} factor
  */
-export function adjustHexColor(hex, factor){
+window.adjustHexColor = function(hex, factor){
   try{
     const m = (hex||'').trim().match(/^#?([0-9a-fA-F]{6})$/);
     if(!m) return hex;
@@ -39,15 +39,17 @@ export function adjustHexColor(hex, factor){
     const toHex = (v)=> v.toString(16).padStart(2,'0');
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   }catch{ return hex; }
-}
+};
 /** @returns {import('leaflet').PathOptions} */
-export function sesStyle(){ return { color:'#FF9900', weight:3, fillColor:'orange', fillOpacity:0.2 }; }
+window.sesStyle = function(){ return { color:'#FF9900', weight:3, fillColor:'orange', fillOpacity:0.2 }; };
 /** @returns {import('leaflet').PathOptions} */
-export function lgaStyle(){ return { color:'#001A70', weight:1.5, fillColor:'#0082CA', fillOpacity:0.1, dashArray:'8 8' }; }
+window.lgaStyle = function(){ return { color:'#001A70', weight:1.5, fillColor:'#0082CA', fillOpacity:0.1, dashArray:'8 8' }; };
 /** @returns {import('leaflet').PathOptions} */
-export function cfaStyle(){ return { color:'red', weight:2, fillColor:'red', fillOpacity:0.1 }; }
-/** @type {Record<'ses'|'lga'|'cfa'|'ambulance', CategoryMeta>} */
-export const categoryMeta = {
+window.cfaStyle = function(){ return { color:'red', weight:2, fillColor:'red', fillOpacity:0.1 }; };
+/** @returns {import('leaflet').PathOptions} */
+window.frvStyle = function(){ return { color:'crimson', weight:2, fillColor:'crimson', fillOpacity:0.1 }; };
+/** @type {Record<'ses'|'lga'|'cfa'|'ambulance'|'police'|'frv', CategoryMeta>} */
+window.categoryMeta = {
   ses: {
     type: 'polygon',
     nameProp: 'RESPONSE_ZONE_NAME',
@@ -87,9 +89,13 @@ export const categoryMeta = {
     defaultOn: () => false,
     listId: 'policeList',
     toggleAllId: 'toggleAllPolice'
+  },
+  frv: {
+    type: 'polygon',
+    nameProp: 'AGENCY',
+    styleFn: frvStyle,
+    defaultOn: () => false,
+    listId: 'frvList',
+    toggleAllId: 'toggleAllFRV'
   }
 };
-
-// WillyWeather API key for development only. Do NOT use in production or public repos.
-// Transition to backend proxy for security in future versions.
-export const WILLYWEATHER_API_KEY = "NGMwYjk3YjlhZTIxZjJhMjNmYTFkY2";
