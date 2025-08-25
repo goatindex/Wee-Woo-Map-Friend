@@ -10,7 +10,8 @@
  * @returns {string}
  */
 window.toTitleCase = function(str){
-  return str.replace(/\w\S*/g, t => t[0].toUpperCase()+t.slice(1).toLowerCase());
+  // Replace underscores with spaces first, then apply title case
+  return str.replace(/_/g, ' ').replace(/\w\S*/g, t => t[0].toUpperCase()+t.slice(1).toLowerCase());
 }
 
 /**
