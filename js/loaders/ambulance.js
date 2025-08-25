@@ -12,7 +12,7 @@ let ambulanceData=[];
 window.getAmbulanceFeatures = async function() {
   if (ambulanceData.length) return ambulanceData;
   try {
-    const res = await fetch('ambulance.geojson');
+    const res = await fetch('geojson/ambulance.geojson');
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     ambulanceData = data.features.filter(f =>
@@ -39,7 +39,7 @@ window.loadAmbulance = async function(){
       showSidebarError('You are offline. Ambulance data cannot be loaded.');
       return;
     }
-    const res=await fetch('ambulance.geojson');
+    const res=await fetch('geojson/ambulance.geojson');
     if(!res.ok) throw new Error(res.status);
     const data=await res.json();
     ambulanceData = data.features.filter(f =>
