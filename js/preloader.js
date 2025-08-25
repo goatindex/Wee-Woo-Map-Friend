@@ -5,14 +5,14 @@ const PRELOAD_ENABLED = true; // Toggle to enable/disable preloading
 
 // Sidebar order: SES, LGA, CFA, Ambulance, Police, FRV
 const preloadOrder = [
-  { name: 'SES Areas', loader: () => window.loadPolygonCategory('ses', 'ses.geojson') },
+  { name: 'SES Areas', loader: () => window.loadPolygonCategory('ses', 'geojson/ses.geojson') },
   { name: 'SES Facilities', loader: () => window.loadSesFacilities() },
   { name: 'SES Units', loader: () => window.loadSesUnits() },
-  { name: 'LGA Areas', loader: () => window.loadPolygonCategory('lga', 'LGAs.geojson') },
-  { name: 'CFA Areas', loader: () => window.loadPolygonCategory('cfa', 'cfa.geojson') },
+  { name: 'LGA Areas', loader: () => window.loadPolygonCategory('lga', 'geojson/LGAs.geojson') },
+  { name: 'CFA Areas', loader: () => window.loadPolygonCategory('cfa', 'geojson/cfa.geojson') },
   { name: 'CFA Facilities', loader: () => window.loadCfaFacilities() },
   { name: 'Ambulance Stations', loader: () => window.loadAmbulance() },
-  { name: 'FRV Boundaries', loader: () => window.loadPolygonCategory('frv', 'frv.geojson') }
+  { name: 'FRV Boundaries', loader: () => window.loadPolygonCategory('frv', 'geojson/frv.geojson') }
   // Note: Police is lazy-loaded when needed (see bootstrap.js)
 ];
 

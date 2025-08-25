@@ -12,7 +12,7 @@ let policeData = [];
 window.getPoliceFeatures = async function() {
   if (policeData.length) return policeData;
   try {
-    const res = await fetch('police.geojson');
+    const res = await fetch('geojson/police.geojson');
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     policeData = (data.features || []).filter(f => {
@@ -40,7 +40,7 @@ window.loadPolice = async function(){
       showSidebarError('You are offline. Police data cannot be loaded.');
       return;
     }
-    const res = await fetch('police.geojson');
+    const res = await fetch('geojson/police.geojson');
     if(!res.ok) throw new Error(res.status);
     const data = await res.json();
     policeData = (data.features||[]).filter(f => {

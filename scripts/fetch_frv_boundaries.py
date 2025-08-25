@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 import sys
 import os
 
-def fetch_frv_boundaries(output_file='frv.geojson'):
+def fetch_frv_boundaries(output_file='geojson/frv.geojson'):
     """
     Fetch FRV boundaries from the ArcGIS REST service
     """
@@ -114,7 +114,7 @@ def main():
     print("==========================================")
     
     # Allow custom output filename
-    output_file = sys.argv[1] if len(sys.argv) > 1 else 'frv.geojson'
+    output_file = sys.argv[1] if len(sys.argv) > 1 else 'geojson/frv.geojson'
     
     success = fetch_frv_boundaries(output_file)
     

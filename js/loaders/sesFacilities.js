@@ -18,7 +18,7 @@ function normaliseKey(name){
  */
 window.loadSesFacilities = async function(){
   try{
-    const res = await fetch('sesbld.geojson');
+    const res = await fetch('geojson/sesbld.geojson');
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (!data || !Array.isArray(data.features)) throw new Error('Invalid GeoJSON');
@@ -59,7 +59,7 @@ window.loadSesFacilities = async function(){
  */
 window.getSESFacilities = async function() {
   try {
-    const res = await fetch('sesbld.geojson');
+    const res = await fetch('geojson/sesbld.geojson');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (!data || !Array.isArray(data.features)) throw new Error('Invalid GeoJSON');

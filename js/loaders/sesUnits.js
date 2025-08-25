@@ -18,7 +18,7 @@ window.loadSesUnits = async function(){
     return;
   }
   try{
-    const res=await fetch('ses.geojson');
+    const res=await fetch('geojson/ses.geojson');
     if(!res.ok) return;
     const data=await res.json();
     if(!data?.features) return;
