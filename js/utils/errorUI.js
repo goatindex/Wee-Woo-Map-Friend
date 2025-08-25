@@ -3,7 +3,7 @@
  * Sidebar error messaging and online/offline notifications.
  */
 // Utility for showing dismissible error messages in the sidebar
-export function showSidebarError(message) {
+window.showSidebarError = function(message) {
   const sidebar = document.getElementById('layerMenu');
   if (!sidebar) return;
   const errMsg = document.createElement('div');
@@ -33,15 +33,15 @@ export function showSidebarError(message) {
 }
 
 // Utility for offline detection
-export function isOffline() {
+window.isOffline = function() {
   return !navigator.onLine;
 }
 
-export function setupOfflineListener() {
+window.setupOfflineListener = function() {
   window.addEventListener('offline', () => {
-    showSidebarError('You are offline. Map data may not load.');
+    window.showSidebarError('You are offline. Map data may not load.');
   });
   window.addEventListener('online', () => {
-    showSidebarError('You are back online. Try reloading the map.');
+    window.showSidebarError('You are back online. Try reloading the map.');
   });
-}
+};

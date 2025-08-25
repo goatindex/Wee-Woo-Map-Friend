@@ -2,10 +2,7 @@
  * @module labels
  * Creation and management of map name labels for polygons and points.
  */
-import { getMap } from './state.js';
-import { outlineColors, labelColorAdjust, adjustHexColor } from './config.js';
-import { nameLabelMarkers } from './state.js';
-import { toTitleCase } from './utils.js';
+// ...existing code...
 
 /**
  * Resolve a label color for a feature based on its rendered style.
@@ -44,10 +41,10 @@ function resolveLabelColor(category, isPoint, layerOrMarker){
  * @param {string} name
  * @returns {string}
  */
-export function formatAmbulanceName(name) {
+window.formatAmbulanceName = function(name) {
   let text = name.replace(/\bstation\b/gi, '').replace(/\s{2,}/g, ' ').trim();
   text = text.replace(/\bambulance\b/gi, 'Ambo');
-  return toTitleCase(text);
+  return window.toTitleCase(text);
 }
 
 /**
@@ -55,12 +52,12 @@ export function formatAmbulanceName(name) {
  * @param {string} name
  * @returns {string}
  */
-export function formatPoliceName(name) {
+window.formatPoliceName = function(name) {
   let text = (name || '')
     .replace(/\spolice station\s*$/i, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
-  return toTitleCase(text);
+  return window.toTitleCase(text);
 }
 
 /**
@@ -69,7 +66,7 @@ export function formatPoliceName(name) {
  * @param {string} name
  * @returns {string}
  */
-export function formatLgaName(name){
+window.formatLgaName = function(name){
   let text = (name || '');
   // Remove parenthesised form first, e.g., "(Unincorporated)"
   text = text.replace(/\(\s*unincorporated\s*\)/gi, '');
@@ -84,15 +81,35 @@ export function formatLgaName(name){
 }
 
 /**
- * Compute an anchor within a polygon by approximating center along max span axes.
+ * Compute an anchor within a polygon using efficient bounds-based calculation.
+ * Falls back to complex calculation only for small polygons.
  * @param {import('leaflet').Polygon|import('leaflet').Polyline} layer
  * @returns {import('leaflet').LatLng}
  */
-export function getPolygonLabelAnchor(layer){
+window.getPolygonLabelAnchor = function(layer){
+  // For performance, try bounds center first
+  try {
+    const bounds = layer.getBounds();
+    if (bounds && bounds.isValid()) {
+      return bounds.getCenter();
+    }
+  } catch (e) {
+    // Fall back to coordinate analysis if bounds fails
+  }
+  
+  // Fallback to coordinate analysis for complex cases
   let latlngs = layer.getLatLngs ? layer.getLatLngs() : [];
   function flatten(a){ return a.reduce((acc,v)=>Array.isArray(v)?acc.concat(flatten(v)):acc.concat(v),[]); }
   latlngs = flatten(latlngs);
-  if(!latlngs.length) return layer.getBounds().getCenter();
+  if(!latlngs.length) return L.latLng(0, 0);
+  
+  // For very large polygons (>1000 points), use sampling for performance
+  if (latlngs.length > 1000) {
+    // Sample every 10th point for performance
+    const sampled = latlngs.filter((_, index) => index % 10 === 0);
+    latlngs = sampled;
+  }
+  
   let maxH=0,hLat=0,hLng=0;
   for(let i=0;i<latlngs.length;i++){
     for(let j=i+1;j<latlngs.length;j++){
@@ -119,12 +136,20 @@ export function getPolygonLabelAnchor(layer){
  * @param {boolean} isPoint
  * @param {import('leaflet').Marker|import('leaflet').Polygon|import('leaflet').Polyline} layerOrMarker
  */
-export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
+window.ensureLabel = function(category,key,displayName,isPoint,layerOrMarker){
   const map = getMap();
   removeLabel(category,key);
   let latlng=null;
   if(isPoint){
     latlng = layerOrMarker.getLatLng();
+  } else if(category === 'ses' && window.sesFacilityCoords[key]) {
+    // Use pre-calculated SES facility coordinates (much faster than polygon analysis)
+    const coord = window.sesFacilityCoords[key];
+    latlng = L.latLng(coord.lat, coord.lng);
+  } else if(category === 'cfa' && window.cfaFacilityCoords[key]) {
+    // Use pre-calculated CFA facility coordinates (much faster than polygon analysis)
+    const coord = window.cfaFacilityCoords[key];
+    latlng = L.latLng(coord.lat, coord.lng);
   } else {
     latlng = getPolygonLabelAnchor(layerOrMarker);
   }
@@ -137,7 +162,7 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
   }
   // For LGA polygon labels, remove 'Unincorporated' markers from the name
   if (category === 'lga' && !isPoint) {
-    text = formatLgaName(text);
+    text = window.formatLgaName(text);
   }
   text = processName(text);
   let outline = resolveLabelColor(category, isPoint, layerOrMarker);
@@ -168,7 +193,7 @@ export function ensureLabel(category,key,displayName,isPoint,layerOrMarker){
  * @param {'ses'|'lga'|'cfa'|'ambulance'} category
  * @param {string} key
  */
-export function removeLabel(category,key){
+window.removeLabel = function(category,key){
   const map = getMap();
   const m = nameLabelMarkers[category][key];
   if(m){ map.removeLayer(m); nameLabelMarkers[category][key]=null; }

@@ -1,8 +1,7 @@
 /* Sidebar search dropdown styles */
 .search-sticky {
-  position: sticky;
-  top: 0;
-  z-index: 1001; /* above section headers */
+  position: relative; /* changed from sticky to relative to fix layout issues */
+  z-index: 100;
   background: #fff;
   padding-bottom: var(--sidebar-tools-vpad, 8px);
   border-bottom: 1px solid #ddd;

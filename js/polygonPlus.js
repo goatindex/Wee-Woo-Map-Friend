@@ -7,7 +7,7 @@
  * @param {import('leaflet').Map} map
  * @param {import('leaflet').Polygon|import('leaflet').Polyline} polygonLayer
  */
-export function addPolygonPlus(map, polygonLayer) {
+window.addPolygonPlus = function(map, polygonLayer) {
   if (!polygonLayer || !polygonLayer.getBounds) return;
   const center = polygonLayer.getBounds().getCenter();
   // SVG overlay for a thick white plus
@@ -32,7 +32,7 @@ export function addPolygonPlus(map, polygonLayer) {
  * @param {import('leaflet').Polygon|import('leaflet').Polyline & { _plusMarker?: import('leaflet').Marker|null }} polygonLayer
  * @param {import('leaflet').Map} map
  */
-export function removePolygonPlus(polygonLayer, map) {
+window.removePolygonPlus = function(polygonLayer, map) {
   if (polygonLayer && polygonLayer._plusMarker) {
     map.removeLayer(polygonLayer._plusMarker);
     polygonLayer._plusMarker = null;

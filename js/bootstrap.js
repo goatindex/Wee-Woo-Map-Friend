@@ -2,19 +2,8 @@
  * @module bootstrap
  * Initialise Leaflet map, load data sources, and wire UI components.
  */
-import { setMap, nameLabelMarkers, emphasised } from './state.js';
-import { loadPolygonCategory } from './loaders/polygons.js';
-import { loadAmbulance } from './loaders/ambulance.js';
-import { loadPolice } from './loaders/police.js';
-import { loadSesUnits } from './loaders/sesUnits.js';
-import { loadSesFacilities } from './loaders/sesFacilities.js';
-import { setupCollapsible } from './ui/collapsible.js';
-import { initSearch } from './ui/search.js';
-import { updateActiveList, beginActiveListBulk, endActiveListBulk } from './ui/activeList.js';
-import { removeLabel } from './labels.js';
-import { loadWaterwayCentres, showWaterwayCentres, hideWaterwayCentres } from './loaders/waterwaycent.js';
-import { setupOfflineListener } from './utils/errorUI.js';
-import { outlineColors, categoryMeta, headerColorAdjust, adjustHexColor } from './config.js';
+// All shared functions/variables are now attached to window for vanilla script compatibility.
+// Example: window.setMap, window.startPreloading, etc.
 
 // Map init (uses global Leaflet script)
 const mapInstance = L.map('map', {
@@ -23,18 +12,24 @@ const mapInstance = L.map('map', {
 	preferCanvas: true
 }).setView([-37.8,144.9],7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors'}).addTo(mapInstance);
-setMap(mapInstance);
+window.setMap(mapInstance);
 // Capture the default view to support a full UI reset
 const DEFAULT_VIEW = { center: mapInstance.getCenter(), zoom: mapInstance.getZoom() };
 
-// Create panes to control z-order (bottom -> top): LGA, CFA, SES, Ambulance
+// Modular batched preloading of polygons/labels (sidebar order)
+window.addEventListener('DOMContentLoaded', () => {
+	window.startPreloading();
+});
+
+// Create panes to control z-order (bottom -> top): LGA, CFA, SES, Ambulance, Police, FRV
 (() => {
 	const panes = [
 		['lga', 400],
 		['cfa', 410],
 		['ses', 420],
 		['ambulance', 430],
-		['police', 440]
+		['police', 440],
+		['frv', 450]
 	];
 	panes.forEach(([name, z]) => {
 		mapInstance.createPane(name);
@@ -44,23 +39,24 @@ const DEFAULT_VIEW = { center: mapInstance.getCenter(), zoom: mapInstance.getZoo
 
 // Collapsibles
 // Start All Active collapsed; it will auto-expand when the first item is added
-setupCollapsible('activeHeader','activeList',false);
-setupCollapsible('showAllHeader','showAllList');
-setupCollapsible('sesHeader','sesList');
-setupCollapsible('lgaHeader','lgaList');
-setupCollapsible('cfaHeader','cfaList');
-setupCollapsible('policeHeader','policeList');
-setupCollapsible('ambulanceHeader','ambulanceList');
+window.setupCollapsible('activeHeader','activeList',false);
+window.setupCollapsible('showAllHeader','showAllList');
+window.setupCollapsible('sesHeader','sesList');
+window.setupCollapsible('lgaHeader','lgaList');
+window.setupCollapsible('cfaHeader','cfaList');
+window.setupCollapsible('policeHeader','policeList');
+window.setupCollapsible('ambulanceHeader','ambulanceList');
+window.setupCollapsible('frvHeader','frvList');
 
 // Harden: align outlineColors with each category's styleFn color (prevents drift)
 (() => {
-	['ses','lga','cfa'].forEach(cat => {
+	['ses','lga','cfa','frv'].forEach(cat => {
 		try {
-			const fn = categoryMeta?.[cat]?.styleFn;
+			const fn = window.categoryMeta?.[cat]?.styleFn;
 			if (typeof fn === 'function') {
 				const style = fn();
 				if (style && style.color) {
-					outlineColors[cat] = style.color;
+					window.outlineColors[cat] = style.color;
 				}
 			}
 		} catch {}
@@ -74,37 +70,31 @@ setupCollapsible('ambulanceHeader','ambulanceList');
 		lgaHeader: 'lga',
 		cfaHeader: 'cfa',
 		ambulanceHeader: 'ambulance',
-		policeHeader: 'police'
+		policeHeader: 'police',
+		frvHeader: 'frv'
 	};
 		Object.entries(headerToCategory).forEach(([id, cat]) => {
-		const el = document.getElementById(id);
-		if (el) {
-			el.classList.add('category-header');
-				const base = outlineColors[cat];
-				const factor = headerColorAdjust[cat] ?? 1.0;
-				el.style.color = adjustHexColor(base, factor);
+			const el = document.getElementById(id);
+			if (el) {
+				el.classList.add('category-header');
+				const base = window.outlineColors[cat];
+				const factor = window.headerColorAdjust[cat] ?? 1.0;
+				el.style.color = window.adjustHexColor(base, factor);
 				const arrow = el.querySelector('.collapse-arrow');
-				if (arrow) arrow.style.color = adjustHexColor(base, Math.max(0, factor - 0.1));
-		}
-	});
+				if (arrow) arrow.style.color = window.adjustHexColor(base, Math.max(0, factor - 0.1));
+			}
+		});
 })();
 
-// Load data
-loadPolygonCategory('ses','ses.geojson');
-loadPolygonCategory('lga','LGAs.geojson');
-loadPolygonCategory('cfa','cfa.geojson');
-loadSesFacilities();
-loadAmbulance();
-// Lazy-load Police: load only when needed (expand section or use Show All toggle)
-// Do not load here to keep initial render snappy.
-loadSesUnits();
+// Data loading is now handled by the preloader in sidebar order
+// See preloader.js for the batched loading sequence
 
 // Lazy-load triggers for Police
 let _policeLoaded = false;
 async function ensurePoliceLoaded(){
 	if (_policeLoaded) return;
 	try {
-		await loadPolice();
+		await window.loadPolice();
 		_policeLoaded = true;
 	} catch (e) { console.error('Police load failed:', e); }
 }
@@ -139,11 +129,11 @@ async function ensurePoliceLoaded(){
 })();
 
 // Load waterway centrelines (but don't show by default)
-loadWaterwayCentres();
+window.loadWaterwayCentres();
 
 // UI
-initSearch();
-updateActiveList();
+window.initSearch();
+window.updateActiveList();
 
 // Sidebar minimize/expand toggle (mobile-friendly)
 window.addEventListener('DOMContentLoaded', () => {
@@ -198,7 +188,7 @@ window.addEventListener('DOMContentLoaded', () => {
 	});
 });
 
-setupOfflineListener();
+window.setupOfflineListener();
 
 // Reset handler: return the UI to a clean default starting state
 window.addEventListener('sidebar-tool-click', async (ev) => {
@@ -207,7 +197,7 @@ window.addEventListener('sidebar-tool-click', async (ev) => {
 		if (detail.index !== 1 && detail.id !== 'sidebarBtn1') return;
 
 		// Enter bulk mode to avoid churn in Active List during mass changes
-		try { beginActiveListBulk(); } catch {}
+	try { window.beginActiveListBulk(); } catch {}
 
 		// 1) Clear global search and dropdown
 		const input = document.getElementById('globalSidebarSearch');
@@ -220,16 +210,16 @@ window.addEventListener('sidebar-tool-click', async (ev) => {
 		if (wb) { wb.style.display = 'none'; wb.innerHTML = ''; }
 
 		// 3a) Proactively clear all existing labels and emphasis, independent of list state
-		;(['ses','lga','cfa','ambulance','police']).forEach(cat => {
-			const bucket = nameLabelMarkers?.[cat] || {};
+		;(['ses','lga','cfa','ambulance','police','frv']).forEach(cat => {
+			const bucket = window.nameLabelMarkers?.[cat] || {};
 			Object.keys(bucket).forEach(key => {
-				try { removeLabel(cat, key); } catch {}
-				try { emphasised[cat][key] = false; } catch {}
+				try { window.removeLabel(cat, key); } catch {}
+				try { window.emphasised[cat][key] = false; } catch {}
 			});
 		});
 
 		// 3b) Clear all row checkboxes without forcing lazy loads
-			const listIds = ['sesList','lgaList','cfaList','ambulanceList','policeList'];
+			const listIds = ['sesList','lgaList','cfaList','ambulanceList','policeList','frvList'];
 			listIds.forEach(listId => {
 				const list = document.getElementById(listId);
 				if (!list) return;
@@ -241,14 +231,14 @@ window.addEventListener('sidebar-tool-click', async (ev) => {
 				});
 			});
 		// 3c) Reflect group toggles visually as unchecked, but avoid dispatching change
-			['toggleAllSES','toggleAllLGAs','toggleAllCFA','toggleAllAmbulance','toggleAllPolice'].forEach(id => {
+			['toggleAllSES','toggleAllLGAs','toggleAllCFA','toggleAllAmbulance','toggleAllPolice','toggleAllFRV'].forEach(id => {
 				const el = document.getElementById(id);
 				if (el) el.checked = false;
 			});
 
 		// 4) Clear the All Active UI then collapse sections
-		try { updateActiveList(); } catch {}
-		const sections = ['active','showAll','ses','lga','cfa','ambulance','police'];
+	try { window.updateActiveList(); } catch {}
+		const sections = ['active','showAll','ses','lga','cfa','ambulance','police','frv'];
 		sections.forEach(key => {
 			const header = document.getElementById(`${key}Header`);
 			const list = document.getElementById(`${key}List`);
@@ -257,7 +247,7 @@ window.addEventListener('sidebar-tool-click', async (ev) => {
 		});
 
 		// 5) Ensure any optional overlays are hidden
-		try { hideWaterwayCentres(); } catch {}
+	try { window.hideWaterwayCentres(); } catch {}
 
 		// 6) Reset map view to default
 		try { mapInstance.setView(DEFAULT_VIEW.center, DEFAULT_VIEW.zoom); } catch {}
@@ -277,16 +267,16 @@ window.addEventListener('sidebar-tool-click', async (ev) => {
 		} catch {}
 
 		// Exit bulk mode after the bulk of changes are complete
-		try { endActiveListBulk(); } catch {}
+	try { window.endActiveListBulk(); } catch {}
 
 		// Final safety sweep after UI settles (handles any late events)
 		setTimeout(() => {
 			try {
 				;(['ses','lga','cfa','ambulance','police']).forEach(cat => {
-					const bucket = nameLabelMarkers?.[cat] || {};
+					const bucket = window.nameLabelMarkers?.[cat] || {};
 					Object.keys(bucket).forEach(key => {
-						try { removeLabel(cat, key); } catch {}
-						try { emphasised[cat][key] = false; } catch {}
+						try { window.removeLabel(cat, key); } catch {}
+						try { window.emphasised[cat][key] = false; } catch {}
 					});
 				});
 			} catch {}

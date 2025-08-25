@@ -2,8 +2,7 @@
  * @module emphasise
  * Toggle emphasis state for polygons and point markers.
  */
-import { featureLayers, emphasised, getMap } from './state.js';
-import { categoryMeta } from './config.js';
+// Removed import statements
 
 /**
  * Set emphasis visual state for a given category/key.
@@ -13,7 +12,7 @@ import { categoryMeta } from './config.js';
  * @param {boolean} on
  * @param {boolean} [isPoint]
  */
-export function setEmphasis(category,key,on,isPoint){
+window.setEmphasis = function(category,key,on,isPoint){
   emphasised[category][key]=on;
   if(isPoint){
     const map = getMap(); // ensures map initialised; not used directly but safe

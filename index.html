@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no" />
   <title>SES Response Boundaries</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="css/styles.css">
@@ -33,6 +33,7 @@
   <label><input type="checkbox" id="toggleAllCFA" checked> 🔥 CFA Response Areas</label>
   <label><input type="checkbox" id="toggleAllAmbulance"> 🚑 Ambulance Stations</label>
   <label><input type="checkbox" id="toggleAllPolice"> 👮 Police Stations</label>
+  <label><input type="checkbox" id="toggleAllFRV"> � Fire Rescue Victoria</label>
     </div>
     <div class="divider"></div>
   <h4 id="sesHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>👷 SES Response Areas</h4>
@@ -50,13 +51,47 @@
   <h4 id="policeHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>👮 Police Stations</h4>
   <div class="collapsible-list" id="policeList" style="display: none;"></div>
   <div class="divider"></div>
+  <h4 id="frvHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>� Fire Rescue Victoria</h4>
+  <div class="collapsible-list" id="frvList" style="display: none;"></div>
+  <div class="divider"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Proj4 for coordinate conversion (required by coordConvert.js) -->
   <script src="https://cdn.jsdelivr.net/npm/proj4@2.9.2/dist/proj4.min.js"></script>
-  <script type="module" src="js/bootstrap.js"></script>
+  
+  <!-- Core state and configuration -->
+  <script src="js/state.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  
+  <!-- Utilities -->
+  <script src="js/utils/coordConvert.js"></script>
+  <script src="js/utils/errorUI.js"></script>
+  
+  <!-- Feature management -->
+  <script src="js/labels.js"></script>
+  <script src="js/emphasise.js"></script>
+  <script src="js/polygonPlus.js"></script>
+  
+  <!-- Data loaders -->
+  <script src="js/loaders/polygons.js"></script>
+  <script src="js/loaders/ambulance.js"></script>
+  <script src="js/loaders/police.js"></script>
+  <script src="js/loaders/sesFacilities.js"></script>
+  <script src="js/loaders/cfaFacilities.js"></script>
+  <script src="js/loaders/sesUnits.js"></script>
+  <script src="js/loaders/waterwaycent.js"></script>
+  
+  <!-- UI components -->
+  <script src="js/ui/collapsible.js"></script>
+  <script src="js/ui/search.js"></script>
+  <script src="js/ui/activeList.js"></script>
+  
+  <!-- Preloader and bootstrap -->
+  <script src="js/preloader.js"></script>
+  <script src="js/bootstrap.js"></script>
   <!-- Last updated line -->
   <div id="lastUpdated" style="position:fixed;left:12px;bottom:8px;font-size:0.95em;color:#444;background:rgba(255,255,255,0.85);padding:4px 10px;border-radius:6px;z-index:2000;pointer-events:none;">
     <!--#include file="last-updated.txt" -->
@@ -106,6 +141,7 @@
           <li><a href="#docs/intro" data-doc="intro">Welcome</a></li>
           <li><a href="#docs/usage" data-doc="usage">Using the App</a></li>
           <li><a href="#docs/layers" data-doc="layers">Layers & Categories</a></li>
+          <li><a href="#docs/troubleshooting" data-doc="troubleshooting">Troubleshooting</a></li>
         </ul>
       </nav>
       <main id="docsContent" class="docs-content" tabindex="0" aria-live="polite">

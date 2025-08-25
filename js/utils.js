@@ -9,8 +9,17 @@
  * @param {string} str
  * @returns {string}
  */
-export function toTitleCase(str){
+window.toTitleCase = function(str){
   return str.replace(/\w\S*/g, t => t[0].toUpperCase()+t.slice(1).toLowerCase());
+}
+
+/**
+ * Format FRV name to display "Fire Rescue Victoria" instead of "FRV"
+ * @param {string} name - The raw name from GeoJSON (usually "FRV")
+ * @returns {string} - Formatted display name
+ */
+window.formatFrvName = function(name) {
+  return name === 'FRV' ? 'Fire Rescue Victoria' : name;
 }
 /**
  * Create a labeled checkbox element.
@@ -20,7 +29,7 @@ export function toTitleCase(str){
  * @param {(e:Event)=>void} [onChange] - Optional change handler.
  * @returns {HTMLLabelElement}
  */
-export function createCheckbox(id,label,checked,onChange){
+window.createCheckbox = function(id,label,checked,onChange){
   const wrapper=document.createElement('label');
   const cb=document.createElement('input');
   cb.type='checkbox'; cb.id=id; cb.checked=checked;
