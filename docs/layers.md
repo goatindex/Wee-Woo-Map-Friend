@@ -1,4 +1,14 @@
-# Layers & Categories
+# Layers & ## How Layers Work
+
+**Polygons (Areas):**
+- Show a name label by default when turned on
+- You can toggle labels off in "All Active"
+- Render in a dedicated canvas layer for better performance
+
+**Points (Stations):**
+- Don't show labels by default
+- Use 🏷️ in "All Active" to reveal the name
+- Appear as icons on the mapAvailable Layers
 
 - 👷 SES Response Areas (polygons)
 - 🏛️ Local Government Areas (polygons)

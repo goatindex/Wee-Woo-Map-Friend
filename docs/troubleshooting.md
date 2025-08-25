@@ -2,7 +2,7 @@
 
 Having trouble with WeeWoo Map Friend? Here are solutions to common issues:
 
-## Map Issues
+## 🗺️ Map Issues
 
 ### Map Won't Load or Appears Blank
 - **Check your internet connection** - the map tiles need to download from the internet
@@ -14,7 +14,7 @@ Having trouble with WeeWoo Map Friend? Here are solutions to common issues:
 - **Check the map zoom level** - zoom out to see if items are outside your current view
 - **Look for loading indicators** in the sidebar
 
-## Search Issues
+## 🔍 Search Issues
 
 ### Search Returns No Results
 - **Check your spelling** - try searching for part of the name instead
@@ -25,7 +25,7 @@ Having trouble with WeeWoo Map Friend? Here are solutions to common issues:
 - **Clear your search** and try again with fewer characters
 - **Refresh the page** if search becomes completely unresponsive
 
-## Weather Issues
+## 🌦️ Weather Issues
 
 ### Weather Data Not Loading
 - **Wait a few seconds** - weather data is fetched from external services
@@ -36,7 +36,7 @@ Having trouble with WeeWoo Map Friend? Here are solutions to common issues:
 - **This is normal** - weather uses the centre point of areas, which may not match your exact location
 - **For polygons** (SES, LGA, CFA areas), weather shows data for the geographical centre of that area
 
-## Performance Issues
+## ⚡ Performance Issues
 
 ### Page Loads Slowly
 - **This is normal on first visit** - data is downloaded and cached for faster future visits
@@ -48,7 +48,7 @@ Having trouble with WeeWoo Map Friend? Here are solutions to common issues:
 - **Use the reset button (♻️)** to clear everything and start fresh
 - **Close other browser tabs** if your computer is running slowly
 
-## Browser Compatibility
+## 🌐 Browser Compatibility
 
 ### Features Don't Work Properly
 - **Use a modern browser** - the app works best in Chrome, Firefox, Safari, or Edge

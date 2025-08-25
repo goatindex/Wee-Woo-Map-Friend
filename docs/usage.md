@@ -1,6 +1,20 @@
-# Using the App
+# Using the A## 2. Manage "All Active"
 
-## 1. Search and Activate Items
+The "All Active" panel shows everything you've turned on. For each active item you can:
+
+- **📢 Emphasise**: Makes the item stand out with a thicker border or larger icon
+- **🏷️ Show Name**: Displays the location name directly on the map
+- **🌦️ Weather**: Shows a detailed 7-day forecast for that location
+
+### Weather Features
+
+The weather feature provides:
+- **7-day forecast** with daily highs and lows
+- **Current conditions** including temperature and weather description
+- **Location-specific data** using the centre point of polygons or exact coordinates for points
+- **Multiple providers** for reliable data (automatically switches if one service is unavailable)
+
+**Weather works for:** All categories (SES areas, LGAs, CFA areas, FRV stations, Ambulance stations, Police stations)# 1. Search and Activate Items
 
 - **Search by name**: Type part of any location name (e.g., "Melbourne", "Ballarat", "Bendigo") to find matching items across all categories
 - **Category lists**: Browse and click items in SES, LGA, CFA, FRV, Ambulance, or Police sections
