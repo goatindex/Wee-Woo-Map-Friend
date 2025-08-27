@@ -9,6 +9,48 @@
  * @param {string} str
  * @returns {string}
  */
+/**
+ * Responsive design utilities
+ */
+
+// Get current responsive breakpoint context
+window.getResponsiveContext = function() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  
+  // Get breakpoints from CSS custom properties
+  const computedStyle = getComputedStyle(document.documentElement);
+  const mobileSmall = parseInt(computedStyle.getPropertyValue('--mobile-small')?.replace('px', '')) || 480;
+  const mobileLarge = parseInt(computedStyle.getPropertyValue('--mobile-large')?.replace('px', '')) || 768;
+  const tablet = parseInt(computedStyle.getPropertyValue('--tablet')?.replace('px', '')) || 1024;
+  
+  let breakpoint = 'desktop';
+  if (width <= mobileSmall) breakpoint = 'mobile-small';
+  else if (width <= mobileLarge) breakpoint = 'mobile-large';
+  else if (width <= tablet) breakpoint = 'tablet';
+  
+  return {
+    width,
+    height,
+    breakpoint,
+    isMobile: width <= mobileLarge,
+    isTablet: width > mobileLarge && width <= tablet,
+    isDesktop: width > tablet,
+    isTouch: 'ontouchstart' in window,
+    isLandscape: width > height,
+    isStandalone: window.matchMedia('(display-mode: standalone)').matches
+  };
+};
+
+// Check if current screen size is considered mobile
+window.isMobileSize = function() {
+  return window.getResponsiveContext().isMobile;
+};
+
+/**
+ * Text formatting utilities
+ */
+
 window.toTitleCase = function(str){
   // Replace underscores with spaces first, then apply title case
   return str.replace(/_/g, ' ').replace(/\w\S*/g, t => t[0].toUpperCase()+t.slice(1).toLowerCase());
