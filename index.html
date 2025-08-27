@@ -2,8 +2,43 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no" />
-  <title>SES Response Boundaries</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no,viewport-fit=cover" />
+  <title>WeeWoo Map Friend - Emergency Services Map</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="description" content="Interactive emergency services mapping for Victoria, Australia. Find SES, CFA, Ambulance, Police, and FRV boundaries and facilities.">
+  <meta name="theme-color" content="#1976d2">
+  <meta name="background-color" content="#ffffff">
+  <meta name="display" content="standalone">
+  <meta name="orientation" content="any">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- iOS PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="WeeWoo Map">
+  <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiMxOTc2ZDIiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzguMTMgMiA1IDUuMTMgNSA5YzAgNS4yNSA3IDEzIDcgMTNzNy03Ljc1IDctMTNjMC0zLjg3LTMuMTMtNy03LTd6bTAgOS41Yy0xLjM4IDAtMi41LTEuMTItMi41LTIuNXMxLjEyLTIuNSAyLjUtMi41IDIuNSAxLjEyIDIuNSAyLjUtMS4xMiAyLjUtMi41IDIuNXoiLz4KPC9zdmc+Cjwvc3ZnPgo=">
+  
+  <!-- Windows PWA Meta Tags -->
+  <meta name="msapplication-TileColor" content="#1976d2">
+  <meta name="msapplication-config" content="browserconfig.xml">
+  
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:title" content="WeeWoo Map Friend">
+  <meta property="og:description" content="Interactive emergency services mapping for Victoria, Australia">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://goatindex.github.io/mapexp.github.io/">
+  <meta property="og:image" content="https://goatindex.github.io/mapexp.github.io/docs/assets/sidebar-all-active.svg">
+  
+  <!-- Twitter Card Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="WeeWoo Map Friend">
+  <meta name="twitter:description" content="Interactive emergency services mapping for Victoria, Australia">
+  <meta name="twitter:image" content="https://goatindex.github.io/mapexp.github.io/docs/assets/sidebar-all-active.svg">
+  
+  <!-- Stylesheets -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -65,6 +100,8 @@
   <script src="js/state.js"></script>
   <script src="js/config.js"></script>
   <script src="js/utils.js"></script>
+  <script src="js/device.js"></script>
+  <script src="js/native/features.js"></script>
   
   <!-- Utilities -->
   <script src="js/utils/coordConvert.js"></script>
@@ -88,10 +125,82 @@
   <script src="js/ui/collapsible.js"></script>
   <script src="js/ui/search.js"></script>
   <script src="js/ui/activeList.js"></script>
+  <script src="js/ui/mobileDocsNav.js"></script>
   
   <!-- Preloader and bootstrap -->
   <script src="js/preloader.js"></script>
   <script src="js/bootstrap.js"></script>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    // Register service worker for PWA functionality
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('PWA: Service Worker registered successfully:', registration.scope);
+            
+            // Handle service worker updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New service worker available, show update notification
+                  console.log('PWA: New version available');
+                  if (confirm('A new version of WeeWoo Map Friend is available. Update now?')) {
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                    window.location.reload();
+                  }
+                }
+              });
+            });
+          })
+          .catch(error => {
+            console.warn('PWA: Service Worker registration failed:', error);
+          });
+      });
+    }
+    
+    // Handle PWA install prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('PWA: Install prompt available');
+      e.preventDefault();
+      deferredPrompt = e;
+      
+      // Show custom install button or notification
+      setTimeout(() => {
+        if (deferredPrompt && !window.DeviceContext.getContext().isPWA) {
+          const installMessage = document.createElement('div');
+          installMessage.style.cssText = `
+            position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+            background: #1976d2; color: white; padding: 8px 16px; border-radius: 6px;
+            font-size: 14px; z-index: 4000; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          `;
+          installMessage.textContent = '📱 Install WeeWoo Map as an app';
+          installMessage.addEventListener('click', async () => {
+            if (deferredPrompt) {
+              deferredPrompt.prompt();
+              const { outcome } = await deferredPrompt.userChoice;
+              console.log('PWA: Install prompt result:', outcome);
+              deferredPrompt = null;
+              installMessage.remove();
+            }
+          });
+          document.body.appendChild(installMessage);
+          
+          // Auto-hide after 10 seconds
+          setTimeout(() => installMessage.remove(), 10000);
+        }
+      }, 2000);
+    });
+    
+    // Handle successful app install
+    window.addEventListener('appinstalled', (e) => {
+      console.log('PWA: App installed successfully');
+      deferredPrompt = null;
+    });
+  </script>
   <!-- Last updated line -->
   <div id="lastUpdated" style="position:fixed;left:12px;bottom:8px;font-size:0.95em;color:#444;background:rgba(255,255,255,0.85);padding:4px 10px;border-radius:6px;z-index:2000;pointer-events:none;">
     <!--#include file="last-updated.txt" -->
@@ -140,12 +249,16 @@
         <ul>
           <li><a href="#docs/intro" data-doc="intro">Welcome</a></li>
           <li><a href="#docs/usage" data-doc="usage">Using the App</a></li>
+          <li><a href="#docs/adding-layers" data-doc="adding-layers">Adding Layers</a></li>
           <li><a href="#docs/layers" data-doc="layers">Layers & Categories</a></li>
           <li><a href="#docs/troubleshooting" data-doc="troubleshooting">Troubleshooting</a></li>
         </ul>
       </nav>
       <main id="docsContent" class="docs-content" tabindex="0" aria-live="polite">
-        <p>Choose a topic from the left.</p>
+        <h2>Welcome to Documentation</h2>
+        <p>On mobile devices, tap the blue <strong>"📚 Documentation Pages"</strong> button at the top to navigate between topics.</p>
+        <p>On desktop, use the navigation panel on the left.</p>
+        <p>Choose a topic to get started!</p>
       </main>
     </div>
   </aside>

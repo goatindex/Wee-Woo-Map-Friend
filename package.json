@@ -1,13 +1,61 @@
 {
-  "name": "mapexp-screenshots",
+  "name": "weewoo-map-friend",
   "private": true,
-  "version": "0.1.0",
-  "description": "Helper tooling to capture screenshots of WeeWoo Map Friend",
+  "version": "2.0.0",
+  "description": "Interactive emergency services mapping for Victoria, Australia - now with native app support",
   "license": "MIT",
   "scripts": {
-    "capture": "node scripts/capture.js"
+    "capture": "node scripts/capture.js",
+    "dev": "python -m http.server 8000",
+    "build": "npm run build:web && npm run build:native",
+    "build:web": "echo 'Web build: Static files ready for GitHub Pages'",
+    "build:native": "npm run cap:copy && npm run cap:build",
+    "cap:init": "cap init",
+    "cap:add": "cap add ios && cap add android",
+    "cap:copy": "cap copy",
+    "cap:sync": "cap sync",
+    "cap:build": "cap build",
+    "cap:run:ios": "cap run ios",
+    "cap:run:android": "cap run android",
+    "cap:open:ios": "cap open ios",
+    "cap:open:android": "cap open android",
+    "icons": "node scripts/generate-icons.js",
+    "test:pwa": "npx serve . -p 8000",
+    "lint": "echo 'Linting not configured yet'",
+    "prepare:appstore": "npm run build && npm run icons && npm run cap:sync"
   },
   "devDependencies": {
-    "puppeteer": "^22.10.0"
+    "puppeteer": "^22.10.0",
+    "@capacitor/core": "^5.4.0",
+    "@capacitor/cli": "^5.4.0",
+    "@capacitor/ios": "^5.4.0",
+    "@capacitor/android": "^5.4.0",
+    "@capacitor/app": "^5.0.6",
+    "@capacitor/haptics": "^5.0.6",
+    "@capacitor/status-bar": "^5.0.6",
+    "@capacitor/splash-screen": "^5.0.6",
+    "@capacitor/geolocation": "^5.0.6",
+    "@capacitor/device": "^5.0.6",
+    "@capacitor/network": "^5.0.6",
+    "@capacitor/push-notifications": "^5.0.6",
+    "sharp": "^0.32.0"
+  },
+  "keywords": [
+    "emergency-services",
+    "mapping",
+    "victoria",
+    "australia",
+    "pwa",
+    "mobile-app",
+    "leaflet",
+    "geojson"
+  ],
+  "homepage": "https://goatindex.github.io/mapexp.github.io/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/goatindex/mapexp.github.io.git"
+  },
+  "bugs": {
+    "url": "https://github.com/goatindex/mapexp.github.io/issues"
   }
 }

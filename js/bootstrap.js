@@ -1,52 +1,711 @@
 /**
  * @module bootstrap
- * Initialise Leaflet map, load data sources, and wire UI components.
+ * Application initialization and bootstrap with native features integration
  */
-// All shared functions/variables are now attached to window for vanilla script compatibility.
-// Example: window.setMap, window.startPreloading, etc.
 
-// Map init (uses global Leaflet script)
-const mapInstance = L.map('map', {
-	zoomSnap: 0.333,
-	zoomDelta: 0.333,
-	preferCanvas: true
-}).setView([-37.8,144.9],7);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors'}).addTo(mapInstance);
-window.setMap(mapInstance);
-// Capture the default view to support a full UI reset
-const DEFAULT_VIEW = { center: mapInstance.getCenter(), zoom: mapInstance.getZoom() };
+/**
+ * Application Bootstrap
+ * Handles initialization, device context setup, native features, and application startup
+ */
+window.AppBootstrap = {
+  
+  /**
+   * Initialize the application
+   */
+  async init() {
+    console.log('AppBootstrap: Starting application initialization');
+    
+    try {
+      // Wait for native features to be ready
+      await this.waitForNativeFeatures();
+      
+      // Get device context with native info
+      const deviceContext = DeviceContext.getContext();
+      console.log('AppBootstrap: Device context initialized:', deviceContext);
+      
+      // Apply device-specific styling
+      this.applyDeviceStyles(deviceContext);
+      
+      // Initialize responsive breakpoint handling
+      this.initResponsiveHandling();
+      
+      // Set up orientation change handling
+      this.setupOrientationHandling();
+      
+      // Initialize native app integration
+      await this.initNativeIntegration();
+      
+      // Initialize map
+      this.initMap();
+      
+      // Set up collapsibles and UI components
+      this.setupUI();
+      
+      // Initialize mobile documentation navigation
+      if (window.MobileDocsNav) {
+        console.log('AppBootstrap: Initializing mobile documentation navigation');
+        window.MobileDocsNav.init();
+      }
+      
+      // Load data and UI components
+      await this.loadComponents();
+      
+      // Set up event handlers
+      this.setupEventHandlers();
+      
+      // Handle initial geolocation
+      this.handleInitialLocation();
+      
+      console.log('AppBootstrap: Application initialization complete');
+      
+    } catch (error) {
+      console.error('AppBootstrap: Initialization failed:', error);
+      if (window.ErrorUI) {
+        ErrorUI.showError('Failed to initialize application', error.message);
+      }
+    }
+  },
+  
+  /**
+   * Wait for native features to be ready
+   */
+  async waitForNativeFeatures() {
+    return new Promise((resolve) => {
+      if (window.NativeFeatures) {
+        // Listen for native features ready event
+        window.addEventListener('nativeFeaturesReady', (event) => {
+          console.log('AppBootstrap: Native features ready:', event.detail);
+          resolve(event.detail);
+        }, { once: true });
+        
+        // Fallback timeout
+        setTimeout(() => {
+          console.log('AppBootstrap: Native features timeout, continuing with web-only');
+          resolve({ isNative: false });
+        }, 1000);
+      } else {
+        resolve({ isNative: false });
+      }
+    });
+  },
+  
+  /**
+   * Apply device-specific styles and classes
+   */
+  applyDeviceStyles(deviceContext) {
+    const body = document.body;
+    
+    // Remove any existing device classes
+    body.classList.remove('device-mobile', 'device-tablet', 'device-desktop', 'device-large');
+    body.classList.remove('platform-ios', 'platform-android', 'platform-web');
+    body.classList.remove('context-portrait', 'context-landscape');
+    
+    // Add current device classes
+    body.classList.add(`device-${deviceContext.device}`);
+    body.classList.add(`platform-${deviceContext.platform}`);
+    body.classList.add(`context-${deviceContext.orientation}`);
+    
+    // Add touch/hover context
+    if (deviceContext.hasTouch) {
+      body.classList.add('has-touch');
+    } else {
+      body.classList.add('no-touch');
+    }
+    
+    // Add standalone/native app context
+    if (deviceContext.isStandalone || (window.NativeFeatures && window.NativeFeatures.isNativeApp())) {
+      body.classList.add('app-standalone');
+    }
+    
+    console.log('AppBootstrap: Applied device styles:', {
+      device: deviceContext.device,
+      platform: deviceContext.platform,
+      orientation: deviceContext.orientation,
+      hasTouch: deviceContext.hasTouch,
+      isStandalone: deviceContext.isStandalone
+    });
+  },
+  
+  /**
+   * Initialize responsive breakpoint handling
+   */
+  initResponsiveHandling() {
+    // Update breakpoint classes on resize
+    const updateBreakpoints = () => {
+      const deviceContext = DeviceContext.getContext();
+      this.applyDeviceStyles(deviceContext);
+    };
+    
+    window.addEventListener('resize', debounce(updateBreakpoints, 150));
+    
+    // CSS custom properties for JavaScript integration
+    const root = document.documentElement;
+    const updateCSSProperties = () => {
+      const context = DeviceContext.getContext();
+      root.style.setProperty('--current-breakpoint', context.device);
+      root.style.setProperty('--is-touch', context.hasTouch ? '1' : '0');
+      root.style.setProperty('--is-landscape', context.orientation === 'landscape' ? '1' : '0');
+    };
+    
+    updateCSSProperties();
+    window.addEventListener('resize', debounce(updateCSSProperties, 150));
+  },
+  
+  /**
+   * Set up orientation change handling
+   */
+  setupOrientationHandling() {
+    const handleOrientationChange = () => {
+      setTimeout(() => {
+        const deviceContext = DeviceContext.getContext();
+        this.applyDeviceStyles(deviceContext);
+        
+        // Trigger map resize if available
+        if (window.map) {
+          window.map.invalidateSize();
+        }
+        
+        // Dispatch custom event for other components
+        window.dispatchEvent(new CustomEvent('appOrientationChange', {
+          detail: { context: deviceContext }
+        }));
+      }, 100);
+    };
+    
+    window.addEventListener('orientationchange', handleOrientationChange);
+    window.addEventListener('resize', debounce(handleOrientationChange, 150));
+  },
+  
+  /**
+   * Initialize native app integration
+   */
+  async initNativeIntegration() {
+    if (window.NativeFeatures && window.NativeFeatures.isNativeApp()) {
+      console.log('AppBootstrap: Setting up native app integration');
+      
+      // Handle native app state changes
+      window.addEventListener('nativeAppStateChange', (event) => {
+        console.log('AppBootstrap: App state changed:', event.detail);
+        
+        if (event.detail.isActive) {
+          // App became active - refresh data if needed
+          this.handleAppActivation();
+        } else {
+          // App went to background - save state if needed
+          this.handleAppBackground();
+        }
+      });
+      
+      // Handle native back button
+      window.addEventListener('nativeBackButton', (event) => {
+        console.log('AppBootstrap: Native back button pressed');
+        this.handleNativeBackButton();
+      });
+      
+      // Set up native geolocation enhancement
+      this.setupNativeGeolocation();
+      
+    } else {
+      console.log('AppBootstrap: Running in web browser mode');
+    }
+  },
+  
+  /**
+   * Handle app activation (foreground)
+   */
+  handleAppActivation() {
+    // Refresh map if needed
+    if (window.map) {
+      setTimeout(() => window.map.invalidateSize(), 100);
+    }
+    
+    // Check for data updates
+    // Could implement periodic refresh here
+  },
+  
+  /**
+   * Handle app going to background
+   */
+  handleAppBackground() {
+    // Save current state
+    if (window.StateManager) {
+      StateManager.saveState();
+    }
+  },
+  
+  /**
+   * Handle native back button
+   */
+  handleNativeBackButton() {
+    // Check if any modals are open
+    const openModal = document.querySelector('.app-modal:not([hidden])');
+    const openDrawer = document.querySelector('.docs-drawer:not([hidden])');
+    
+    if (openModal) {
+      openModal.hidden = true;
+      document.querySelector('.app-overlay').hidden = true;
+      return;
+    }
+    
+    if (openDrawer) {
+      openDrawer.hidden = true;
+      document.querySelector('.app-overlay').hidden = true;
+      return;
+    }
+    
+    // If nothing to close, minimize app (native only)
+    if (window.NativeFeatures && window.NativeFeatures.hasFeature('app')) {
+      // Could implement app minimization here
+    }
+  },
+  
+  /**
+   * Set up enhanced geolocation with native features
+   */
+  setupNativeGeolocation() {
+    if (!window.NativeFeatures) return;
+    
+    // Replace global geolocation functions with native-enhanced versions
+    window.getEnhancedPosition = async (options) => {
+      try {
+        const position = await window.NativeFeatures.getCurrentPosition(options);
+        console.log('AppBootstrap: Enhanced position obtained:', position);
+        return position;
+      } catch (error) {
+        console.warn('AppBootstrap: Enhanced geolocation failed:', error);
+        throw error;
+      }
+    };
+    
+    window.watchEnhancedPosition = (callback, options) => {
+      try {
+        return window.NativeFeatures.watchPosition(callback, options);
+      } catch (error) {
+        console.warn('AppBootstrap: Enhanced position watching failed:', error);
+        throw error;
+      }
+    };
+  },
+  
+  /**
+   * Initialize map
+   */
+  initMap() {
+    console.log('AppBootstrap: Initializing map');
+    
+    // Create map instance with optimized settings
+    window.map = L.map('map', {
+      center: [-37.8136, 144.9631], // Melbourne
+      zoom: 8,
+      zoomSnap: 0.333,
+      zoomDelta: 0.333,
+      preferCanvas: true,
+      zoomControl: false,
+      attributionControl: false
+    });
+    
+    // Store default view for reset functionality
+    window.DEFAULT_VIEW = { 
+      center: window.map.getCenter(), 
+      zoom: window.map.getZoom() 
+    };
+    
+    // Add zoom control in better position for mobile
+    L.control.zoom({
+      position: DeviceContext.getContext().device === 'mobile' ? 'bottomright' : 'topleft'
+    }).addTo(window.map);
+    
+    // Add base tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(window.map);
+    
+    // Create panes to control z-order (bottom -> top): LGA, CFA, SES, Ambulance, Police, FRV
+    const panes = [
+      ['lga', 400],
+      ['cfa', 410],
+      ['ses', 420],
+      ['ambulance', 430],
+      ['police', 440],
+      ['frv', 450]
+    ];
+    
+    panes.forEach(([name, z]) => {
+      window.map.createPane(name);
+      window.map.getPane(name).style.zIndex = String(z);
+    });
+    
+    // Handle map interactions with native feedback
+    window.map.on('click', () => {
+      if (window.NativeFeatures) {
+        window.NativeFeatures.hapticFeedback('light');
+      }
+    });
+    
+    window.map.on('zoomend', () => {
+      if (window.NativeFeatures) {
+        window.NativeFeatures.hapticFeedback('light');
+      }
+    });
+    
+    // Set map reference for legacy compatibility
+    if (window.setMap) {
+      window.setMap(window.map);
+    }
+  },
+  
+  /**
+   * Set up UI components
+   */
+  setupUI() {
+    console.log('AppBootstrap: Setting up UI components');
+    
+    // Set up collapsible sections
+    if (window.setupCollapsible) {
+      // Start All Active collapsed; it will auto-expand when the first item is added
+      window.setupCollapsible('activeHeader', 'activeList', false);
+      window.setupCollapsible('showAllHeader', 'showAllList');
+      window.setupCollapsible('sesHeader', 'sesList');
+      window.setupCollapsible('lgaHeader', 'lgaList');
+      window.setupCollapsible('cfaHeader', 'cfaList');
+      window.setupCollapsible('policeHeader', 'policeList');
+      window.setupCollapsible('ambulanceHeader', 'ambulanceList');
+      window.setupCollapsible('frvHeader', 'frvList');
+    }
+    
+    // Initialize other UI managers
+    if (window.CollapsibleManager) {
+      CollapsibleManager.init();
+    }
+    
+    if (window.SearchManager) {
+      SearchManager.init();
+    }
+    
+    if (window.ActiveListManager) {
+      ActiveListManager.init();
+    }
+  },
+  
+  /**
+   * Load application components
+   */
+  async loadComponents() {
+    console.log('AppBootstrap: Loading application components');
+    
+    try {
+      // Start preloading if available
+      if (window.startPreloading) {
+        window.startPreloading();
+      }
+      
+      // Load map data
+      if (window.PolygonLoader) {
+        await PolygonLoader.loadAllPolygons();
+      }
+      
+      // Load facility data
+      const facilityLoaders = [
+        'AmbulanceLoader',
+        'PoliceLoader', 
+        'SESFacilitiesLoader',
+        'CFAFacilitiesLoader'
+      ];
+      
+      for (const loaderName of facilityLoaders) {
+        if (window[loaderName]) {
+          try {
+            await window[loaderName].init();
+          } catch (error) {
+            console.warn(`AppBootstrap: Failed to load ${loaderName}:`, error);
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.error('AppBootstrap: Component loading failed:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Set up event handlers
+   */
+  setupEventHandlers() {
+    console.log('AppBootstrap: Setting up event handlers');
+    
+    // Sidebar tool click handling
+    window.addEventListener('sidebar-tool-click', (ev) => {
+      const idx = ev?.detail?.index;
+      
+      // Haptic feedback for interactions
+      if (window.NativeFeatures) {
+        window.NativeFeatures.hapticFeedback('light');
+      }
+      
+      if (idx === 3) { // Info
+        this.openInfo();
+      } else if (idx === 2) { // Docs
+        const hash = (location.hash || '').toString();
+        const m = hash.match(/^#docs\/(\w+)/);
+        const slug = m ? m[1] : 'intro';
+        this.openDocs(slug);
+      }
+    });
+    
+    // Overlay/close buttons and ESC handling
+    const iClose = document.getElementById('infoClose');
+    const dClose = document.getElementById('docsClose');
+    const iOv = document.getElementById('infoOverlay');
+    const dOv = document.getElementById('docsOverlay');
+    
+    if (iClose) iClose.addEventListener('click', () => this.closeInfo());
+    if (iOv) iOv.addEventListener('click', () => this.closeInfo());
+    if (dClose) dClose.addEventListener('click', () => this.closeDocs());
+    if (dOv) dOv.addEventListener('click', () => this.closeDocs());
+    
+    // TOC clicks
+    document.querySelectorAll('.docs-toc a[data-doc]').forEach(a => {
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        const slug = a.getAttribute('data-doc');
+        if (!slug) return;
+        
+        // Haptic feedback
+        if (window.NativeFeatures) {
+          window.NativeFeatures.hapticFeedback('light');
+        }
+        
+        history.replaceState(null, '', `#docs/${slug}`);
+        this.openDocs(slug);
+      });
+    });
+    
+    // Set up mobile navigation on window resize
+    window.addEventListener('resize', debounce(() => {
+      if (window.MobileDocsNav) {
+        window.MobileDocsNav.setupDocsNavigation();
+      }
+    }, 250));
+    
+    // Set up initial mobile navigation if docs are open
+    if (window.MobileDocsNav) {
+      window.MobileDocsNav.setupDocsNavigation();
+    }
+    
+    // ESC key handling
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.closeInfo();
+        this.closeDocs();
+      }
+    });
+  },
+  
+  /**
+   * Handle initial geolocation
+   */
+  handleInitialLocation() {
+    const deviceContext = DeviceContext.getContext();
+    
+    // Only auto-locate on mobile devices or if explicitly requested
+    if (deviceContext.device === 'mobile' || localStorage.getItem('autoLocate') === 'true') {
+      this.requestUserLocation();
+    }
+  },
+  
+  /**
+   * Request user location with enhanced native features
+   */
+  async requestUserLocation() {
+    try {
+      console.log('AppBootstrap: Requesting user location');
+      
+      let position;
+      if (window.getEnhancedPosition) {
+        position = await window.getEnhancedPosition({
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000
+        });
+      } else {
+        // Fallback to standard geolocation
+        position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000
+          });
+        });
+      }
+      
+      if (position && window.map) {
+        const lat = position.latitude || position.coords.latitude;
+        const lng = position.longitude || position.coords.longitude;
+        
+        // Add user location marker
+        L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: 'user-location-marker',
+            html: '📍',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          })
+        }).addTo(window.map).bindPopup('Your location');
+        
+        // Center map on user location
+        window.map.setView([lat, lng], 12);
+        
+        // Haptic feedback for successful location
+        if (window.NativeFeatures) {
+          window.NativeFeatures.hapticFeedback('success');
+        }
+        
+        console.log('AppBootstrap: User location set:', { lat, lng });
+      }
+      
+    } catch (error) {
+      console.warn('AppBootstrap: Geolocation failed:', error);
+      
+      // Haptic feedback for failed location
+      if (window.NativeFeatures) {
+        window.NativeFeatures.hapticFeedback('error');
+      }
+    }
+  },
+  
+  /**
+   * Modal and drawer management
+   */
+  openDocs(slug = 'intro') {
+    fetch(`docs/${slug}.md`)
+      .then(response => response.text())
+      .then(content => {
+        const contentEl = document.getElementById('docsContent');
+        if (contentEl) {
+          // Basic markdown parsing (for simple content)
+          contentEl.innerHTML = this.parseMarkdown(content);
+        }
+        
+        const overlay = document.getElementById('docsOverlay');
+        const drawer = document.getElementById('docsDrawer');
+        if (overlay) overlay.hidden = false;
+        if (drawer) drawer.hidden = false;
+        
+        // Set up mobile navigation
+        if (window.MobileDocsNav) {
+          window.MobileDocsNav.setupDocsNavigation();
+        }
+        
+        // Update URL hash to reflect current page
+        if (window.location.hash !== `#docs/${slug}`) {
+          history.replaceState(null, '', `#docs/${slug}`);
+        }
+        
+        const closeBtn = document.getElementById('docsClose');
+        if (closeBtn) closeBtn.focus();
+      })
+      .catch(error => {
+        console.error('Failed to load documentation:', error);
+        const contentEl = document.getElementById('docsContent');
+        if (contentEl) {
+          contentEl.innerHTML = '<p>Failed to load documentation.</p>';
+        }
+        
+        // Still set up navigation even if content fails
+        if (window.MobileDocsNav) {
+          window.MobileDocsNav.setupDocsNavigation();
+        }
+      });
+  },
+  
+  /**
+   * Highlight the currently active documentation page
+   */
+  highlightCurrentDocsPage() {
+    const toc = document.querySelector('.docs-toc');
+    if (!toc) return;
+    
+    // Get current page from URL hash
+    const hash = window.location.hash;
+    const match = hash.match(/^#docs\/(\w+)/);
+    const currentSlug = match ? match[1] : 'intro';
+    
+    // Remove active class from all links
+    toc.querySelectorAll('a[data-doc]').forEach(link => {
+      link.classList.remove('active');
+    });
+    
+    // Add active class to current page
+    const currentLink = toc.querySelector(`a[data-doc="${currentSlug}"]`);
+    if (currentLink) {
+      currentLink.classList.add('active');
+    }
+  },
+  
+  closeDocs() {
+    const overlay = document.getElementById('docsOverlay');
+    const drawer = document.getElementById('docsDrawer');
+    if (overlay) overlay.hidden = true;
+    if (drawer) drawer.hidden = true;
+  },
+  
+  openInfo() {
+    const overlay = document.getElementById('infoOverlay');
+    const modal = document.getElementById('infoModal');
+    if (overlay) overlay.hidden = false;
+    if (modal) modal.hidden = false;
+    const closeBtn = document.getElementById('infoClose');
+    if (closeBtn) closeBtn.focus();
+  },
+  
+  closeInfo() {
+    const overlay = document.getElementById('infoOverlay');
+    const modal = document.getElementById('infoModal');
+    if (overlay) overlay.hidden = true;
+    if (modal) modal.hidden = true;
+  },
+  
+  /**
+   * Basic markdown parser for documentation
+   */
+  parseMarkdown(content) {
+    return content
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+      .replace(/\*(.*)\*/gim, '<em>$1</em>')
+      .replace(/!\[([^\]]*)\]\(([^\)]*)\)/gim, '<img alt="$1" src="$2" />')
+      .replace(/\[([^\]]*)\]\(([^\)]*)\)/gim, '<a href="$2">$1</a>')
+      .replace(/`([^`]*)`/gim, '<code>$1</code>')
+      .replace(/^\* (.*$)/gim, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/gims, '<ul>$1</ul>')
+      .replace(/\n\n/gim, '</p><p>')
+      .replace(/^(?!<[h|u|l])/gim, '<p>')
+      .replace(/$/gim, '</p>');
+  }
+};
 
-// Modular batched preloading of polygons/labels (sidebar order)
-window.addEventListener('DOMContentLoaded', () => {
-	window.startPreloading();
-});
+// Utility function for debouncing
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
 
-// Create panes to control z-order (bottom -> top): LGA, CFA, SES, Ambulance, Police, FRV
-(() => {
-	const panes = [
-		['lga', 400],
-		['cfa', 410],
-		['ses', 420],
-		['ambulance', 430],
-		['police', 440],
-		['frv', 450]
-	];
-	panes.forEach(([name, z]) => {
-		mapInstance.createPane(name);
-		mapInstance.getPane(name).style.zIndex = String(z);
-	});
-})();
-
-// Collapsibles
-// Start All Active collapsed; it will auto-expand when the first item is added
-window.setupCollapsible('activeHeader','activeList',false);
-window.setupCollapsible('showAllHeader','showAllList');
-window.setupCollapsible('sesHeader','sesList');
-window.setupCollapsible('lgaHeader','lgaList');
-window.setupCollapsible('cfaHeader','cfaList');
-window.setupCollapsible('policeHeader','policeList');
-window.setupCollapsible('ambulanceHeader','ambulanceList');
-window.setupCollapsible('frvHeader','frvList');
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => AppBootstrap.init());
+} else {
+  AppBootstrap.init();
+}
 
 // Harden: align outlineColors with each category's styleFn color (prevents drift)
 (() => {
@@ -155,7 +814,10 @@ window.addEventListener('DOMContentLoaded', () => {
 	// Restore persisted state or default-minimize on small screens
 	try {
 		const saved = localStorage.getItem('sidebarMinimized');
-		const shouldMinimize = saved === '1' || (saved === null && window.innerWidth < 768);
+		// Get mobile breakpoint from CSS custom property, fallback to 768px
+		const computedStyle = getComputedStyle(document.documentElement);
+		const mobileBreakpoint = parseInt(computedStyle.getPropertyValue('--mobile-large')?.replace('px', '')) || 768;
+		const shouldMinimize = saved === '1' || (saved === null && window.innerWidth < mobileBreakpoint);
 		if (shouldMinimize) {
 			menu.classList.add('sidebar-minimized');
 				// Disable focus/keyboard inside menu when minimized
@@ -189,6 +851,72 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 window.setupOfflineListener();
+
+// Enhanced device context integration
+window.addEventListener('deviceContextReady', (event) => {
+	const context = event.detail.context;
+	console.log('Bootstrap: Device context ready:', context);
+	
+	// Apply platform-specific optimizations
+	if (context.isPWA) {
+		document.body.classList.add('pwa-mode');
+		console.log('Bootstrap: PWA mode enabled');
+	}
+	
+	if (context.platform.startsWith('ios')) {
+		document.body.classList.add('ios-device');
+	} else if (context.platform.startsWith('android')) {
+		document.body.classList.add('android-device');
+	}
+	
+	// Add breakpoint class to body
+	document.body.classList.add(`breakpoint-${context.breakpoint}`);
+});
+
+// Handle orientation and context changes
+window.addEventListener('deviceContextChange', (event) => {
+	const { context, type } = event.detail;
+	console.log('Bootstrap: Device context changed:', type, context);
+	
+	if (type === 'orientation') {
+		// Update sidebar behavior on orientation change
+		const menu = document.getElementById('layerMenu');
+		if (menu && context.isMobile) {
+			// On mobile landscape with limited height, adjust sidebar max-height
+			if (context.orientation === 'landscape' && context.height < 500) {
+				menu.style.maxHeight = '90vh';
+			} else {
+				menu.style.maxHeight = '80vh';
+			}
+		}
+		
+		// Update breakpoint class
+		document.body.className = document.body.className.replace(/breakpoint-\w+/, '');
+		document.body.classList.add(`breakpoint-${context.breakpoint}`);
+	}
+});
+
+// Handle app visibility changes for performance
+window.addEventListener('appVisibilityChange', (event) => {
+	const { visible } = event.detail;
+	console.log('Bootstrap: App visibility changed:', visible);
+	
+	if (!visible) {
+		// App went to background, pause any heavy operations
+		try {
+			window.pauseOperations?.();
+		} catch (e) {
+			console.warn('Failed to pause operations:', e);
+		}
+	} else {
+		// App came to foreground, resume operations
+		try {
+			window.resumeOperations?.();
+		} catch (e) {
+			console.warn('Failed to resume operations:', e);
+		}
+	}
+});
 
 // Reset handler: return the UI to a clean default starting state
 window.addEventListener('sidebar-tool-click', async (ev) => {
@@ -324,6 +1052,14 @@ function openDocs(slug) {
 	}
 	const content = document.getElementById('docsContent');
 	if (content) content.focus();
+	
+	// Trigger mobile navigation setup
+	if (window.MobileDocsNav) {
+		window.MobileDocsNav.onDocsOpen();
+	}
+	
+	// Dispatch event for other listeners
+	window.dispatchEvent(new CustomEvent('docs-opened', { detail: { slug } }));
 }
 
 function closeDocs() {
@@ -380,6 +1116,11 @@ window.addEventListener('DOMContentLoaded', () => {
 			if (!slug) return;
 			history.replaceState(null, '', `#docs/${slug}`);
 			openDocs(slug);
+			
+			// Haptic feedback for mobile
+			if (window.NativeFeatures) {
+				window.NativeFeatures.hapticFeedback('light');
+			}
 		});
 	});
 });
