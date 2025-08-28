@@ -385,14 +385,6 @@ window.AppBootstrap = {
     if (window.ActiveListManager) {
       ActiveListManager.init();
     }
-    
-    // Initialize Documentation and Sidebar FABs via FABManager
-    setTimeout(() => {
-      if (window.FABManager) {
-        window.FABManager.create('docsFab');
-        window.FABManager.create('sidebarToggle');
-      }
-    }, 100);
   },
   
   /**
@@ -802,8 +794,7 @@ window.loadWaterwayCentres();
 window.initSearch();
 window.updateActiveList();
 
-// Sidebar minimize/expand toggle (mobile-friendly) - REPLACED BY SidebarToggleFab
-/*
+// Sidebar minimize/expand toggle (mobile-friendly)
 window.addEventListener('DOMContentLoaded', () => {
 	const menu = document.getElementById('layerMenu');
 	if (!menu) return;
@@ -846,10 +837,7 @@ window.addEventListener('DOMContentLoaded', () => {
 		btn.textContent = expanded ? '⏩' : '⏪';
 		try { localStorage.setItem('sidebarMinimized', minimized ? '1' : '0'); } catch {}
 	});
-*/
 
-// Sidebar tool button handlers  
-window.addEventListener('DOMContentLoaded', () => {
 	// Attach inert click handlers to sidebar tool buttons (1, 2, 3)
 	['sidebarBtn1','sidebarBtn2','sidebarBtn3'].forEach((id, idx) => {
 		const el = document.getElementById(id);
@@ -995,17 +983,15 @@ window.addEventListener('sidebar-tool-click', async (ev) => {
 		// 7) Ensure sidebar is expanded (default on desktops)
 		try {
 			const menu = document.getElementById('layerMenu');
-			if (menu) {
+			const btn = document.getElementById('sidebarToggle');
+			if (menu && btn) {
 				menu.classList.remove('sidebar-minimized');
 				try { menu.inert = false; } catch {}
+				btn.setAttribute('aria-expanded', 'true');
+				btn.title = 'Hide panel';
+				btn.textContent = '⏩';
 			}
 			localStorage.setItem('sidebarMinimized', '0');
-			
-      // Update SidebarToggleFAB state if it exists
-      const sidebarFAB = window.FABManager && window.FABManager.getInstance('sidebarToggle');
-      if (sidebarFAB && typeof sidebarFAB.restoreState === 'function') {
-        sidebarFAB.restoreState();
-      }
 		} catch {}
 
 		// Exit bulk mode after the bulk of changes are complete

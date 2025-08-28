@@ -28,25 +28,16 @@
 #   powershell -ExecutionPolicy Bypass -File scripts/dev-up.ps1 -BackendPort 5001 -FrontendPort 8001
 #   powershell -ExecutionPolicy Bypass -File scripts/dev-up.ps1 -Stop   # stops previously started processes
 
-
 [CmdletBinding()]
 param(
   [int]$BackendPort = 5000,
   [int]$FrontendPort = 8000,
   [string]$BackendHost = '127.0.0.1',
-  [string]$VenvPython,
+  # Path to venv python; if missing, script will attempt to create .venv using system python
+  [string]$VenvPython = (Join-Path (Join-Path $PSScriptRoot '..') '.venv\Scripts\python.exe'),
   [switch]$Stop,
   [switch]$NoInstall
 )
-
-# Patch: Ensure $PSScriptRoot is set, fallback to script location if empty
-$__scriptRoot = $PSScriptRoot
-if ([string]::IsNullOrEmpty($__scriptRoot)) {
-  $__scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-}
-if (-not $VenvPython) {
-  $VenvPython = Join-Path (Join-Path $__scriptRoot '..') '.venv\Scripts\python.exe'
-}
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -186,8 +177,8 @@ $runInfo = [ordered]@{
   repoRoot    = $repoRoot
   backend     = "http://${BackendHost}:${BackendPort}"
   frontend    = "http://127.0.0.1:$FrontendPort"
-  backendPid  = if ($backendProc) { $backendProc.Id } else { $null }
-  frontendPid = if ($frontendProc) { $frontendProc.Id } else { $null }
+  backendPid  = ($backendProc.Id  | ForEach-Object { $_ })
+  frontendPid = ($frontendProc.Id | ForEach-Object { $_ })
 }
 $runInfo | ConvertTo-Json | Set-Content (Get-PidsFile)
 

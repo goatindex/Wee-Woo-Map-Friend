@@ -1,0 +1,8 @@
+{
+    "startedAt":  "2025-08-28T20:59:29",
+    "repoRoot":  "D:\\mapexp.github.io",
+    "backend":  "http://127.0.0.1:5000",
+    "frontend":  "http://127.0.0.1:8000",
+    "backendPid":  null,
+    "frontendPid":  null
+}
