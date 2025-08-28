@@ -719,3 +719,29 @@ This project is open source. See individual files for specific licensing terms.
 - **OpenStreetMap** for base map tiles
 - **Victoria State Government** for emergency services data
 - **Contributors** who have helped improve this project
+
+## Unified FAB Framework & Navigation (2025 Update)
+
+### Overview
+The application now uses a unified Floating Action Button (FAB) framework for all major UI actions, including sidebar toggling and documentation navigation. This replaces legacy sidebar toggle buttons and docs menus with a consistent, Material Design-inspired approach.
+
+### Key Features
+- **FABManager**: Central manager for all FABs, handles registration, creation, and lifecycle.
+- **BaseFAB**: Abstract base class for FABs, ensuring consistent behavior and extensibility.
+- **SidebarToggleFAB & DocsFAB**: Refactored components using the new framework, registered with FABManager.
+- **Modern UI**: All FABs are visually consistent, touch-friendly, and accessible across devices.
+
+### How to Add a New FAB
+1. Extend `BaseFAB` to create your custom FAB component.
+2. Register the new FAB with `FABManager` in `js/bootstrap.js`.
+3. Add any required CSS to `css/styles.css` (prefer `.fab-*` classes).
+4. Test on desktop and mobile for accessibility and responsiveness.
+
+### Migration Notes
+- All legacy sidebar toggle and docs menu code has been removed.
+- CSS for `.sidebar-toggle` and related rules has been deleted.
+- FABs now handle all navigation and toggling actions.
+
+### Troubleshooting
+- If a FAB does not appear, check registration in `FABManager` and ensure the component extends `BaseFAB`.
+- For layout issues, verify CSS uses the new `.fab-*` classes and does not reference legacy selectors.

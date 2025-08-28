@@ -96,45 +96,88 @@
   <!-- Proj4 for coordinate conversion (required by coordConvert.js) -->
   <script src="https://cdn.jsdelivr.net/npm/proj4@2.9.2/dist/proj4.min.js"></script>
   
-  <!-- Core state and configuration -->
-  <script src="js/state.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/utils.js"></script>
-  <script src="js/device.js"></script>
-  <script src="js/native/features.js"></script>
+  <!-- Dual Architecture System: Modern ES Modules + Legacy Compatibility -->
+  <!-- Phase 2 Modern Module System (ES2022+) with Legacy Fallback -->
+  <script>
+    // Feature detection for modern module support
+    const supportsModules = 'noModule' in HTMLScriptElement.prototype;
+    const supportsES2022 = (() => {
+      try {
+        // Test for ES2022 features: private fields, top-level await, etc.
+        new Function('class A { #private = 1; }');
+        return true;
+      } catch (e) {
+        return false;
+      }
+    })();
+    
+    // Determine which system to load based on capabilities and user preference
+    window.useModernSystem = supportsModules && supportsES2022 && 
+      !window.location.search.includes('legacy=true') &&
+      !window.forceModernSystem === false;
+    
+    console.log(`🚀 WeeWoo Map Friend: Loading ${window.useModernSystem ? 'modern' : 'legacy'} system`);
+    console.log(`📊 Browser capabilities: modules=${supportsModules}, ES2022=${supportsES2022}`);
+  </script>
   
-  <!-- Utilities -->
-  <script src="js/utils/coordConvert.js"></script>
-  <script src="js/utils/errorUI.js"></script>
+  <!-- Modern ES Module System (Bundled) -->
+  <script type="module">
+    if (window.useModernSystem) {
+      try {
+        // Load modern bundled system
+        await import('./dist/js/app.modern.js');
+        console.log('✅ Modern system loaded successfully');
+      } catch (error) {
+        console.error('❌ Modern system failed to load, falling back to legacy:', error);
+        window.useModernSystem = false;
+        
+        // Fallback to legacy system
+        const script = document.createElement('script');
+        script.src = './dist/js/app.legacy.js';
+        script.onerror = () => {
+          console.error('❌ Legacy system also failed, trying source files...');
+          // Final fallback to source bootstrap
+          const bootstrapScript = document.createElement('script');
+          bootstrapScript.src = './js/bootstrap.js';
+          document.head.appendChild(bootstrapScript);
+        };
+        document.head.appendChild(script);
+      }
+    }
+  </script>
   
-  <!-- Feature management -->
-  <script src="js/labels.js"></script>
-  <script src="js/emphasise.js"></script>
-  <script src="js/polygonPlus.js"></script>
+  <!-- Legacy System (Bundled) -->
+  <script nomodule>
+    // Load legacy bundled system for older browsers
+    const script = document.createElement('script');
+    script.src = './dist/js/app.legacy.js';
+    script.onerror = () => {
+      console.error('❌ Legacy bundle failed, trying source bootstrap...');
+      const bootstrapScript = document.createElement('script');
+      bootstrapScript.src = './js/bootstrap.js';
+      document.head.appendChild(bootstrapScript);
+    };
+    document.head.appendChild(script);
+  </script>
   
-  <!-- Data loaders -->
-  <script src="js/loaders/polygons.js"></script>
-  <script src="js/loaders/ambulance.js"></script>
-  <script src="js/loaders/police.js"></script>
-  <script src="js/loaders/sesFacilities.js"></script>
-  <script src="js/loaders/cfaFacilities.js"></script>
-  <script src="js/loaders/sesUnits.js"></script>
-  <script src="js/loaders/waterwaycent.js"></script>
-  
-  <!-- UI components -->
-  <script src="js/ui/collapsible.js"></script>
-  <script src="js/ui/search.js"></script>
-  <script src="js/ui/activeList.js"></script>
-  <script src="js/ui/mobileDocsNav.js"></script>
-  <!-- Unified FAB framework -->
-  <script src="js/fab/BaseFAB.js"></script>
-  <script src="js/fab/FABManager.js"></script>
-  <script src="js/fab/DocsFAB.js"></script>
-  <script src="js/fab/SidebarToggleFAB.js"></script>
-
-  <!-- Preloader and bootstrap -->
-  <script src="js/preloader.js"></script>
-  <script src="js/bootstrap.js"></script>
+  <!-- Legacy System Fallback for when modern is disabled -->
+  <script>
+    // Delayed loading for when modern system detection completes
+    setTimeout(() => {
+      if (!window.useModernSystem && !document.querySelector('script[nomodule]')) {
+        console.log('🔄 Loading legacy system (modern disabled)');
+        const script = document.createElement('script');
+        script.src = './dist/js/app.legacy.js';
+        script.onerror = () => {
+          console.error('❌ Legacy bundle failed, trying source bootstrap...');
+          const bootstrapScript = document.createElement('script');
+          bootstrapScript.src = './js/bootstrap.js';
+          document.head.appendChild(bootstrapScript);
+        };
+        document.head.appendChild(script);
+      }
+    }, 10);
+  </script>
   
   <!-- Service Worker Registration -->
   <script>
@@ -249,7 +292,16 @@
       <h2 id="docsTitle">Documentation</h2>
       <button id="docsClose" class="docs-close" aria-label="Close">✖</button>
     </header>
-    <div class="docs-body fab-mode">
+    <div class="docs-body">
+      <nav class="docs-toc" aria-label="Table of contents">
+        <ul>
+          <li><a href="#docs/intro" data-doc="intro">Welcome</a></li>
+          <li><a href="#docs/usage" data-doc="usage">Using the App</a></li>
+          <li><a href="#docs/adding-layers" data-doc="adding-layers">Adding Layers</a></li>
+          <li><a href="#docs/layers" data-doc="layers">Layers & Categories</a></li>
+          <li><a href="#docs/troubleshooting" data-doc="troubleshooting">Troubleshooting</a></li>
+        </ul>
+      </nav>
       <main id="docsContent" class="docs-content" tabindex="0" aria-live="polite">
         <h2>Welcome to Documentation</h2>
         <p>On mobile devices, tap the blue <strong>"📚 Documentation Pages"</strong> button at the top to navigate between topics.</p>
@@ -258,9 +310,6 @@
       </main>
     </div>
   </aside>
-
-  <!-- FAB Container -->
-  <div id="docsFabContainer" class="docs-fab-container"></div>
 
 </body>
 </html>
