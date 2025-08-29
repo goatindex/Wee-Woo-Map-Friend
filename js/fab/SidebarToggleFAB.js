@@ -54,5 +54,8 @@ class SidebarToggleFAB extends window.BaseFAB {
   }
 }
 
+// Register with FABManager
+console.log('SidebarToggleFAB: Registering with FABManager');
 window.FABManager.register('sidebarToggle', SidebarToggleFAB);
+console.log('SidebarToggleFAB: Registration complete');
 console.log('SidebarToggleFAB loaded successfully - version 20250101_004');

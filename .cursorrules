@@ -166,6 +166,58 @@ This project is a Leaflet.js-based web map for visualizing SES, LGA, CFA, and Am
 
 ---
 
+## 📚 **Documentation Architecture (2025 Q1 Update)**
+
+### **Documentation Structure**
+
+This project now uses a **dual documentation system** for maximum clarity and efficiency:
+
+#### **Application Documentation (`docs/`)**
+
+- **Purpose**: User-facing features, functionality, and troubleshooting
+- **Content**: User guides, API reference, feature documentation
+- **Audience**: End users, API consumers, general users
+- **Maintenance**: Update when features change or new functionality is added
+
+#### **Project Documentation (`project_docs/`)**
+
+- **Purpose**: Development, architecture, and project management
+- **Content**: Architecture analysis, development guides, project templates
+- **Audience**: Developers, architects, project managers
+- **Maintenance**: Update during development phases and architectural changes
+
+### **Documentation Templates**
+
+All project documentation now uses **standardized templates** for consistency:
+
+- **Project Template**: For new architectural analysis and modernization projects
+- **Feature Template**: For documenting new user-facing features
+- **Testing Template**: For establishing testing frameworks and procedures
+- **Architecture Template**: For system architecture analysis and component mapping
+- **Architecture Decision Record**: For individual architectural decisions
+- **Architecture Decision Matrix**: For comparing multiple architectural approaches
+- **Performance Baselines**: For performance measurement and optimization
+- **Lessons Learned**: For capturing project insights and recommendations
+
+### **AI IDE Documentation Guidelines**
+
+When working with documentation:
+
+1. **Use appropriate templates** for new documentation
+2. **Maintain consistent structure** across all documents
+3. **Cross-reference appropriately** between application and project docs
+4. **Update both documentation systems** when making changes
+5. **Follow template patterns** for consistency and maintainability
+
+### **Documentation Location Logic**
+
+- **User features, API endpoints, troubleshooting** → `docs/`
+- **Architecture analysis, development guides, project management** → `project_docs/`
+- **Templates and standards** → `project_docs/templates/`
+- **Project-specific analysis** → `project_docs/` with appropriate template
+
+---
+
 This file provides instructions for using Cursor's AI assistant effectively in this project. Update as needed to reflect new features or changes.
 
 /\*\*
@@ -175,4 +227,3 @@ This file provides instructions for using Cursor's AI assistant effectively in t
 - API key is imported from config.js for development only.
 - For production, use a backend proxy for security.
   \*/
-
