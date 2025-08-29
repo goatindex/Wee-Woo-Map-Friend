@@ -48,4 +48,4 @@ class FABManager {
 }
 
 window.FABManager = new FABManager();
-export default FABManager;
+console.log('FABManager loaded successfully - version 20250101_004');

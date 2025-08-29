@@ -1,13 +1,12 @@
 /**
  * DocsFAB - FAB for documentation navigation, using unified BaseFAB
  */
-import BaseFAB from './BaseFAB.js';
 
-class DocsFAB extends BaseFAB {
+class DocsFAB extends window.BaseFAB {
   constructor(config = {}) {
     super(Object.assign({
       id: 'docsFab',
-      className: 'docs-fab',
+      className: 'fab fab-button',
       icon: '📄',
       ariaLabel: 'Open documentation',
       title: 'Docs',
@@ -15,13 +14,13 @@ class DocsFAB extends BaseFAB {
   }
 
   onClick(e) {
-    if (window.openDocs) {
-      window.openDocs();
+    if (window.AppBootstrap && typeof window.AppBootstrap.openDocs === 'function') {
+      window.AppBootstrap.openDocs('intro');
     } else {
-      console.error('DocsFAB: openDocs function not found');
+      console.error('DocsFAB: AppBootstrap.openDocs method not found');
     }
   }
 }
 
 window.FABManager.register('docsFab', DocsFAB);
-export default DocsFAB;
+console.log('DocsFAB loaded successfully - version 20250101_004');
