@@ -243,6 +243,118 @@ describe('ComponentToTest', () => {
 });
 ```
 
+### **Search Functionality Testing**
+
+Pattern for testing search components with emergency services data:
+
+```javascript
+describe('SearchManager Functionality', () => {
+  let searchManager;
+  let searchInput;
+  let searchResults;
+
+  beforeEach(() => {
+    // Create search DOM structure
+    container.innerHTML = `
+      <div class="search-container">
+        <input type="text" class="search-input" placeholder="Search emergency services...">
+        <div class="search-results"></div>
+      </div>
+    `;
+    
+    searchInput = container.querySelector('.search-input');
+    searchResults = container.querySelector('.search-results');
+    searchManager = new SearchManager(container, mockEmergencyData);
+  });
+
+  test('should filter search results by category', () => {
+    // Simulate user typing
+    searchInput.value = 'ballarat';
+    searchInput.dispatchEvent(new Event('input'));
+
+    // Should find results in multiple categories
+    const results = searchResults.querySelectorAll('.search-result-item');
+    expect(results.length).toBeGreaterThan(0);
+    
+    // Verify results contain expected categories
+    const resultTexts = Array.from(results).map(r => r.textContent);
+    expect(resultTexts.some(text => text.includes('SES'))).toBe(true);
+    expect(resultTexts.some(text => text.includes('LGA'))).toBe(true);
+  });
+
+  test('should handle no search results gracefully', () => {
+    searchInput.value = 'nonexistent location';
+    searchInput.dispatchEvent(new Event('input'));
+
+    const noResults = searchResults.querySelector('.no-results');
+    expect(noResults).toBeTruthy();
+    expect(noResults.textContent).toContain('No results found');
+  });
+
+  test('should activate item when search result is clicked', () => {
+    const mockActivate = jest.fn();
+    searchManager.on('itemActivated', mockActivate);
+    
+    searchInput.value = 'ballarat';
+    searchInput.dispatchEvent(new Event('input'));
+    
+    const firstResult = searchResults.querySelector('.search-result-item');
+    firstResult.click();
+    
+    expect(mockActivate).toHaveBeenCalledWith(expect.objectContaining({
+      category: 'ses',
+      key: 'ballarat_city',
+      name: 'Ballarat City'
+    }));
+  });
+});
+```
+
+### **DOM Testing Patterns**
+
+WeeWoo-specific patterns for testing DOM interactions:
+
+```javascript
+describe('DOM Testing Patterns', () => {
+  test('should test component render structure', () => {
+    const component = new ActiveListManager(container, mockEmergencyData);
+    component.render();
+
+    // Test specific DOM structure
+    expect(container.querySelector('.active-list-container')).toBeTruthy();
+    expect(container.querySelector('.active-list-header')).toBeTruthy();
+    expect(container.querySelectorAll('.active-list-icon-header')).toHaveLength(3);
+  });
+
+  test('should test button interactions with proper wait patterns', (done) => {
+    const component = new CollapsibleManager(container);
+    const toggleButton = container.querySelector('.collapsible-toggle');
+    
+    toggleButton.click();
+    
+    // Use setTimeout for async DOM updates (project pattern)
+    setTimeout(() => {
+      expect(container.querySelector('.collapsed')).toBeTruthy();
+      done();
+    }, 20);
+  });
+
+  test('should test form interactions', () => {
+    const checkbox = container.querySelector('input[type="checkbox"]');
+    const mockHandler = jest.fn();
+    
+    checkbox.addEventListener('change', mockHandler);
+    
+    // Simulate user interaction
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event('change'));
+    
+    expect(mockHandler).toHaveBeenCalled();
+    expect(checkbox.checked).toBe(true);
+  });
+});
+```
+
 ### **Testing Best Practices**
 
 #### **✅ Do:**
@@ -252,6 +364,8 @@ describe('ComponentToTest', () => {
 - Use appropriate assertions (`toBe`, `toEqual`, `toHaveBeenCalled`)
 - Mock external dependencies (APIs, timers, etc.)
 - Test component lifecycle (initialization, updates, destruction)
+- Use `setTimeout` for async DOM updates (20ms is project standard)
+- Test with real emergency services data structure (SES, LGA, CFA)
 
 #### **❌ Don't:**
 - Test implementation details (private methods, internal state)
@@ -259,6 +373,7 @@ describe('ComponentToTest', () => {
 - Use real network requests or timers in tests
 - Leave memory leaks (unremoved event listeners, DOM elements)
 - Test third-party library functionality (Leaflet, Turf.js)
+- Forget to test accessibility attributes (aria-expanded, etc.)
 
 ## Running Tests
 
@@ -323,37 +438,102 @@ Coverage reports are generated in the `coverage/` directory:
 
 ### **Component Testing Pattern**
 
+#### **WeeWoo Map Friend Component Pattern**
+
+Based on the actual project components like `HamburgerMenu` and `SearchManager`:
+
 ```javascript
-describe('Component Lifecycle', () => {
-  test('should initialize with correct default state', async () => {
-    component = await Component.create(container, options);
-    
-    // Verify initial state
-    expect(component.isInitialized).toBe(true);
-    expect(component.container).toBe(container);
-    expect(component.options).toMatchObject(expectedDefaults);
+describe('HamburgerMenu Component', () => {
+  let hamburgerMenu;
+  let container;
+
+  beforeEach(() => {
+    // Standard DOM setup for WeeWoo components
+    document.body.innerHTML = '<div id="test-container"></div>';
+    container = document.getElementById('test-container');
   });
 
-  test('should handle user interactions', async () => {
-    component = await Component.create(container);
-    const mockHandler = jest.fn();
-    component.on('event', mockHandler);
+  afterEach(() => {
+    if (hamburgerMenu) {
+      hamburgerMenu.destroy();
+    }
+    document.body.innerHTML = '';
+  });
+
+  test('should create component with default options', async () => {
+    hamburgerMenu = await HamburgerMenu.create(container);
     
-    // Simulate user action
-    component.container.click();
+    expect(hamburgerMenu).toBeInstanceOf(HamburgerMenu);
+    expect(hamburgerMenu.isOpen).toBe(false);
+    expect(hamburgerMenu.options.position).toBe('top-right');
+  });
+
+  test('should handle menu toggle interactions', () => {
+    const button = hamburgerMenu.find('.hamburger-button');
     
-    expect(mockHandler).toHaveBeenCalledWith(expectedEventData);
+    // Test open
+    button.click();
+    expect(hamburgerMenu.isOpen).toBe(true);
+    expect(button.classList.contains('active')).toBe(true);
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    
+    // Test close
+    button.click();
+    expect(hamburgerMenu.isOpen).toBe(false);
+    expect(button.getAttribute('aria-expanded')).toBe('false');
   });
 
   test('should clean up properly on destroy', () => {
-    component = new Component(container);
-    component.initialize();
-    
-    const spy = jest.spyOn(component, 'removeEventListeners');
-    component.destroy();
+    const spy = jest.spyOn(hamburgerMenu, 'removeEventListeners');
+    hamburgerMenu.destroy();
     
     expect(spy).toHaveBeenCalled();
-    expect(component.isDestroyed).toBe(true);
+    expect(hamburgerMenu.isDestroyed).toBe(true);
+  });
+});
+```
+
+#### **Emergency Services Data Testing**
+
+Pattern for testing components that handle SES, LGA, CFA data:
+
+```javascript
+describe('ActiveListManager with Emergency Services Data', () => {
+  // Real mock data pattern from the project
+  const mockEmergencyData = {
+    namesByCategory: {
+      ses: ['Alpine Resorts', 'Ararat Rural City', 'Ballarat City'],
+      lga: ['Ballarat', 'Bendigo', 'Geelong'], 
+      cfa: ['Ballarat Group', 'Bendigo Group', 'Geelong Group']
+    },
+    nameToKey: {
+      ses: {
+        'Alpine Resorts': 'alpine_resorts',
+        'Ballarat City': 'ballarat_city'
+      },
+      lga: {
+        'Ballarat': 'ballarat',
+        'Geelong': 'geelong'
+      }
+    },
+    categoryMeta: {
+      ses: { type: 'polygon' },
+      lga: { type: 'polygon' },
+      cfa: { type: 'point' }
+    },
+    outlineColors: {
+      ses: '#ff6b35',
+      lga: '#4ecdc4', 
+      cfa: '#45b7d1'
+    }
+  };
+
+  test('should handle emergency services data correctly', () => {
+    const manager = new ActiveListManager(container, mockEmergencyData);
+    
+    expect(manager.data.namesByCategory.ses).toHaveLength(3);
+    expect(manager.data.outlineColors.ses).toBe('#ff6b35');
+    expect(manager.data.categoryMeta.cfa.type).toBe('point');
   });
 });
 ```
@@ -386,28 +566,140 @@ describe('Async Operations', () => {
 
 ### **Map Integration Testing**
 
+#### **GeoJSON Layer Testing Pattern**
+
+Based on real emergency services GeoJSON handling:
+
 ```javascript
-describe('Map Integration', () => {
-  test('should add layer to map', () => {
-    const mockLayer = { addTo: jest.fn() };
-    global.L.geoJSON.mockReturnValue(mockLayer);
-    
-    MapManager.addGeoJSONLayer(mockGeoJSONData);
-    
-    expect(global.L.geoJSON).toHaveBeenCalledWith(mockGeoJSONData);
-    expect(mockLayer.addTo).toHaveBeenCalled();
+describe('Emergency Services GeoJSON Integration', () => {
+  let mockGeoJSONLayer;
+  
+  beforeEach(() => {
+    mockGeoJSONLayer = {
+      addTo: jest.fn(),
+      remove: jest.fn(),
+      setStyle: jest.fn(),
+      eachLayer: jest.fn()
+    };
+    global.L.geoJSON.mockReturnValue(mockGeoJSONLayer);
   });
 
-  test('should handle map events', () => {
-    const mapInstance = global.L.map();
-    const eventHandler = jest.fn();
+  test('should load SES polygon layer correctly', () => {
+    const sesGeoJSON = {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        properties: { 
+          name: 'Ballarat City',
+          category: 'ses' 
+        },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[[143.8, -37.5], [143.9, -37.5], [143.9, -37.6], [143.8, -37.6], [143.8, -37.5]]]
+        }
+      }]
+    };
+
+    LayerManager.addGeoJSONLayer('ses', sesGeoJSON);
     
-    MapManager.on('layerActivated', eventHandler);
+    expect(global.L.geoJSON).toHaveBeenCalledWith(sesGeoJSON, expect.objectContaining({
+      style: expect.any(Function),
+      onEachFeature: expect.any(Function)
+    }));
+    expect(mockGeoJSONLayer.addTo).toHaveBeenCalled();
+  });
+
+  test('should handle CFA point markers correctly', () => {
+    const cfaGeoJSON = {
+      type: 'FeatureCollection', 
+      features: [{
+        type: 'Feature',
+        properties: {
+          name: 'Ballarat Fire Station',
+          category: 'cfa'
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [143.85, -37.55]
+        }
+      }]
+    };
+
+    LayerManager.addGeoJSONLayer('cfa', cfaGeoJSON);
     
-    // Simulate map interaction
-    mapInstance.fireEvent('click', { latlng: [lat, lng] });
+    expect(global.L.geoJSON).toHaveBeenCalledWith(cfaGeoJSON, expect.objectContaining({
+      pointToLayer: expect.any(Function)
+    }));
+  });
+
+  test('should apply correct styling for emergency services', () => {
+    const stylingOptions = {
+      ses: { color: '#ff6b35', weight: 2 },
+      lga: { color: '#4ecdc4', weight: 2 },
+      cfa: { color: '#45b7d1', weight: 3 }
+    };
+
+    Object.keys(stylingOptions).forEach(category => {
+      const style = LayerManager.getStyleForCategory(category);
+      expect(style.color).toBe(stylingOptions[category].color);
+      expect(style.weight).toBe(stylingOptions[category].weight);
+    });
+  });
+});
+```
+
+#### **State Management Integration Testing**
+
+Pattern for testing StateManager and EventBus integration:
+
+```javascript
+describe('State Management Integration', () => {
+  let component;
+  let mockStateManager;
+  let mockEventBus;
+
+  beforeEach(() => {
+    // Mock the global state manager 
+    mockStateManager = {
+      setState: jest.fn(),
+      getState: jest.fn(() => ({})),
+      subscribe: jest.fn()
+    };
     
-    expect(eventHandler).toHaveBeenCalled();
+    mockEventBus = {
+      emit: jest.fn(),
+      on: jest.fn(),
+      off: jest.fn()
+    };
+
+    // Replace global instances
+    jest.spyOn(require('../modules/StateManager.js'), 'stateManager', 'get')
+      .mockReturnValue(mockStateManager);
+    jest.spyOn(require('../modules/EventBus.js'), 'globalEventBus', 'get')
+      .mockReturnValue(mockEventBus);
+  });
+
+  test('should update state when layer is activated', () => {
+    const searchManager = new SearchManager(container, mockEmergencyData);
+    
+    searchManager.activateItem('ses', 'ballarat_city', 'Ballarat City');
+    
+    expect(mockStateManager.setState).toHaveBeenCalledWith({
+      activeItems: expect.objectContaining({
+        ses: expect.arrayContaining(['ballarat_city'])
+      })
+    });
+  });
+
+  test('should emit events for layer changes', () => {
+    const activeListManager = new ActiveListManager(container, mockEmergencyData);
+    
+    activeListManager.removeItem('lga', 'geelong');
+    
+    expect(mockEventBus.emit).toHaveBeenCalledWith('layerRemoved', {
+      category: 'lga',
+      key: 'geelong'
+    });
   });
 });
 ```
@@ -526,68 +818,130 @@ const mockMapInstance = {
 
 ### **Performance Test Structure**
 
+#### **Emergency Services Performance Testing**
+
+Performance tests specific to WeeWoo Map Friend's mapping requirements:
+
 ```javascript
-describe('Performance Tests', () => {
+describe('Emergency Services Performance Tests', () => {
   beforeEach(() => {
     // Clear any performance markers
     performance.clearMarks();
     performance.clearMeasures();
   });
 
-  test('should load large GeoJSON within time limit', async () => {
+  test('should load SES GeoJSON data within performance targets', async () => {
     const startTime = performance.now();
     
-    await LayerManager.loadGeoJSON('large-dataset.geojson');
+    // Test with real SES data size (~85ms target from baselines)
+    await LayerManager.loadGeoJSON('ses', mockLargeSESData);
     
-    const endTime = performance.now();
-    const duration = endTime - startTime;
+    const duration = performance.now() - startTime;
     
-    expect(duration).toBeLessThan(500); // 500ms limit
+    expect(duration).toBeLessThan(100); // SES rendering target: 85ms
   });
 
-  test('should render polygons efficiently', () => {
-    const polygons = generateTestPolygons(1000);
+  test('should handle LGA polygon rendering efficiently', () => {
+    const lgaPolygons = generateMockLGAPolygons(79); // Victoria has 79 LGAs
     
-    performance.mark('render-start');
+    performance.mark('lga-render-start');
     
-    polygons.forEach(polygon => {
-      MapRenderer.addPolygon(polygon);
+    lgaPolygons.forEach(polygon => {
+      LayerManager.addPolygonToMap('lga', polygon);
     });
     
-    performance.mark('render-end');
-    performance.measure('polygon-rendering', 'render-start', 'render-end');
+    performance.mark('lga-render-end');
+    performance.measure('lga-rendering', 'lga-render-start', 'lga-render-end');
     
-    const measure = performance.getEntriesByName('polygon-rendering')[0];
-    expect(measure.duration).toBeLessThan(200); // 200ms for 1000 polygons
+    const measure = performance.getEntriesByName('lga-rendering')[0];
+    expect(measure.duration).toBeLessThan(120); // LGA rendering target: 120ms
+  });
+
+  test('should perform search filtering within acceptable time', () => {
+    const searchManager = new SearchManager(container, mockLargeEmergencyData);
+    
+    performance.mark('search-start');
+    
+    // Test search with common query that returns many results
+    const results = searchManager.filterResults('ballarat');
+    
+    performance.mark('search-end');
+    performance.measure('search-filtering', 'search-start', 'search-end');
+    
+    const measure = performance.getEntriesByName('search-filtering')[0];
+    expect(measure.duration).toBeLessThan(50); // Search should be under 50ms
+    expect(results.length).toBeGreaterThan(0);
+  });
+
+  test('should handle active list updates efficiently', () => {
+    const activeListManager = new ActiveListManager(container, mockEmergencyData);
+    
+    performance.mark('update-start');
+    
+    // Add multiple items rapidly (simulating user activating many layers)
+    for (let i = 0; i < 10; i++) {
+      activeListManager.addItem('ses', `item_${i}`, `Test Item ${i}`);
+    }
+    
+    performance.mark('update-end');
+    performance.measure('active-list-updates', 'update-start', 'update-end');
+    
+    const measure = performance.getEntriesByName('active-list-updates')[0];
+    expect(measure.duration).toBeLessThan(100); // Multiple updates under 100ms
   });
 });
 ```
 
-### **Memory Testing**
+#### **Memory Performance Testing**
 
 ```javascript
-describe('Memory Management', () => {
-  test('should not leak memory after component destruction', () => {
+describe('Memory Management Performance', () => {
+  test('should not leak memory when loading/unloading layers', () => {
     const initialMemory = performance.memory?.usedJSHeapSize || 0;
     
-    // Create and destroy multiple components
-    for (let i = 0; i < 100; i++) {
-      const component = new TestComponent(document.createElement('div'));
-      component.initialize();
-      component.destroy();
+    // Load and unload emergency services layers multiple times
+    for (let cycle = 0; cycle < 5; cycle++) {
+      const layerManager = new LayerManager();
+      
+      // Load all emergency services categories
+      ['ses', 'lga', 'cfa', 'ambulance', 'police'].forEach(category => {
+        layerManager.loadCategory(category, mockEmergencyData[category]);
+      });
+      
+      // Clean up
+      layerManager.destroy();
     }
     
-    // Force garbage collection (if available)
+    // Force garbage collection if available
     if (global.gc) global.gc();
     
     const finalMemory = performance.memory?.usedJSHeapSize || 0;
     const memoryGrowth = finalMemory - initialMemory;
     
-    // Memory growth should be minimal
-    expect(memoryGrowth).toBeLessThan(1000000); // 1MB limit
+    // Memory growth should be minimal for emergency services data
+    expect(memoryGrowth).toBeLessThan(5000000); // 5MB limit for multiple cycles
+  });
+
+  test('should handle large GeoJSON datasets without memory spikes', () => {
+    const beforeMemory = performance.memory?.usedJSHeapSize || 0;
+    
+    // Load largest dataset (police stations)
+    const policeManager = new PoliceLayerManager();
+    policeManager.loadPoliceStations(mockLargePoliceData);
+    
+    const afterMemory = performance.memory?.usedJSHeapSize || 0;
+    const memoryIncrease = afterMemory - beforeMemory;
+    
+    // Memory increase should be reasonable for police data
+    expect(memoryIncrease).toBeLessThan(10000000); // 10MB limit for police data
+    
+    // Clean up
+    policeManager.destroy();
   });
 });
 ```
+
+
 
 ## Troubleshooting
 
