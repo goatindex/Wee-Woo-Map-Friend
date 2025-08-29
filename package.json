@@ -29,6 +29,11 @@
     "test:performance:budgets": "jest --testNamePattern='Performance Budget'",
     "test:runtime-health": "node scripts/check-performance-budget.js",
     "test:pwa": "npx serve . -p 8000",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
     "lint": "echo 'Linting not configured yet'",
     "quality:check": "npm run lint && npm run test:coverage",
     "quality:report": "npm run test:coverage && npm run lint",
@@ -36,6 +41,7 @@
     "prepare:appstore": "npm run build && npm run icons && npm run cap:sync"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.22.0",
     "@capacitor/android": "^5.4.0",
     "@capacitor/app": "^5.0.6",
     "@capacitor/cli": "^5.4.0",
@@ -48,12 +54,12 @@
     "@capacitor/push-notifications": "^5.0.6",
     "@capacitor/splash-screen": "^5.0.6",
     "@capacitor/status-bar": "^5.0.6",
-    "puppeteer": "^24.17.1",
-    "sharp": "^0.32.0",
+    "@playwright/test": "^1.55.0",
+    "babel-jest": "^29.7.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "babel-jest": "^29.7.0",
-    "@babel/preset-env": "^7.22.0"
+    "puppeteer": "^24.17.1",
+    "sharp": "^0.32.0"
   },
   "keywords": [
     "emergency-services",
