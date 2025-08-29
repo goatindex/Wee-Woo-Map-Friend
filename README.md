@@ -12,7 +12,7 @@ An interactive emergency services mapping application for Victoria, Australia, f
 - [Available Scripts](#available-scripts)
 - [Deployment](#deployment)
 - [Architecture](#architecture)
-- [API Reference](#api-reference)
+- [API Reference](#api-reference) 📚 **[Complete API Docs](project_docs/api/README.md)**
 - [Performance](#performance)
 - [Development](#development)
 - [Security](#security)
@@ -260,85 +260,41 @@ index.html → PWA manifest & service worker → js/bootstrap.js → device.js (
 
 ## API Reference
 
-### Backend Endpoints
+📚 **[Complete API Documentation](project_docs/api/README.md)** - Comprehensive API reference with examples
 
-#### Health Check
+### Quick API Overview
 
-```http
-GET /health
-```
+#### Backend Services
+- **[Weather API](project_docs/api/endpoints.md#weather-data)** - Multi-provider weather forecasting
+- **[Health Check](project_docs/api/endpoints.md#health-check)** - Service status monitoring
 
-**Response**: `200 OK`
+#### Frontend APIs
+- **[Emergency Services Data](project_docs/api/data-formats.md#emergency-services-geojson-structure)** - GeoJSON layer management
+- **[Native Features](project_docs/api/native-api.md)** - Mobile app capabilities
+- **[PWA Features](project_docs/api/pwa-api.md)** - Offline functionality
 
-```json
-{ "status": "ok" }
-```
+#### Key API Categories
+- **[Data Loading](project_docs/api/examples.md#emergency-services-data-loading)** - Load and manage emergency service layers
+- **[State Management](project_docs/api/data-formats.md#state-management-schemas)** - Layer visibility and emphasis
+- **[Error Handling](project_docs/api/error-handling.md)** - Robust error recovery patterns
+- **[Performance](project_docs/api/rate-limits.md)** - Optimization and monitoring
 
-#### Weather Data
-
-```http
-GET /api/weather?lat={latitude}&lon={longitude}&days={days}&provider={provider}
-```
-
-**Parameters**:
-
-- `lat` (required): Latitude (-90 to 90)
-- `lon` (required): Longitude (-180 to 180)
-- `days` (optional): Number of forecast days (1-7, default: 7)
-- `provider` (optional): Weather provider (`mock`, `open-meteo`, `willyweather`)
-
-**Response**: `200 OK`
-
-```json
-{
-  "location": { "lat": -37.8136, "lon": 144.9631 },
-  "days": 7,
-  "forecast": [
-    {
-      "day": 1,
-      "summary": "Partly cloudy",
-      "tempMin": 12,
-      "tempMax": 22
-    }
-  ]
-}
-```
-
-**Error Responses**:
-
-- `400 Bad Request`: Invalid parameters
-- `404 Not Found`: No location found for coordinates
-- `502 Bad Gateway`: Upstream API error
-- `504 Gateway Timeout`: Request timeout
-
-### Frontend Configuration
-
-#### Category Metadata
+#### Configuration Reference
 
 ```javascript
+// Category metadata - See: project_docs/api/data-formats.md#category-metadata
 window.categoryMeta = {
-  ses: {
-    type: 'polygon',
-    nameProp: 'RESPONSE_ZONE_NAME',
-    styleFn: sesStyle,
-    defaultOn: () => false,
-    listId: 'sesList',
-    toggleAllId: 'toggleAllSES',
-  },
-  // ... other categories
+  ses: { type: 'polygon', nameProp: 'RESPONSE_ZONE_NAME', /* ... */ },
+  // ... other categories - Full reference in API docs
 };
-```
 
-#### Color Configuration
-
-```javascript
+// Color configuration - See: project_docs/api/data-formats.md#style-configuration  
 window.outlineColors = {
-  ses: '#cc7a00',
-  lga: 'black',
-  cfa: '#FF0000',
-  // ... other categories
+  ses: '#cc7a00', lga: 'black', cfa: '#FF0000', // ... others
 };
 ```
+
+For complete API documentation including examples, data formats, authentication, and error handling, see **[project_docs/api/](project_docs/api/README.md)**.
 
 ## Performance
 
