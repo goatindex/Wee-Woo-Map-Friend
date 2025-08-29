@@ -7,7 +7,11 @@
 global.document = {
   createElement: jest.fn((tag) => ({
     tagName: tag.toUpperCase(),
-    classList: { add: jest.fn(), remove: jest.fn(), contains: jest.fn() },
+    classList: { 
+      add: jest.fn(), 
+      remove: jest.fn(), 
+      contains: jest.fn() 
+    },
     style: {},
     addEventListener: jest.fn(),
     removeEventListener: jest.fn(),
@@ -40,7 +44,8 @@ global.window = {
     matches: false,
     addListener: jest.fn(),
     removeListener: jest.fn()
-  }))
+  })),
+  dispatchEvent: jest.fn()
 };
 
 global.console = {
@@ -52,6 +57,41 @@ global.console = {
 describe('UI Components', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Ensure window.addEventListener is a Jest mock
+    window.addEventListener = jest.fn();
+    window.removeEventListener = jest.fn();
+    window.dispatchEvent = jest.fn();
+    
+    // Create proper Jest mocks for DOM elements
+    const createMockElement = (tag) => {
+      const element = {
+        tagName: tag.toUpperCase(),
+        classList: { 
+          add: jest.fn(), 
+          remove: jest.fn(), 
+          contains: jest.fn() 
+        },
+        style: {},
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        appendChild: jest.fn(),
+        removeChild: jest.fn(),
+        querySelector: jest.fn(),
+        querySelectorAll: jest.fn(() => []),
+        getAttribute: jest.fn(),
+        setAttribute: jest.fn(),
+        innerHTML: '',
+        textContent: '',
+        id: '',
+        className: '',
+        dispatchEvent: jest.fn()
+      };
+      return element;
+    };
+    
+    // Override document.createElement to return proper mocks
+    document.createElement = jest.fn(createMockElement);
   });
 
   describe('Component Interactions', () => {
@@ -128,17 +168,25 @@ describe('UI Components', () => {
       const mockButton = document.createElement('button');
       const eventHandler = jest.fn();
 
+      // Get the event listener function that was registered
+      let registeredHandler;
+      mockContainer.addEventListener.mockImplementation((event, handler) => {
+        registeredHandler = handler;
+      });
+
       mockContainer.addEventListener('click', (event) => {
         if (event.target.tagName === 'BUTTON') {
           eventHandler();
         }
       });
 
-      // Simulate button click
+      // Simulate button click by calling the registered handler directly
       const clickEvent = new Event('click');
       Object.defineProperty(clickEvent, 'target', { value: mockButton });
       
-      mockContainer.dispatchEvent(clickEvent);
+      if (registeredHandler) {
+        registeredHandler(clickEvent);
+      }
       expect(eventHandler).toHaveBeenCalled();
     });
   });
@@ -197,11 +245,12 @@ describe('UI Components', () => {
 
   describe('Responsive Behavior', () => {
     test('should handle responsive breakpoints', () => {
-      const mockMatchMedia = (query) => ({
-        matches: query.includes('mobile'),
+      // Mock matchMedia to return different results based on query
+      const mockMatchMedia = jest.fn((query) => ({
+        matches: query.includes('max-width'),
         addListener: jest.fn(),
         removeListener: jest.fn()
-      });
+      }));
 
       window.matchMedia = mockMatchMedia;
 
@@ -214,11 +263,11 @@ describe('UI Components', () => {
 
     test('should apply responsive classes', () => {
       const mockElement = document.createElement('div');
-      const mockMatchMedia = (query) => ({
-        matches: query.includes('mobile'),
+      const mockMatchMedia = jest.fn((query) => ({
+        matches: query.includes('max-width'),
         addListener: jest.fn(),
         removeListener: jest.fn()
-      });
+      }));
 
       window.matchMedia = mockMatchMedia;
 
@@ -237,12 +286,21 @@ describe('UI Components', () => {
       const mockElement = document.createElement('div');
       const orientationHandler = jest.fn();
 
+      // Get the registered event listener
+      let registeredHandler;
+      window.addEventListener.mockImplementation((event, handler) => {
+        if (event === 'orientationchange') {
+          registeredHandler = handler;
+        }
+      });
+
       window.addEventListener('orientationchange', orientationHandler);
       expect(window.addEventListener).toHaveBeenCalledWith('orientationchange', orientationHandler);
 
-      // Simulate orientation change
-      const orientationEvent = new Event('orientationchange');
-      window.dispatchEvent(orientationEvent);
+      // Simulate orientation change by calling the registered handler directly
+      if (registeredHandler) {
+        registeredHandler(new Event('orientationchange'));
+      }
     });
   });
 

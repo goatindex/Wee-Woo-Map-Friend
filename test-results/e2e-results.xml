@@ -1,0 +1,50 @@
+<testsuites id="" name="" tests="1" failures="1" skipped="0" errors="0" time="11.604011999999999">
+<testsuite name="user-journey.spec.js" timestamp="2025-08-29T16:31:12.577Z" hostname="chromium" tests="1" failures="1" skipped="0" time="10.539" errors="0">
+<testcase name="User Journey Tests › should complete full emergency services workflow" classname="user-journey.spec.js" time="10.539">
+<failure message="user-journey.spec.js:21:3 should complete full emergency services workflow" type="FAILURE">
+<![CDATA[  [chromium] › user-journey.spec.js:21:3 › User Journey Tests › should complete full emergency services workflow 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  locator('#sidebar')
+    Expected: visible
+    Received: <element(s) not found>
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('#sidebar')
+
+
+      25 |     
+      26 |     // 2. Verify sidebar is present and functional
+    > 27 |     await expect(page.locator('#sidebar')).toBeVisible();
+         |                                            ^
+      28 |     await expect(page.locator('.sidebar-section')).toHaveCount(6); // SES, LGA, CFA, Ambulance, Police, FRV
+      29 |     
+      30 |     // 3. Test SES layer activation workflow
+        at D:\mapexp.github.io\tests\e2e\user-journey.spec.js:27:44
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\..\test-results\user-journey-User-Journey--834a8-emergency-services-workflow-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\..\test-results\user-journey-User-Journey--834a8-emergency-services-workflow-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\..\test-results\user-journey-User-Journey--834a8-emergency-services-workflow-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|user-journey-User-Journey--834a8-emergency-services-workflow-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|user-journey-User-Journey--834a8-emergency-services-workflow-chromium\video.webm]]
+
+[[ATTACHMENT|user-journey-User-Journey--834a8-emergency-services-workflow-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+</testsuites>
