@@ -23,8 +23,16 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:phase1": "jest tests/Phase1TestFramework.test.js",
+    "test:performance": "jest tests/performance/",
+    "test:performance:suite": "jest tests/performance/PerformanceTestSuite.test.js",
+    "test:performance:budgets": "jest --testNamePattern='Performance Budget'",
+    "test:runtime-health": "node scripts/check-performance-budget.js",
     "test:pwa": "npx serve . -p 8000",
     "lint": "echo 'Linting not configured yet'",
+    "quality:check": "npm run lint && npm run test:coverage",
+    "quality:report": "npm run test:coverage && npm run lint",
+    "budget:check": "node scripts/check-performance-budget.js",
     "prepare:appstore": "npm run build && npm run icons && npm run cap:sync"
   },
   "devDependencies": {

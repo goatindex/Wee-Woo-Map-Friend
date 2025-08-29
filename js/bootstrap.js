@@ -87,30 +87,39 @@ const AppBootstrap = {
       DiagnosticLogger.verbose('AppBootstrap', 'Step 6: Initializing native integration');
       await this.initNativeIntegration();
       
+      // Wait for Leaflet to be ready
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 7: Waiting for Leaflet to be ready');
+      const leafletReady = await this.waitForLeaflet();
+      
       // Initialize map
-      DiagnosticLogger.verbose('AppBootstrap', 'Step 7: Initializing map');
-      this.initMap();
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 8: Initializing map');
+      const mapSuccess = this.initMap();
+      
+      if (!mapSuccess) {
+        DiagnosticLogger.warn('AppBootstrap', 'Map initialization failed, continuing with limited functionality');
+        // Continue without map - FAB buttons will still work for other features
+      }
       
       // Set up collapsibles and UI components
-      DiagnosticLogger.verbose('AppBootstrap', 'Step 8: Setting up UI components');
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 9: Setting up UI components');
       this.setupUI();
       
       // Initialize mobile documentation navigation
       if (window.MobileDocsNav) {
-        DiagnosticLogger.verbose('AppBootstrap', 'Step 9: Initializing mobile docs navigation');
+        DiagnosticLogger.verbose('AppBootstrap', 'Step 10: Initializing mobile docs navigation');
         window.MobileDocsNav.init();
       }
       
       // Load data and UI components
-      DiagnosticLogger.verbose('AppBootstrap', 'Step 10: Loading application components');
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 11: Loading application components');
       await this.loadComponents();
       
       // Set up event handlers
-      DiagnosticLogger.verbose('AppBootstrap', 'Step 11: Setting up event handlers');
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 12: Setting up event handlers');
       this.setupEventHandlers();
       
       // Handle initial geolocation
-      DiagnosticLogger.verbose('AppBootstrap', 'Step 12: Handling initial location');
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 13: Handling initial location');
       this.handleInitialLocation();
       
       const endTime = performance.now();
@@ -125,6 +134,40 @@ const AppBootstrap = {
     }
   },
   
+  /**
+   * Wait for Leaflet to be ready
+   */
+  async waitForLeaflet() {
+    return new Promise((resolve) => {
+      // Check if Leaflet is already available
+      if (typeof L !== 'undefined' && L.map) {
+        console.log('AppBootstrap: Leaflet already available');
+        resolve(true);
+        return;
+      }
+      
+      // Wait for Leaflet to load
+      const checkLeaflet = () => {
+        if (typeof L !== 'undefined' && L.map) {
+          console.log('AppBootstrap: Leaflet became available');
+          resolve(true);
+        } else {
+          // Check again in 100ms
+          setTimeout(checkLeaflet, 100);
+        }
+      };
+      
+      // Start checking
+      checkLeaflet();
+      
+      // Fallback timeout after 5 seconds
+      setTimeout(() => {
+        console.warn('AppBootstrap: Leaflet timeout, proceeding anyway');
+        resolve(false);
+      }, 5000);
+    });
+  },
+
   /**
    * Wait for native features to be ready
    */
@@ -352,16 +395,47 @@ const AppBootstrap = {
   initMap() {
     console.log('AppBootstrap: Initializing map');
     
-    // Create map instance with optimized settings
-    window.map = L.map('map', {
-      center: [-37.8136, 144.9631], // Melbourne
-      zoom: 8,
-      zoomSnap: 0.333,
-      zoomDelta: 0.333,
-      preferCanvas: true,
-      zoomControl: false,
-      attributionControl: false
-    });
+    // Check if Leaflet is available
+    if (typeof L === 'undefined') {
+      console.error('AppBootstrap: Leaflet (L) is not available');
+      DiagnosticLogger.error('AppBootstrap', 'Leaflet library not loaded');
+      
+      // Show user-friendly error message
+      if (window.ErrorUI) {
+        window.ErrorUI.showError('Map Library Error', 'The map library failed to load. Please refresh the page or check your internet connection.');
+      } else {
+        // Fallback error display
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#f8d7da;color:#721c24;padding:20px;border-radius:8px;border:1px solid #f5c6cb;z-index:10000;text-align:center;max-width:400px;';
+        errorDiv.innerHTML = `
+          <h3>🚨 Map Loading Error</h3>
+          <p>The map library failed to load. This usually means:</p>
+          <ul style="text-align:left;margin:10px 0;">
+            <li>Internet connection issues</li>
+            <li>CDN service temporarily unavailable</li>
+            <li>Browser security blocking external scripts</li>
+          </ul>
+          <p><strong>Please refresh the page to try again.</strong></p>
+          <button onclick="location.reload()" style="background:#721c24;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;">🔄 Refresh Page</button>
+        `;
+        document.body.appendChild(errorDiv);
+      }
+      
+      // Return false to indicate failure
+      return false;
+    }
+    
+    try {
+      // Create map instance with optimized settings
+      window.map = L.map('map', {
+        center: [-37.8136, 144.9631], // Melbourne
+        zoom: 8,
+        zoomSnap: 0.333,
+        zoomDelta: 0.333,
+        preferCanvas: true,
+        zoomControl: false,
+        attributionControl: false
+      });
     
     // Store default view for reset functionality
     window.DEFAULT_VIEW = { 
@@ -411,6 +485,39 @@ const AppBootstrap = {
     if (window.setMap) {
       window.setMap(window.map);
     }
+    
+    console.log('AppBootstrap: Map initialized successfully');
+    return true;
+    
+    } catch (error) {
+      console.error('AppBootstrap: Map initialization failed:', error);
+      DiagnosticLogger.error('AppBootstrap', 'Map initialization failed', error);
+      
+      // Show user-friendly error message
+      if (window.ErrorUI) {
+        window.ErrorUI.showError('Map Initialization Error', `Failed to initialize map: ${error.message}`);
+      } else {
+        // Fallback error display
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#f8d7da;color:#721c24;padding:20px;border-radius:8px;border:1px solid #f5c6cb;z-index:10000;text-align:center;max-width:400px;';
+        errorDiv.innerHTML = `
+          <h3>🚨 Map Initialization Error</h3>
+          <p>Failed to initialize the map: <strong>${error.message}</strong></p>
+          <p>This could be due to:</p>
+          <ul style="text-align:left;margin:10px 0;">
+            <li>Browser compatibility issues</li>
+            <li>Memory or performance constraints</li>
+            <li>Conflicting JavaScript libraries</li>
+          </ul>
+          <p><strong>Please refresh the page to try again.</strong></p>
+          <button onclick="location.reload()" style="background:#721c24;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;">🔄 Refresh Page</button>
+        `;
+        document.body.appendChild(errorDiv);
+      }
+      
+      // Return false to indicate failure
+      return false;
+    }
   },
   
   /**
@@ -446,7 +553,7 @@ const AppBootstrap = {
     }
     
     // Initialize Documentation and Sidebar FABs via FABManager
-    DiagnosticLogger.verbose('AppBootstrap', 'Step 12.1: Attempting to create FABs');
+    DiagnosticLogger.verbose('AppBootstrap', 'Step 13.1: Attempting to create FABs');
     
     setTimeout(() => {
       DiagnosticLogger.info('AppBootstrap', 'FAB Creation: Starting FAB initialization');
