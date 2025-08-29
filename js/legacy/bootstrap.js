@@ -794,50 +794,10 @@ window.loadWaterwayCentres();
 window.initSearch();
 window.updateActiveList();
 
-// Sidebar minimize/expand toggle (mobile-friendly)
-window.addEventListener('DOMContentLoaded', () => {
-	const menu = document.getElementById('layerMenu');
-	if (!menu) return;
-	let btn = document.getElementById('sidebarToggle');
-		if (!btn) {
-			btn = document.createElement('button');
-			btn.id = 'sidebarToggle';
-			btn.className = 'sidebar-toggle';
-			btn.type = 'button';
-			btn.setAttribute('aria-controls', 'layerMenu');
-			btn.setAttribute('aria-expanded', 'true');
-			btn.title = 'Hide panel';
-			btn.textContent = '⏩';
-			// Append to body so transforms on the sidebar don't affect it
-			document.body.appendChild(btn);
-		}
-	// Restore persisted state or default-minimize on small screens
-	try {
-		const saved = localStorage.getItem('sidebarMinimized');
-		// Get mobile breakpoint from CSS custom property, fallback to 768px
-		const computedStyle = getComputedStyle(document.documentElement);
-		const mobileBreakpoint = parseInt(computedStyle.getPropertyValue('--mobile-large')?.replace('px', '')) || 768;
-		const shouldMinimize = saved === '1' || (saved === null && window.innerWidth < mobileBreakpoint);
-		if (shouldMinimize) {
-			menu.classList.add('sidebar-minimized');
-				// Disable focus/keyboard inside menu when minimized
-				try { menu.inert = true; } catch {}
-			btn.setAttribute('aria-expanded', 'false');
-			btn.title = 'Show panel';
-			btn.textContent = '⏪';
-		}
-	} catch {}
-	btn.addEventListener('click', () => {
-		const minimized = menu.classList.toggle('sidebar-minimized');
-		const expanded = !minimized;
-			// Toggle inert (focus/keyboard) safety when minimized
-			try { menu.inert = minimized; } catch {}
-		btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-		btn.title = expanded ? 'Hide panel' : 'Show panel';
-		btn.textContent = expanded ? '⏩' : '⏪';
-		try { localStorage.setItem('sidebarMinimized', minimized ? '1' : '0'); } catch {}
-	});
+// Legacy sidebar toggle code removed - replaced by SidebarToggleFAB
 
+// Sidebar tool button handlers
+window.addEventListener('DOMContentLoaded', () => {
 	// Attach inert click handlers to sidebar tool buttons (1, 2, 3)
 	['sidebarBtn1','sidebarBtn2','sidebarBtn3'].forEach((id, idx) => {
 		const el = document.getElementById(id);

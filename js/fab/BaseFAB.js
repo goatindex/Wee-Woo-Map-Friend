@@ -107,4 +107,4 @@ class BaseFAB {
 }
 
 window.BaseFAB = BaseFAB;
-export default BaseFAB;
+console.log('BaseFAB loaded successfully - version 20250101_004');

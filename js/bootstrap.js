@@ -3,11 +3,27 @@
  * Application initialization and bootstrap with native features integration
  */
 
+// Import dependencies - Note: DeviceContext is available globally via window.DeviceContext
+// StateManager and globalEventBus are not yet globally available, so we'll use window globals for now
+
+// Utility function for debouncing
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
 /**
  * Application Bootstrap
  * Handles initialization, device context setup, native features, and application startup
  */
-window.AppBootstrap = {
+export const AppBootstrap = {
   
   /**
    * Initialize the application
@@ -20,7 +36,7 @@ window.AppBootstrap = {
       await this.waitForNativeFeatures();
       
       // Get device context with native info
-      const deviceContext = DeviceContext.getContext();
+      const deviceContext = window.DeviceContext.getContext();
       console.log('AppBootstrap: Device context initialized:', deviceContext);
       
       // Apply device-specific styling
@@ -61,7 +77,7 @@ window.AppBootstrap = {
     } catch (error) {
       console.error('AppBootstrap: Initialization failed:', error);
       if (window.ErrorUI) {
-        ErrorUI.showError('Failed to initialize application', error.message);
+        window.ErrorUI.showError('Failed to initialize application', error.message);
       }
     }
   },
@@ -132,7 +148,7 @@ window.AppBootstrap = {
   initResponsiveHandling() {
     // Update breakpoint classes on resize
     const updateBreakpoints = () => {
-      const deviceContext = DeviceContext.getContext();
+      const deviceContext = window.DeviceContext.getContext();
       this.applyDeviceStyles(deviceContext);
     };
     
@@ -141,7 +157,7 @@ window.AppBootstrap = {
     // CSS custom properties for JavaScript integration
     const root = document.documentElement;
     const updateCSSProperties = () => {
-      const context = DeviceContext.getContext();
+      const context = window.DeviceContext.getContext();
       root.style.setProperty('--current-breakpoint', context.device);
       root.style.setProperty('--is-touch', context.hasTouch ? '1' : '0');
       root.style.setProperty('--is-landscape', context.orientation === 'landscape' ? '1' : '0');
@@ -157,7 +173,7 @@ window.AppBootstrap = {
   setupOrientationHandling() {
     const handleOrientationChange = () => {
       setTimeout(() => {
-        const deviceContext = DeviceContext.getContext();
+        const deviceContext = window.DeviceContext.getContext();
         this.applyDeviceStyles(deviceContext);
         
         // Trigger map resize if available
@@ -312,7 +328,7 @@ window.AppBootstrap = {
     
     // Add zoom control in better position for mobile
     L.control.zoom({
-      position: DeviceContext.getContext().device === 'mobile' ? 'bottomright' : 'topleft'
+      position: window.DeviceContext.getContext().device === 'mobile' ? 'bottomright' : 'topleft'
     }).addTo(window.map);
     
     // Add base tile layer
@@ -388,9 +404,22 @@ window.AppBootstrap = {
     
     // Initialize Documentation and Sidebar FABs via FABManager
     setTimeout(() => {
+      console.log('Bootstrap: Attempting to create FABs...');
+      console.log('Bootstrap: FABManager available:', !!window.FABManager);
       if (window.FABManager) {
-        window.FABManager.create('docsFab');
-        window.FABManager.create('sidebarToggle');
+        try {
+          const docsFab = window.FABManager.create('docsFab');
+          console.log('Bootstrap: DocsFAB created:', docsFab);
+        } catch (error) {
+          console.error('Bootstrap: Failed to create DocsFAB:', error);
+        }
+        
+        try {
+          const sidebarFab = window.FABManager.create('sidebarToggle');
+          console.log('Bootstrap: SidebarToggleFAB created:', sidebarFab);
+        } catch (error) {
+          console.error('Bootstrap: Failed to create SidebarToggleFAB:', error);
+        }
       }
     }, 100);
   },
@@ -514,7 +543,7 @@ window.AppBootstrap = {
    * Handle initial geolocation
    */
   handleInitialLocation() {
-    const deviceContext = DeviceContext.getContext();
+    const deviceContext = window.DeviceContext.getContext();
     
     // Only auto-locate on mobile devices or if explicitly requested
     if (deviceContext.device === 'mobile' || localStorage.getItem('autoLocate') === 'true') {
@@ -694,19 +723,6 @@ window.AppBootstrap = {
       .replace(/$/gim, '</p>');
   }
 };
-
-// Utility function for debouncing
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
 
 // Auto-initialize when DOM is ready
 if (document.readyState === 'loading') {
@@ -1145,3 +1161,15 @@ window.addEventListener('keydown', (e) => {
 		closeDocs();
 	}
 });
+
+// Make AppBootstrap available globally for backward compatibility
+window.AppBootstrap = AppBootstrap;
+
+// Initialize the application when the DOM is ready
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', () => AppBootstrap.init());
+} else {
+	AppBootstrap.init();
+}
+
+// FABs are created in setupUI() method during initialization

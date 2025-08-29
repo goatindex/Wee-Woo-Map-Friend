@@ -1,13 +1,12 @@
 /**
  * SidebarToggleFAB - FAB for toggling sidebar, using unified BaseFAB
  */
-import BaseFAB from './BaseFAB.js';
 
-class SidebarToggleFAB extends BaseFAB {
+class SidebarToggleFAB extends window.BaseFAB {
   constructor(config = {}) {
     super(Object.assign({
       id: 'sidebarToggle',
-      className: 'sidebar-fab',
+      className: 'fab fab-button',
       icon: '☰',
       ariaLabel: 'Toggle sidebar',
       ariaControls: 'layerMenu',
@@ -56,4 +55,4 @@ class SidebarToggleFAB extends BaseFAB {
 }
 
 window.FABManager.register('sidebarToggle', SidebarToggleFAB);
-export default SidebarToggleFAB;
+console.log('SidebarToggleFAB loaded successfully - version 20250101_004');

@@ -37,7 +37,7 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   margin-top: 0;
   margin-bottom: 0px;
-  z-index: 1100;
+  z-index: var(--z-search-dropdown);
   max-height: 220px;
   overflow-y: auto;
   display: none;
@@ -61,7 +61,29 @@
 html, body, #map { height:100%; margin:0; }
 /* Prevent horizontal scroll when sidebar is translated */
 html, body { overflow-x: hidden; }
-/* Sidebar title and toggle shared sizing */
+/* ==========================================================================
+   CSS Custom Properties - Centralized Design System
+   ========================================================================== 
+   
+   This file uses CSS custom properties (variables) to maintain consistency
+   across the application. All design tokens are defined here and organized
+   by category:
+   
+   - Responsive Breakpoints: Screen size breakpoints for responsive design
+   - Layout & Spacing: Core layout dimensions and spacing values
+   - Spacing System: Standardized spacing scale (xs, sm, md, lg, xl, xxl)
+   - Shadow System: Consistent shadow values for depth and elevation
+   - Touch & Interaction: Touch target sizes and interaction dimensions
+   - Sidebar Components: Sidebar-specific sizing and spacing
+   - Button System: Button sizing and icon dimensions
+   - Color System: Color values for UI elements
+   - Map Labels: Map label styling properties
+   - App Overlays: Modal and overlay properties
+   - Z-Index System: Layering system for proper stacking order
+   
+   Usage: Use these variables instead of hardcoded values for consistency.
+   Example: box-shadow: var(--shadow-md); instead of box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+   ========================================================================== */
 :root {
   /* ========== Responsive Breakpoints ========== */
   --mobile-small: 480px;
@@ -69,42 +91,58 @@ html, body { overflow-x: hidden; }
   --tablet: 1024px;
   --desktop: 1200px;
   
-  /* ========== Adaptive Sidebar Dimensions ========== */
+  /* ========== Layout & Spacing ========== */
   --sidebar-width-mobile: 100vw;
   --sidebar-width-tablet: min(380px, 85vw);
   --sidebar-width-desktop: 380px;
   --sidebar-min-visible-tab: 44px;
+  --gap-below-title: 0px;
+  --active-list-top-gap: 8px;
+  --sidebar-tools-vpad: 8px;
   
-  /* ========== Touch and Interaction Targets ========== */
+  /* ========== Spacing System ========== */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-xxl: 24px;
+  
+  /* ========== Shadow System ========== */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.15);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.2);
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.15);
+  --shadow-xl: 0 10px 30px rgba(0,0,0,0.25);
+  
+  /* ========== Touch & Interaction Targets ========== */
   --touch-target-min: 44px;
   --touch-target-small: 40px;
   --mouse-target-size: 34px;
   
-  /* ========== Original Sidebar Properties ========== */
-  --sidebar-toggle-size: 34px; /* keep in sync with .sidebar-toggle */
+  /* ========== Sidebar Components ========== */
+  --sidebar-toggle-size: 34px; /* keep in sync with FAB framework */
   --sidebar-title-height: var(--sidebar-toggle-size);
   --sidebar-title-font-size: 18px;
   --sidebar-title-font-weight: 700;
-  --sidebar-title-color: #222;
-  --sidebar-title-bg: #fff;
   --sidebar-title-padding-x: 6px;
-  /* Divider under the title */
-  --sidebar-title-divider-color: #ddd;
   --sidebar-title-divider-width: 2px;
-  /* Gap under the title equals the minimize button height */
-  --gap-below-title: 0px;
-  /* Horizontal clearance for the minimize button (toggle size + small gap) */
   --sidebar-right-gap: 6px;
   --sidebar-right-pad-for-toggle: calc(var(--sidebar-toggle-size) + var(--sidebar-right-gap));
-  /* Controls the gap between the 'All Active' title and the 'Name' header */
-  --active-list-top-gap: 8px;
-  /* Unify emoji/icon font size across sidebar buttons */
+  
+  /* ========== Button System ========== */
   --sidebar-button-emoji-size: 27px;
-  /* Adjustable darken factor for button backgrounds */
-  --sidebar-button-bg-base: #ffffff;           /* starting color to darken */
-  --sidebar-button-darken-factor: 3%;         /* adjust this to change darkness */
-  --sidebar-button-hover-extra: 6%;            /* extra darkness on hover */
-  /* Computed backgrounds (modern browsers). Fallbacks exist where used. */
+  --active-list-icon-size: 24px;
+  --title-emoji-gap: -2px;
+  
+  /* ========== Color System ========== */
+  --sidebar-title-color: #222;
+  --sidebar-title-bg: #fff;
+  --sidebar-title-divider-color: #ddd;
+  
+  /* Button background system with computed values */
+  --sidebar-button-bg-base: #ffffff;
+  --sidebar-button-darken-factor: 3%;
+  --sidebar-button-hover-extra: 6%;
   --sidebar-button-bg: color-mix(in srgb,
     var(--sidebar-button-bg-base) calc(100% - var(--sidebar-button-darken-factor)),
     black var(--sidebar-button-darken-factor)
@@ -113,12 +151,24 @@ html, body { overflow-x: hidden; }
     var(--sidebar-button-bg-base) calc(100% - calc(var(--sidebar-button-darken-factor) + var(--sidebar-button-hover-extra))),
     black calc(var(--sidebar-button-darken-factor) + var(--sidebar-button-hover-extra))
   );
-  /* Equal vertical padding above/below the sidebar buttons (divider gap and search gap) */
-  --sidebar-tools-vpad: 8px;
-  /* All Active header emoji size */
-  --active-list-icon-size: 24px;
-  /* Spacing between title emojis; negative values tighten */
-  --title-emoji-gap: -2px;
+  
+  /* ========== Map Labels ========== */
+  --label-bg: #fff;
+  --label-color: #333;
+  
+  /* ========== App Overlays & Panels ========== */
+  --app-overlay-bg: rgba(0,0,0,0.35);
+  --app-panel-bg: #fff;
+  --app-border: #ccc;
+  
+  /* ========== Z-Index System ========== */
+  --z-sidebar: 1000;
+  --z-fab: 2000;
+  --z-overlay: 3000;
+  --z-modal: 3001;
+  --z-search-dropdown: 1100;
+  --z-active-header: 10;
+  --z-active-list-header: 5;
 }
 #layerMenu, .layer-menu {
   position: absolute;
@@ -127,11 +177,11 @@ html, body { overflow-x: hidden; }
   background: rgba(255,255,255,0.95);
   padding:  6px 16px;
   border-radius: 8px;
-  z-index: 1000;
+  z-index: var(--z-sidebar);
   font-family: sans-serif;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-md);
   min-width: 260px;
   width: var(--sidebar-width-desktop);
   display: block;
@@ -145,34 +195,48 @@ html, body { overflow-x: hidden; }
   pointer-events: none; /* disable mouse/touch interactions inside panel */
 }
 
-/* Toggle button at the top-right of the panel */
-.sidebar-toggle {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: var(--sidebar-toggle-size, 34px);
-  height: var(--sidebar-toggle-size, 34px);
-  line-height: 30px;
+/* FAB (Floating Action Button) Base Classes */
+.fab {
+  position: fixed;
+  z-index: var(--z-fab);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--sidebar-button-emoji-size, 18px);
-  font-weight: 600; /* default (normal) */
   border: 1px solid #ccc;
   border-radius: 6px;
   background: var(--sidebar-button-bg, #f7f7f7);
   color: #333;
   cursor: pointer;
-  z-index: 2000; /* ensure always clickable */
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
 }
-.sidebar-toggle:hover { background: var(--sidebar-button-bg-hover, #f0f0f0); }
-.sidebar-toggle:active {
+
+.fab:hover {
+  background: var(--sidebar-button-bg-hover, #f0f0f0);
+  transform: scale(1.05);
+}
+
+.fab:active {
   transform: scale(0.98);
 }
 
-/* When placed outside the panel, keep it pinned to viewport */
-.sidebar-toggle { position: fixed; top: 59px; right: 33px; }
+.fab-button {
+  width: var(--sidebar-toggle-size, 34px);
+  height: var(--sidebar-toggle-size, 34px);
+  line-height: calc(var(--sidebar-toggle-size, 34px) - 4px);
+  font-size: var(--sidebar-button-emoji-size, 18px);
+  font-weight: 700;
+}
+
+.fab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Legacy sidebar-toggle styles removed - replaced by FAB framework */
 
 /* Inline tool buttons inside the sidebar (below title, above search) */
 .sidebar-tools {
@@ -197,7 +261,7 @@ html, body { overflow-x: hidden; }
   background: var(--sidebar-button-bg, #f7f7f7);
   color: #333;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-sm);
 }
 .sidebar-tool-btn:hover { background: var(--sidebar-button-bg-hover, #f0f0f0); }
 .sidebar-tool-btn:active { transform: scale(0.98); }
@@ -225,7 +289,7 @@ html, body { overflow-x: hidden; }
 #activeHeader {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-active-header);
   background: #fff;
 }
 .layer-menu label { display:block; margin:2px 0; font-size:0.95em; cursor:pointer; }
@@ -278,7 +342,7 @@ html, body { overflow-x: hidden; }
   /* Freeze header while the list scrolls */
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: var(--z-active-list-header);
   background: #fff;
 }
 .active-list-icon-header {
@@ -355,16 +419,11 @@ html, body { overflow-x: hidden; }
 }
 
 /* App overlays and panels (Info modal, Docs drawer) */
-:root {
-  --app-overlay-bg: rgba(0,0,0,0.35);
-  --app-panel-bg: #fff;
-  --app-border: #ccc;
-}
 .app-overlay {
   position: fixed;
   inset: 0;
   background: var(--app-overlay-bg);
-  z-index: 3000;
+  z-index: var(--z-overlay);
 }
 .app-modal {
   position: fixed;
@@ -372,7 +431,7 @@ html, body { overflow-x: hidden; }
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3001;
+  z-index: var(--z-modal);
 }
 .app-modal[hidden], .app-overlay[hidden], .docs-drawer[hidden] { display: none !important; }
 .app-modal-content {
@@ -381,7 +440,7 @@ html, body { overflow-x: hidden; }
   background: var(--app-panel-bg);
   border: 1px solid var(--app-border);
   border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  box-shadow: var(--shadow-xl);
   display: flex;
   flex-direction: column;
 }
@@ -396,8 +455,8 @@ html, body { overflow-x: hidden; }
 .docs-drawer {
   position: fixed; top: 0; right: 0; height: 100vh; width: min(920px, 92vw);
   background: var(--app-panel-bg); border-left: 1px solid var(--app-border);
-  z-index: 3001; display: flex; flex-direction: column;
-  box-shadow: -6px 0 24px rgba(0,0,0,0.25);
+  z-index: var(--z-modal); display: flex; flex-direction: column;
+  box-shadow: -6px 0 24px var(--shadow-xl);
 }
 .docs-header { display:flex; align-items:center; justify-content:space-between; padding: 10px 14px; border-bottom:1px solid var(--app-border); font-size: 1.1em; }
 .docs-close { border:1px solid #ccc; background:#f7f7f7; border-radius:6px; cursor:pointer; padding:4px 8px; font-size: 1.1em; }
@@ -409,125 +468,9 @@ html, body { overflow-x: hidden; }
 .docs-toc a:hover { text-decoration:underline; }
 .docs-content { flex:1; padding: 14px; overflow:auto; font-size: 1.1em; }
 
-/* Docs FAB - Floating Action Button for Documentation Navigation */
-.docs-fab-container {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 9999;
-}
+/* Legacy docs-fab CSS removed - now using unified .fab framework */
 
-.docs-fab-button {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #1976d2;
-  color: white;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  position: relative;
-}
-
-.docs-fab-button:hover {
-  background: #1565c0;
-  transform: scale(1.1);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
-
-.docs-fab-button.expanded {
-  background: #d32f2f;
-  transform: rotate(45deg);
-}
-
-.docs-fab-menu {
-  position: absolute;
-  bottom: 70px;
-  right: 0;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-  min-width: 200px;
-  opacity: 0;
-  transform: translateY(20px) scale(0.9);
-  transition: all 0.3s ease;
-  pointer-events: none;
-}
-
-.docs-fab-menu.expanded {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: all;
-}
-
-.docs-fab-menu-item {
-  display: block;
-  width: 100%;
-  padding: 12px 16px;
-  border: none;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.docs-fab-menu-item:last-child {
-  border-bottom: none;
-  border-radius: 0 0 8px 8px;
-}
-
-.docs-fab-menu-item:first-child {
-  border-radius: 8px 8px 0 0;
-}
-
-.docs-fab-menu-item:hover {
-  background: #f5f5f5;
-}
-
-.docs-fab-menu-item:focus {
-  background: #e3f2fd;
-  outline: 2px solid #1976d2;
-  outline-offset: -2px;
-}
-
-/* Sidebar FAB Styles */
-.sidebar-fab {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  width: 56px;
-  height: 56px;
-  background: #ffffff;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15), 
-              0 1px 3px rgba(0, 0, 0, 0.2);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  color: #424242;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-
-/* Hide sidebar FAB on smallest screens when needed */
-@media (max-width: 480px) {
-  .sidebar-fab {
-    top: 12px;
-    right: 12px;
-  }
-}
+/* Legacy sidebar-fab CSS removed - now using unified .fab framework */
 
 /* Documentation images - scale to content width */
 .docs-content img {
@@ -762,16 +705,7 @@ html, body { overflow-x: hidden; }
     padding-left: 12px;
   }
   
-  /* Adjust toggle button position for small screens */
-  .sidebar-toggle {
-    position: fixed;
-    top: 8px;
-    right: 8px;
-    width: var(--touch-target-min);
-    height: var(--touch-target-min);
-    font-size: 18px;
-    z-index: 2001;
-  }
+  /* Legacy sidebar-toggle styles removed - replaced by FAB framework */
   
   /* Full-width modals on small screens */
   .app-modal-content {
@@ -824,10 +758,7 @@ html, body { overflow-x: hidden; }
     max-width: 400px;
   }
   
-  .sidebar-toggle {
-    width: var(--touch-target-small);
-    height: var(--touch-target-small);
-  }
+  /* Legacy sidebar-toggle styles removed - replaced by FAB framework */
   
   .sidebar-tool-btn {
     width: var(--touch-target-small);
@@ -900,10 +831,7 @@ html, body { overflow-x: hidden; }
     padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
   }
   
-  .sidebar-toggle {
-    top: max(8px, calc(env(safe-area-inset-top, 0px) + 8px));
-    right: max(8px, calc(env(safe-area-inset-right, 0px) + 8px));
-  }
+  /* Legacy sidebar-toggle styles removed - replaced by FAB framework */
   
   #lastUpdated {
     bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) + 8px));
@@ -986,7 +914,6 @@ html, body { overflow-x: hidden; }
   }
   
   /* Smaller buttons in compact mode */
-  .sidebar-toggle,
   .sidebar-tool-btn {
     width: 32px;
     height: 32px;
@@ -1026,18 +953,6 @@ html, body { overflow-x: hidden; }
 
 /* Touch-friendly optimizations for coarse pointer devices (touch screens) */
 @media (pointer: coarse) {
-  /* Update CSS custom properties for touch devices */
-  :root {
-    --sidebar-toggle-size: var(--touch-target-min);
-  }
-  
-  /* Larger touch targets for buttons */
-  .sidebar-toggle {
-    width: var(--touch-target-min);
-    height: var(--touch-target-min);
-    font-size: 20px;
-  }
-  
   .sidebar-tool-btn {
     width: var(--touch-target-min);
     height: var(--touch-target-min);
@@ -1119,18 +1034,6 @@ html, body { overflow-x: hidden; }
 
 /* Hover enhancements for fine pointer devices (mouse, trackpad) */
 @media (hover: hover) and (pointer: fine) {
-  /* Update CSS custom properties for mouse devices */
-  :root {
-    --sidebar-toggle-size: var(--mouse-target-size);
-  }
-  
-  /* Refined hover states for buttons */
-  .sidebar-toggle:hover {
-    background: var(--sidebar-button-bg-hover, #f0f0f0);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  }
-  
   .sidebar-tool-btn:hover {
     background: var(--sidebar-button-bg-hover, #f0f0f0);
     transform: translateY(-1px);
@@ -1189,7 +1092,6 @@ html, body { overflow-x: hidden; }
 /* Hybrid device optimizations - devices that support both touch and hover */
 @media (hover: hover) and (pointer: coarse) {
   /* Use touch-friendly sizes but enable hover effects */
-  .sidebar-toggle,
   .sidebar-tool-btn {
     width: var(--touch-target-min);
     height: var(--touch-target-min);
@@ -1201,7 +1103,6 @@ html, body { overflow-x: hidden; }
   }
   
   /* Enable hover effects for hybrid devices */
-  .sidebar-toggle:hover,
   .sidebar-tool-btn:hover {
     background: var(--sidebar-button-bg-hover, #f0f0f0);
   }
@@ -1209,7 +1110,6 @@ html, body { overflow-x: hidden; }
 
 /* Reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
-  .sidebar-toggle:hover,
   .sidebar-tool-btn:hover,
   .app-modal-close:hover,
   .docs-close:hover,
