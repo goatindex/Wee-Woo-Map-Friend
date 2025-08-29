@@ -20,6 +20,9 @@
     "cap:open:ios": "cap open ios",
     "cap:open:android": "cap open android",
     "icons": "node scripts/generate-icons.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "test:pwa": "npx serve . -p 8000",
     "lint": "echo 'Linting not configured yet'",
     "prepare:appstore": "npm run build && npm run icons && npm run cap:sync"
@@ -38,7 +41,11 @@
     "@capacitor/splash-screen": "^5.0.6",
     "@capacitor/status-bar": "^5.0.6",
     "puppeteer": "^24.17.1",
-    "sharp": "^0.32.0"
+    "sharp": "^0.32.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "babel-jest": "^29.7.0",
+    "@babel/preset-env": "^7.22.0"
   },
   "keywords": [
     "emergency-services",
