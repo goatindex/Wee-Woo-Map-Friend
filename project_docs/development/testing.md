@@ -53,18 +53,20 @@ js/
 
 ### **Dependencies**
 
-The testing environment requires these key dependencies:
+The testing environment includes these key dependencies (already configured in `package.json`):
 
 ```json
 {
   "devDependencies": {
-    "@babel/preset-env": "^7.x.x",
-    "babel-jest": "^29.x.x",
-    "jest": "^29.x.x",
-    "jest-environment-jsdom": "^29.x.x"
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0", 
+    "babel-jest": "^29.7.0",
+    "@babel/preset-env": "^7.22.0"
   }
 }
 ```
+
+**Note**: These dependencies are already included in the project's `package.json`, so no additional installation is required beyond running `npm install`.
 
 ### **Configuration Files**
 
@@ -260,29 +262,39 @@ describe('ComponentToTest', () => {
 
 ## Running Tests
 
-### **Installation**
+### **Quick Start**
 
-First, ensure testing dependencies are installed:
+The project is pre-configured for testing. To get started:
 
 ```bash
-# Install Jest and related dependencies
-npm install --save-dev jest jest-environment-jsdom babel-jest @babel/preset-env
-
-# Or run the existing setup if package.json already includes these
+# Install all dependencies (including testing dependencies)
 npm install
+
+# Run tests
+npm test
 ```
 
-### **Running Test Commands**
+### **Available Test Commands**
+
+| Command | Purpose | When to Use |
+|---------|---------|-------------|
+| `npm test` | Run all tests once | CI/CD, quick validation |
+| `npm run test:watch` | Run tests in watch mode | Active development |
+| `npm run test:coverage` | Generate coverage report | Before commits, coverage analysis |
+| `npm run test:pwa` | Serve app for manual testing | PWA functionality testing |
 
 ```bash
-# Run all tests
+# Run all tests once
 npm test
 
 # Run tests in watch mode (re-run on file changes)
-npm test -- --watch
+npm run test:watch
 
 # Run tests with coverage report
-npm test -- --coverage
+npm run test:coverage
+
+# Run PWA test server (serves app on localhost:8000)
+npm run test:pwa
 
 # Run specific test file
 npm test -- ComponentBase.test.js
