@@ -933,7 +933,7 @@ describe('Memory Management Performance', () => {
     const memoryIncrease = afterMemory - beforeMemory;
     
     // Memory increase should be reasonable for police data
-    expect(memoryIncrease).toBeLessThan(10000000); // 10MB limit for police data
+    expect(memoryIncrease).toBeLessThan(1000000); // 1MB limit for police data
     
     // Clean up
     policeManager.destroy();
@@ -1145,7 +1145,7 @@ const PERFORMANCE_BUDGETS = {
   'LGA Layer Rendering': 120,      // 120ms max  
   'Search Filtering': 50,          // 50ms max
   'Active List Updates': 100,      // 100ms max
-  'Memory Usage': 10000000,        // 10MB max
+  'Memory Usage': 1000000,        // 1MB max
   'Bundle Size': 500000            // 500KB max
 };
 

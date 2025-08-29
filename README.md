@@ -8,22 +8,16 @@ An interactive emergency services mapping application for Victoria, Australia, f
 
 - [Features](#features)
 - [Quick Start](#quick-start)
+- [Documentation](#documentation)
 - [Native Mobile Apps](#native-mobile-apps)
 - [Available Scripts](#available-scripts)
-- [Deployment](#deployment)
-- [Architecture](#architecture)
-- [API Reference](#api-reference)
-- [Performance](#performance)
-- [Development](#development)
-- [Security](#security)
-- [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 
 ## Features
 
 ### 📱 Multi-Platform Support
 
-- **Responsive Web Design**: Mobile-first responsive design with 4-tier breakpoint system (480px/768px/1024px/1200px+)
+- **Responsive Web Design**: Mobile-first responsive design with 4-tier breakpoint system
 - **Progressive Web App**: Installable PWA with offline support and native app behaviors
 - **Native Mobile Apps**: iOS and Android app store deployment with Capacitor framework
 - **Cross-Platform Compatibility**: Seamless experience across web browsers and native platforms
@@ -41,30 +35,17 @@ An interactive emergency services mapping application for Victoria, Australia, f
 ### 🎛️ Advanced Controls
 
 - **Sidebar Controls**: Collapsible sections for each layer category with adaptive touch-friendly search
-- **Active List Management**: "All Active" section with controls for:
-  - 📢 Emphasise (highlight on map)
-  - 🏷️ Show Name (display labels)
-  - 🌦️ 7-day Weather (forecast integration)
+- **Active List Management**: "All Active" section with controls for emphasise, labels, and weather
 - **Reset Functionality**: ♻️ button to return to default state
 - **Documentation**: Built-in ℹ️ Info modal and 📚 Documentation drawer with responsive layout
-
-### 📱 Native App Features
-
-- **Enhanced Geolocation**: Native GPS access with high accuracy positioning
-- **Haptic Feedback**: Touch feedback for interactions and notifications
-- **Status Bar Control**: Platform-specific status bar styling and behavior
-- **Background Processing**: Web Workers for heavy geometry calculations
-- **Offline Capabilities**: Service Worker with multi-strategy caching
-- **Native Back Button**: Android back button handling and navigation
 
 ### 🚀 Performance Optimized
 
 - **Canvas Rendering**: High-performance polygon rendering
 - **Async Operations**: Batched loading for bulk operations
-- **Lazy Loading**: Progressive data loading for large datasets
-- **Smart Caching**: Service Worker with cache-first, network-first, and stale-while-revalidate strategies
-- **Web Workers**: Background processing for Turf.js geometry calculations
-- **Z-index Management**: Proper layer ordering with custom panes
+- **Smart Caching**: Service Worker with multiple caching strategies
+- **Web Workers**: Background processing for geometry calculations
+- **Offline Support**: Core functionality available without internet connection
 
 ## Quick Start
 
@@ -96,24 +77,48 @@ An interactive emergency services mapping application for Victoria, Australia, f
 .\scripts\dev-up.ps1
 ```
 
+### Backend Setup (Optional - for weather features)
+
+```powershell
+# Create virtual environment
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# Install dependencies
+pip install -r backend\requirements.txt
+
+# Configure environment
+Copy-Item backend\.env.example backend\.env
+# Edit backend\.env with your API keys
+
+# Start backend
+python backend/app.py
+```
+
 ## 📚 Documentation
 
-### Project Documentation Hub
+### Comprehensive Project Documentation
 
-- **[Project Documentation](project_docs/README.md)** - Comprehensive project documentation, architecture analysis, and development guides
-- **[Documentation Templates](project_docs/templates/)** - Reusable templates for all project documentation needs
+**All detailed documentation is now available in the `project_docs/` directory:**
+
+- **[Project Documentation Hub](project_docs/README.md)** - Complete project overview and navigation
+- **[Architecture Documentation](project_docs/architecture/)** - System design, components, and data flow
+- **[Development Guides](project_docs/development/)** - Setup, workflows, and testing framework
+- **[API Reference](project_docs/api/)** - Backend endpoints, frontend configuration, and integrations
+- **[Deployment Guides](project_docs/deployment/)** - Environment setup, procedures, and operations
+- **[Performance Baselines](project_docs/performance/)** - Performance metrics and optimization
 
 ### Application Documentation
 
 - **[User Documentation](docs/)** - User-facing features, usage guides, and troubleshooting
-- **[API Reference](docs/api/)** - Technical API documentation and examples
+- **[Quick Start Guide](project_docs/getting-started/quick-start.md)** - Get up and running quickly
 
 ### Quick Navigation
 
 - **Getting Started**: [Quick Start Guide](project_docs/getting-started/quick-start.md)
 - **Architecture**: [System Overview](project_docs/architecture/overview.md)
 - **Development**: [Developer Setup](project_docs/development/setup.md)
-- **Testing**: [Testing Framework](project_docs/templates/testing-template.md)
+- **Testing**: [Testing Framework](project_docs/development/testing.md)
 
 ## Native Mobile Apps
 
@@ -172,24 +177,6 @@ npm run open:android   # Opens Android Studio
 - **Offline Support**: Advanced caching strategies
 - **Native Navigation**: Back button handling and app state management
 
-### 📋 App Store Submission Checklist
-
-#### iOS App Store
-
-- [ ] Configure app signing in Xcode
-- [ ] Set deployment target (iOS 13.0+)
-- [ ] Add App Store metadata and screenshots
-- [ ] Archive and upload to App Store Connect
-- [ ] Submit for review
-
-#### Google Play Store
-
-- [ ] Generate signed APK/AAB in Android Studio
-- [ ] Test on various Android devices
-- [ ] Add Play Store metadata and screenshots
-- [ ] Upload to Google Play Console
-- [ ] Submit for review
-
 ## Available Scripts
 
 | Command                | Description                            |
@@ -202,433 +189,6 @@ npm run open:android   # Opens Android Studio
 | `npm run open:ios`     | Open iOS project in Xcode              |
 | `npm run open:android` | Open Android project in Studio         |
 | `npm run capture`      | Generate screenshots for documentation |
-
-## Deployment
-
-### GitHub Pages (Recommended)
-
-1. **Enable GitHub Pages** in repository settings
-2. **Set source** to "Deploy from a branch" → `main` branch
-3. **Access at**: `https://yourusername.github.io/mapexp.github.io/`
-
-### Static Hosting
-
-Works with any static host (Netlify, Vercel, Apache, Nginx):
-
-```bash
-# Build artifacts (if needed)
-npm install  # for screenshot tooling only
-npm run capture  # optional: generate fresh screenshots
-
-# Deploy entire directory to your static host
-```
-
-### Docker Deployment
-
-```dockerfile
-# Dockerfile
-FROM nginx:alpine
-COPY . /usr/share/nginx/html
-EXPOSE 80
-```
-
-```bash
-docker build -t weewoo-map .
-docker run -p 8080:80 weewoo-map
-```
-
-### Production Considerations
-
-- **Backend**: Deploy Flask backend for weather features
-- **Environment**: Set `USE_MOCK=0` and configure API keys
-- **HTTPS**: Enable HTTPS for production (required for geolocation and PWA features)
-- **CSP**: Configure Content Security Policy headers
-- **Caching**: Set appropriate cache headers for GeoJSON files
-- **PWA**: Service worker provides offline support and improved performance
-- **App Store**: Ready for mobile app store deployment via Capacitor or Cordova
-
-## Architecture
-
-### Entry Points & Data Flow
-
-```
-index.html → PWA manifest & service worker → js/bootstrap.js → device.js (context) → preloader.js → loaders/*.js → UI components
-                                                            ↓
-                                                        state.js (centralized state)
-                                                            ↓
-                                                        config.js (styling/metadata)
-```
-
-### Key Components
-
-- **Entry point**: `js/bootstrap.js` — map initialization, panes, collapsibles, device integration
-- **Device Context**: `js/device.js` — comprehensive device detection, platform optimization, native app behaviors
-- **PWA Support**: `sw.js` — service worker for offline support and performance caching
-- **State management**: `js/state.js` — shared maps for layers, names, emphasis, labels
-- **Configuration**: `js/config.js` — styles, category metadata, colors, responsive breakpoints
-- **Data loaders**: `js/loaders/*.js` — fetch/parse GeoJSON and create sidebar rows
-- **UI components**: `js/ui/*.js` — "All Active" management, collapsible behavior, responsive search
-- **Utilities**: `js/utils/*.js` — DOM helpers, coordinate conversion, error handling, responsive utilities
-
-### Event Flow
-
-1. **Data Loading**: Loader builds sidebar rows
-2. **User Interaction**: User checks/unchecks items
-3. **State Update**: Change handler adds/removes layers, labels, emphasis
-4. **UI Sync**: `updateActiveList()` rebuilds "All Active" section
-
-## API Reference
-
-### Backend Endpoints
-
-#### Health Check
-
-```http
-GET /health
-```
-
-**Response**: `200 OK`
-
-```json
-{ "status": "ok" }
-```
-
-#### Weather Data
-
-```http
-GET /api/weather?lat={latitude}&lon={longitude}&days={days}&provider={provider}
-```
-
-**Parameters**:
-
-- `lat` (required): Latitude (-90 to 90)
-- `lon` (required): Longitude (-180 to 180)
-- `days` (optional): Number of forecast days (1-7, default: 7)
-- `provider` (optional): Weather provider (`mock`, `open-meteo`, `willyweather`)
-
-**Response**: `200 OK`
-
-```json
-{
-  "location": { "lat": -37.8136, "lon": 144.9631 },
-  "days": 7,
-  "forecast": [
-    {
-      "day": 1,
-      "summary": "Partly cloudy",
-      "tempMin": 12,
-      "tempMax": 22
-    }
-  ]
-}
-```
-
-**Error Responses**:
-
-- `400 Bad Request`: Invalid parameters
-- `404 Not Found`: No location found for coordinates
-- `502 Bad Gateway`: Upstream API error
-- `504 Gateway Timeout`: Request timeout
-
-### Frontend Configuration
-
-#### Category Metadata
-
-```javascript
-window.categoryMeta = {
-  ses: {
-    type: 'polygon',
-    nameProp: 'RESPONSE_ZONE_NAME',
-    styleFn: sesStyle,
-    defaultOn: () => false,
-    listId: 'sesList',
-    toggleAllId: 'toggleAllSES',
-  },
-  // ... other categories
-};
-```
-
-#### Color Configuration
-
-```javascript
-window.outlineColors = {
-  ses: '#cc7a00',
-  lga: 'black',
-  cfa: '#FF0000',
-  // ... other categories
-};
-```
-
-## Performance
-
-### PWA & Service Worker Caching
-
-Comprehensive caching strategy for optimal performance and offline support:
-
-```javascript
-// Cache strategies
-- Static assets: Cache-first (HTML, CSS, JS, manifest)
-- Data files: Stale-while-revalidate (GeoJSON, JSON data)
-- Dynamic content: Network-first with cache fallback
-- External resources: Cached with graceful degradation
-```
-
-**Features**:
-
-- **Offline Support**: Core functionality available without internet connection
-- **Background Updates**: Data refreshed automatically when connection available
-- **Install Prompt**: Native "Add to Home Screen" functionality
-- **Update Notifications**: Automatic prompts when new versions available
-- **Performance Boost**: 60-90% faster loading after initial visit
-
-### Responsive Design System
-
-Mobile-first responsive architecture with CSS custom properties:
-
-```css
-/* 4-tier breakpoint system */
---mobile-small: 480px    /* Small phones */
---mobile-large: 768px    /* Large phones/small tablets */
---tablet: 1024px         /* Tablets */
---desktop: 1200px        /* Desktop and up */
-```
-
-**Features**:
-
-- **Adaptive Touch Targets**: 44px minimum on touch devices, 34px on desktop
-- **Device-Specific Optimizations**: iOS/Android/Windows platform adaptations
-- **Orientation Handling**: Dynamic layout adjustments for landscape/portrait
-- **Safe Area Support**: Proper handling of notched devices and PWA modes
-
-### Async Batching for Bulk Operations
-
-Large dataset handling uses async batching to prevent UI freezing:
-
-```javascript
-// Example: Processing 1000+ CFA areas
-const batchSize = 20;
-for (let i = 0; i < items.length; i += batchSize) {
-  const batch = items.slice(i, i + batchSize);
-  // Process batch
-  await new Promise((resolve) => requestAnimationFrame(resolve));
-}
-```
-
-**Features**:
-
-- **Batch processing**: 20 items per animation frame
-- **Progress feedback**: Loading indicators with progress counts
-- **Responsive UI**: Uses `requestAnimationFrame` for smooth operation
-- **Optimistic updates**: Immediate visual feedback
-
-### Other Optimizations
-
-- **Modular preloading**: Data loads in sidebar order (SES → LGA → CFA → Ambulance)
-- **Canvas rendering**: Polygons use Leaflet canvas renderer for better performance
-- **Lazy loading**: Police data only loads when section is expanded or toggled
-- **Z-index panes**: Proper layer ordering without expensive bring-to-front operations
-- **Deferred label creation**: Labels created in batches during bulk operations
-- **Device Context Caching**: Responsive breakpoints cached to avoid repeated calculations
-
-## Development
-
-### Prerequisites
-
-- Python 3.8+ (for backend)
-- Node.js 16+ (for screenshot tooling, optional)
-- Modern web browser
-
-### Backend Setup (Optional - for weather features)
-
-```powershell
-# Create virtual environment
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-
-# Install dependencies
-pip install -r backend\requirements.txt
-
-# Configure environment
-Copy-Item backend\.env.example backend\.env
-# Edit backend\.env with your API keys
-
-# Start backend
-python backend/app.py
-```
-
-### Environment Variables
-
-Create `backend/.env` from `backend/.env.example`:
-
-```bash
-# Required for WillyWeather provider
-WILLYWEATHER_API_KEY=your_api_key_here
-
-# CORS configuration
-ALLOWED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000
-
-# Provider settings
-USE_MOCK=1                    # Set to 0 for production
-WEATHER_PROVIDER=mock         # mock, open-meteo, willyweather
-CACHE_TTL_SECONDS=300
-REQUEST_TIMEOUT=5
-```
-
-### Code Style & Quality
-
-```bash
-# Install linting tools (optional)
-npm install -g eslint prettier
-
-# Run linting
-eslint js/**/*.js
-prettier --check js/**/*.js
-
-# Run preflights
-python scripts/preflight_check_duplicates.py js
-python scripts/preflight_active_collapsible.py
-python scripts/preflight_reset_button.py
-```
-
-### Adding New Categories
-
-1. **Add GeoJSON file** to project root
-2. **Update `js/config.js`**:
-   ```javascript
-   window.categoryMeta.newcategory = {
-     type: 'polygon',
-     nameProp: 'NAME_FIELD',
-     styleFn: newCategoryStyle,
-     defaultOn: () => false,
-     listId: 'newCategoryList',
-     toggleAllId: 'toggleAllNewCategory',
-   };
-   ```
-3. **Add HTML elements** to `index.html`
-4. **Create loader** in `js/loaders/`
-5. **Update state arrays** in `js/state.js`
-
-## Security
-
-### Current Security Measures
-
-- **API Key Protection**: Backend proxy prevents frontend API key exposure
-- **Input Sanitization**: Markdown docs sanitized with DOMPurify
-- **CORS Configuration**: Restricted origins in backend
-- **HTTPS CDNs**: External dependencies loaded over HTTPS
-
-### Security Checklist
-
-- [x] **API Keys**: API keys secured in backend (no frontend exposure)
-- [x] **PWA Security**: Service worker implements secure caching strategies
-- [ ] **CSP Headers**: Configure Content Security Policy for production
-- [x] **HTTPS**: HTTPS required for PWA features and service worker
-- [ ] **Input Validation**: Validate all user inputs (coordinates, search terms)
-- [x] **Dependency Security**: Dependencies loaded from trusted CDNs
-- [x] **Environment Variables**: Sensitive config via environment variables
-- [x] **Safe Areas**: Proper handling of device safe areas and notches
-
-### Reporting Security Issues
-
-Please report security vulnerabilities privately via GitHub Security Advisories or email.
-
-## Troubleshooting
-
-### Common Issues
-
-#### Map doesn't load
-
-**Symptoms**: Blank page or "Map not initialized" error
-
-**Solutions**:
-
-1. Check browser console for JavaScript errors
-2. Verify all script dependencies are loading
-3. Ensure you're serving over HTTP/HTTPS (not file://)
-4. Check network connectivity for tile loading
-
-#### Sidebar controls don't work
-
-**Symptoms**: Checkboxes don't respond, sections don't expand
-
-**Solutions**:
-
-1. Check for duplicate HTML IDs in browser inspector
-2. Verify event listeners are attached (check `bootstrap.js`)
-3. Look for JavaScript errors in console
-4. Try the reset button (♻️) to restore default state
-
-#### Weather features not working
-
-**Symptoms**: No weather data, 7-day forecast empty
-
-**Solutions**:
-
-1. Verify backend is running on http://127.0.0.1:5000
-2. Check backend logs for API errors
-3. Confirm `backend/.env` has correct API keys
-4. Test backend directly: `curl http://127.0.0.1:5000/health`
-
-#### Performance issues with large datasets
-
-**Symptoms**: Browser freezing when toggling "Show All"
-
-**Solutions**:
-
-1. Performance is optimized for batching - if issues persist, check:
-2. Available browser memory
-3. Disable browser extensions that might interfere
-4. Use Chrome's Performance tab to identify bottlenecks
-
-#### Data not loading
-
-**Symptoms**: Categories show "No items" or empty lists
-
-**Solutions**:
-
-1. Check network tab for failed GeoJSON requests
-2. Verify GeoJSON files exist and are valid
-3. Check CORS if serving from different domain
-4. Inspect browser console for parsing errors
-
-#### Layout broken/everything appears very small
-
-**Symptoms**: Map and sidebar appear tiny, layout completely broken, content overlapping
-
-**Solutions**:
-
-1. **Check the viewport meta tag** in `index.html` - this is the most common cause
-2. Look for corrupted HTML structure in the `<head>` section
-3. Verify no content has been accidentally inserted into meta tags
-4. Common fix: Ensure viewport tag reads: `<meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no" />`
-5. If layout still broken, check browser console for CSS loading errors
-
-**Important**: Before assuming the entire file is corrupted, check for small targeted issues first. Often what appears as "corruption" is actually a single malformed tag or misplaced content that can be fixed with a minimal edit.
-
-### Debug Mode
-
-Enable debug logging:
-
-```javascript
-// In browser console
-localStorage.setItem('debug', '1');
-// Reload page to see detailed logs
-```
-
-### Performance Monitoring
-
-Monitor performance:
-
-```javascript
-// Check current active items
-console.log(
-  'Active items:',
-  Object.keys(window.featureLayers).map((cat) => Object.keys(window.featureLayers[cat]).length)
-);
-
-// Check pending labels
-console.log('Pending labels:', window.pendingLabels.length);
-```
 
 ## Contributing
 
@@ -648,14 +208,6 @@ console.log('Pending labels:', window.pendingLabels.length);
 - **Naming**: Use camelCase for variables, PascalCase for classes
 - **Modularity**: Keep functions small and focused
 - **Error Handling**: Always handle errors gracefully
-
-### Pull Request Process
-
-1. **Update documentation** if changing functionality
-2. **Add tests** for new features (if applicable)
-3. **Ensure all preflights pass**
-4. **Update README** if adding new dependencies or setup steps
-5. **Link to relevant issues** in PR description
 
 ### Architecture Guidelines
 
@@ -681,50 +233,15 @@ console.log('Pending labels:', window.pendingLabels.length);
 - **Capacitor Integration**: Native mobile app deployment to iOS/Android app stores
 - **Push Notifications**: Emergency alerts and updates via service worker
 
-#### Low Priority
-
-- **Plugin Architecture**: Extensible system for custom data sources
-- **Export/Import**: Save and share custom map configurations
-- **Analytics**: Usage tracking and performance monitoring
-- **Internationalization**: Multi-language support
-
 #### Completed ✅
 
-- **Mobile Optimization**: ✅ Responsive design and touch interactions (Phase 1 & 2)
-- **Offline Support**: ✅ Service Worker for offline map viewing (Phase 2)
-- **PWA Features**: ✅ Progressive Web App with install capability (Phase 2)
+- **Mobile Optimization**: ✅ Responsive design and touch interactions
+- **Offline Support**: ✅ Service Worker for offline map viewing
+- **PWA Features**: ✅ Progressive Web App with install capability
+- **FAB Framework**: ✅ Unified Floating Action Button system
+- **Code Modernization**: ✅ ES6 modules, component architecture, CSS custom properties
 
-#### Recent Implementations (2025 Q1)
-
-- **FAB Framework Modernization**: ✅ Unified Floating Action Button system with BaseFAB, FABManager, and consistent UI components
-- **Code Cleanup & Refactoring**: ✅ Removed duplicate functions, legacy sidebar toggle code, and redundant component files
-- **CSS Custom Properties Optimization**: ✅ Centralized design system with semantic spacing, shadow, and z-index variables
-- **JavaScript Module System**: ✅ Converted bootstrap.js to ES6 module structure while maintaining backward compatibility
-- **Component Architecture**: ✅ Verified all UI components extend ComponentBase for consistent lifecycle management
-
-For questions or discussion, open an issue or start a discussion on GitHub.
-
-## Documentation
-
-### Built-in Documentation
-
-The application includes comprehensive built-in documentation:
-
-- **ℹ️ Info Modal**: Quick overview and tips
-- **📚 Documentation Drawer**: Full documentation with navigation
-- **Deep Links**: Direct links to specific docs sections
-
-### Documentation Structure
-
-- `docs/intro.md` - Welcome and getting started
-- `docs/usage.md` - How to use the application
-- `docs/layers.md` - Layer categories and data sources
-
-### Adding Documentation
-
-1. Create new `.md` file in `docs/` directory
-2. Add link in TOC inside `index.html`
-3. Documentation is automatically rendered with Marked.js and sanitized
+For detailed development information, architecture analysis, and technical specifications, see the **[Project Documentation](project_docs/README.md)**.
 
 ## Screenshots
 
@@ -756,121 +273,6 @@ This project is open source. See individual files for specific licensing terms.
 - **Victoria State Government** for emergency services data
 - **Contributors** who have helped improve this project
 
-## Unified FAB Framework & Navigation (2025 Update)
+---
 
-### Overview
-
-The application now uses a unified Floating Action Button (FAB) framework for all major UI actions, including sidebar toggling and documentation navigation. This replaces legacy sidebar toggle buttons and docs menus with a consistent, Material Design-inspired approach.
-
-### Key Features
-
-- **FABManager**: Central manager for all FABs, handles registration, creation, and lifecycle.
-- **BaseFAB**: Abstract base class for FABs, ensuring consistent behavior and extensibility.
-- **SidebarToggleFAB & DocsFAB**: Refactored components using the new framework, registered with FABManager.
-- **Modern UI**: All FABs are visually consistent, touch-friendly, and accessible across devices.
-
-### How to Add a New FAB
-
-1. Extend `BaseFAB` to create your custom FAB component.
-2. Register the new FAB with `FABManager` in `js/bootstrap.js`.
-3. Add any required CSS to `css/styles.css` (prefer `.fab-*` classes).
-4. Test on desktop and mobile for accessibility and responsiveness.
-
-### Migration Notes
-
-- All legacy sidebar toggle and docs menu code has been removed.
-- CSS for `.sidebar-toggle` and related rules has been deleted.
-- FABs now handle all navigation and toggling actions.
-
-### Troubleshooting
-
-- If a FAB does not appear, check registration in `FABManager` and ensure the component extends `BaseFAB`.
-- For layout issues, verify CSS uses the new `.fab-*` classes and does not reference legacy selectors.
-
-## Recent Implementation Work (2025 Q1)
-
-### Overview
-
-Significant refactoring and modernization work has been completed to improve code quality, maintainability, and architectural consistency. This work focused on cleaning up technical debt, implementing modern JavaScript patterns, and establishing a solid foundation for future development.
-
-### Completed Work
-
-#### 1. FAB Framework Modernization
-
-- **Unified System**: Replaced legacy sidebar toggle and docs menu with consistent FAB framework
-- **Component Architecture**: All FABs now extend BaseFAB with consistent lifecycle management
-- **Visual Consistency**: Standardized appearance and behavior across all floating action buttons
-- **Accessibility**: Improved touch targets and keyboard navigation for mobile and desktop
-
-#### 2. Code Cleanup & Refactoring
-
-- **Duplicate Removal**: Eliminated duplicate function definitions in bootstrap.js and related files
-- **Legacy Code Removal**: Cleaned up old sidebar toggle JavaScript and CSS that was no longer needed
-- **Redundant Component Cleanup**: Removed unused component files (DocsFab.js, DocsFabSimple.js, SidebarToggleFab.js)
-- **Function Consolidation**: Merged duplicate AppBootstrap methods and global functions
-
-#### 3. CSS Custom Properties Optimization
-
-- **Centralized System**: Consolidated all CSS custom properties into a single `:root` block
-- **Semantic Variables**: Implemented logical naming for spacing (`--spacing-xs` to `--spacing-xxl`)
-- **Shadow System**: Created consistent shadow variables (`--shadow-sm` to `--shadow-xl`)
-- **Z-Index Management**: Established semantic z-index variables for proper layering
-- **Design Consistency**: Removed hardcoded values in favor of maintainable custom properties
-
-#### 4. JavaScript Module System Modernization
-
-- **ES6 Modules**: Converted bootstrap.js from script-based to ES6 module structure
-- **Import/Export**: Prepared for future module dependencies and better code organization
-- **Backward Compatibility**: Maintained global access via `window.AppBootstrap` for existing code
-- **HTML Updates**: Updated script loading to use `type="module"` for modern browsers
-
-#### 5. Component Architecture Verification
-
-- **ComponentBase Pattern**: Confirmed all UI components correctly extend ComponentBase
-- **Lifecycle Management**: Verified consistent initialization, event handling, and cleanup
-- **Event System**: Ensured proper use of EventBus for component communication
-- **State Management**: Verified integration with StateManager for reactive updates
-
-### Technical Benefits
-
-#### Code Quality
-
-- **Reduced Duplication**: Eliminated ~200 lines of duplicate code
-- **Improved Maintainability**: Centralized CSS variables and consistent component patterns
-- **Better Organization**: Clear separation of concerns and logical file structure
-
-#### Performance
-
-- **Reduced Bundle Size**: Removed unused legacy code and duplicate functions
-- **Modern JavaScript**: ES6 modules enable future tree-shaking and bundling optimizations
-- **CSS Efficiency**: Custom properties reduce repetition and improve maintainability
-
-#### Developer Experience
-
-- **Consistent Patterns**: All components follow the same architectural approach
-- **Modern Tooling**: ES6 modules enable better IDE support and debugging
-- **Clear Documentation**: Centralized CSS system with logical organization
-
-### Migration Notes
-
-#### For Developers
-
-- **CSS Updates**: Use new custom properties instead of hardcoded values
-- **Component Creation**: Extend ComponentBase for new UI components
-- **FAB Integration**: Use FABManager for any new floating action buttons
-- **Module Imports**: Future work should use ES6 module syntax
-
-#### For Users
-
-- **No Breaking Changes**: All existing functionality preserved
-- **Improved Performance**: Faster loading and better responsiveness
-- **Better Mobile Experience**: Consistent touch interactions and accessibility
-
-### Next Steps
-
-The foundation is now in place for:
-
-- **Full Module Conversion**: Converting remaining scripts to ES6 modules
-- **Build System Updates**: Modernizing rollup configuration for full module support
-- **Advanced Features**: Implementing new functionality on the solid architectural base
-- **Performance Optimization**: Further improvements using modern JavaScript features
+**For comprehensive technical documentation, development guides, and architecture details, visit the [Project Documentation Hub](project_docs/README.md).**

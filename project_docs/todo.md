@@ -281,15 +281,17 @@ This document tracks planned improvements, enhancements, and technical debt item
 | Workflows Docs   | ✅ Complete | 6-8h   | None                 | Low    | Complete                 |
 | Mermaid.js       | Medium      | 9-14h  | Build system         | Medium | After core docs stable   |
 | Performance Docs | ✅ Complete | 8-12h  | Testing tools        | Medium | Complete                 |
-| Testing Docs     | Medium      | 4-6h   | Current tests        | Low    | After core docs complete |
+| Testing Docs     | ✅ Complete | 4-6h   | Current tests        | Low    | Complete                 |
+| API Docs         | ✅ Complete | 5-8h   | None                 | Low    | Complete                 |
+| Deployment Docs  | ✅ Complete | 6-10h  | None                 | Low    | Complete                 |
 | PlantUML         | Low         | 17-25h | Java, build pipeline | High   | Long-term consideration  |
 
 ## Next Steps
 
-1. **Immediate (Next 1-2 sessions)**: Complete Testing Framework documentation
-2. **Short-term (Next 1-2 weeks)**: Implement Mermaid.js integration
-3. **Medium-term (Next 1-2 months)**: Complete remaining documentation
-4. **Long-term (Future phases)**: Evaluate PlantUML integration
+1. **Immediate (Next 1-2 sessions)**: Implement Mermaid.js integration
+2. **Short-term (Next 1-2 weeks)**: Complete remaining documentation
+3. **Medium-term (Next 1-2 months)**: Evaluate PlantUML integration
+4. **Long-term (Future phases)**: Consider additional documentation enhancements
 
 ## Recent Improvements Completed
 
@@ -318,6 +320,13 @@ This document tracks planned improvements, enhancements, and technical debt item
 - ✅ `project_docs/architecture/data-flow.md` - Added error handling and validation patterns
 - ✅ `project_docs/development/workflows.md` - Created comprehensive development workflows
 - ✅ `project_docs/performance/baselines.md` - Created comprehensive performance baselines
+- ✅ `project_docs/development/testing.md` - Created comprehensive testing framework documentation
+- ✅ `project_docs/api/README.md` - Created API overview and navigation
+- ✅ `project_docs/api/endpoints.md` - Created detailed API endpoint reference
+- ✅ `project_docs/api/integration.md` - Created third-party service integration guide
+- ✅ `project_docs/deployment/README.md` - Created deployment overview and navigation
+- ✅ `project_docs/deployment/environments.md` - Created environment configuration reference
+- ✅ `project_docs/deployment/procedures.md` - Created deployment procedures and operations guide
 
 ## Notes
 
