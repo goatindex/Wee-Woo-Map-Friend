@@ -943,6 +943,485 @@ describe('Memory Management Performance', () => {
 
 
 
+## CI/CD Integration
+
+### **Automated Testing Workflows**
+
+Integrate testing into your development workflow with automated CI/CD pipelines and quality gates.
+
+#### **GitHub Actions Workflow**
+
+Create `.github/workflows/test.yml` for automated testing:
+
+```yaml
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run linting
+      run: npm run lint
+      
+    - name: Run tests
+      run: npm run test:coverage
+      
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        
+    - name: Comment coverage on PR
+      if: github.event_name == 'pull_request'
+      uses: romeovs/lcov-reporter-action@v0.3.1
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        lcov-file: ./coverage/lcov.info
+```
+
+#### **Enhanced Package.json Scripts**
+
+Update `package.json` with comprehensive testing scripts:
+
+```json
+{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --coverage --ci --watchAll=false",
+    "test:unit": "jest --testPathPattern=tests/",
+    "test:integration": "jest --testPathPattern=integration/",
+    "test:performance": "jest --testNamePattern='Performance'",
+    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
+    "lint": "eslint js/ tests/ --ext .js",
+    "lint:fix": "eslint js/ tests/ --ext .js --fix",
+    "quality:check": "npm run lint && npm run test:coverage",
+    "quality:report": "npm run test:coverage && npm run lint",
+    "pre-commit": "npm run quality:check"
+  }
+}
+```
+
+### **Pre-commit Hooks**
+
+#### **Husky Setup**
+
+Install and configure Husky for pre-commit hooks:
+
+```bash
+# Install Husky
+npm install --save-dev husky
+
+# Initialize Husky
+npx husky init
+
+# Add pre-commit hook
+echo "npm run pre-commit" > .husky/pre-commit
+chmod +x .husky/pre-commit
+```
+
+#### **Lint-staged Configuration**
+
+Add `lint-staged` for efficient pre-commit checks in `package.json`:
+
+```json
+{
+  "devDependencies": {
+    "husky": "^8.0.3",
+    "lint-staged": "^14.0.1"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "jest --bail --findRelatedTests"
+    ],
+    "*.{js,json,md}": [
+      "prettier --write"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm run test:ci"
+    }
+  }
+}
+```
+
+### **Quality Gates and Coverage**
+
+#### **Coverage Thresholds**
+
+Configure coverage thresholds in `jest.config.json`:
+
+```json
+{
+  "coverageThreshold": {
+    "global": {
+      "branches": 75,
+      "functions": 85, 
+      "lines": 80,
+      "statements": 80
+    },
+    "./js/components/": {
+      "branches": 80,
+      "functions": 90,
+      "lines": 85,
+      "statements": 85
+    },
+    "./js/modules/": {
+      "branches": 85,
+      "functions": 95,
+      "lines": 90,
+      "statements": 90
+    }
+  },
+  "collectCoverageFrom": [
+    "js/modules/**/*.js",
+    "js/components/**/*.js", 
+    "!js/legacy/**/*.js",
+    "!**/*.test.js",
+    "!**/node_modules/**"
+  ]
+}
+```
+
+#### **Performance Budgets**
+
+Add performance budget checks to CI:
+
+```yaml
+# Add to GitHub Actions workflow
+- name: Performance Budget Check
+  run: |
+    # Run performance tests and check against budgets
+    npm run test:performance
+    
+    # Check bundle size (if applicable)
+    npm run build
+    npx bundlesize
+    
+- name: Fail on Performance Regression
+  run: |
+    # Extract performance metrics and compare
+    node scripts/check-performance-budget.js
+```
+
+Create `scripts/check-performance-budget.js`:
+
+```javascript
+// Performance budget checker for emergency services mapping
+const fs = require('fs');
+const path = require('path');
+
+const PERFORMANCE_BUDGETS = {
+  'SES Layer Rendering': 100,      // 100ms max
+  'LGA Layer Rendering': 120,      // 120ms max  
+  'Search Filtering': 50,          // 50ms max
+  'Active List Updates': 100,      // 100ms max
+  'Memory Usage': 10000000,        // 10MB max
+  'Bundle Size': 500000            // 500KB max
+};
+
+const PERFORMANCE_REPORT_PATH = './coverage/performance-report.json';
+
+function checkPerformanceBudget() {
+  if (!fs.existsSync(PERFORMANCE_REPORT_PATH)) {
+    console.log('⚠️ Performance report not found, skipping budget check');
+    return true;
+  }
+
+  const report = JSON.parse(fs.readFileSync(PERFORMANCE_REPORT_PATH, 'utf8'));
+  let budgetPassed = true;
+
+  Object.entries(PERFORMANCE_BUDGETS).forEach(([metric, budget]) => {
+    const actual = report[metric];
+    if (actual && actual > budget) {
+      console.error(`❌ Performance budget exceeded for ${metric}:`);
+      console.error(`   Budget: ${budget}ms, Actual: ${actual}ms`);
+      budgetPassed = false;
+    } else if (actual) {
+      console.log(`✅ ${metric}: ${actual}ms (budget: ${budget}ms)`);
+    }
+  });
+
+  if (!budgetPassed) {
+    console.error('\n❌ Performance budget check failed!');
+    process.exit(1);
+  } else {
+    console.log('\n✅ All performance budgets passed!');
+  }
+}
+
+checkPerformanceBudget();
+```
+
+### **Automated Quality Reporting**
+
+#### **Pull Request Checks**
+
+Create `.github/workflows/pr-checks.yml`:
+
+```yaml
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for better analysis
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run quality checks
+      run: npm run quality:report
+      
+    - name: Test changed files only
+      run: |
+        # Get list of changed JavaScript files
+        CHANGED_FILES=$(git diff --name-only origin/main...HEAD | grep -E '\.(js)$' | tr '\n' ' ')
+        if [ ! -z "$CHANGED_FILES" ]; then
+          echo "Testing changed files: $CHANGED_FILES"
+          npx jest --bail --findRelatedTests $CHANGED_FILES
+        else
+          echo "No JavaScript files changed"
+        fi
+        
+    - name: Comment Test Results
+      if: always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Read coverage report
+          const coverage = JSON.parse(fs.readFileSync('./coverage/coverage-summary.json', 'utf8'));
+          
+          const comment = `
+          ## 🧪 Test Results
+          
+          | Metric | Coverage | Status |
+          |--------|----------|--------|
+          | Statements | ${coverage.total.statements.pct}% | ${coverage.total.statements.pct >= 80 ? '✅' : '❌'} |
+          | Branches | ${coverage.total.branches.pct}% | ${coverage.total.branches.pct >= 75 ? '✅' : '❌'} |
+          | Functions | ${coverage.total.functions.pct}% | ${coverage.total.functions.pct >= 85 ? '✅' : '❌'} |
+          | Lines | ${coverage.total.lines.pct}% | ${coverage.total.lines.pct >= 80 ? '✅' : '❌'} |
+          
+          [View detailed coverage report](${context.payload.pull_request.html_url}/checks)
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+```
+
+#### **Scheduled Quality Reports**
+
+Create `.github/workflows/weekly-quality.yml`:
+
+```yaml
+name: Weekly Quality Report
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9 AM
+  workflow_dispatch:      # Allow manual triggers
+
+jobs:
+  quality-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Generate comprehensive quality report
+      run: |
+        # Run full test suite
+        npm run test:coverage
+        
+        # Run performance tests
+        npm run test:performance
+        
+        # Generate quality metrics
+        npx jest --coverage --outputFile=./reports/test-results.json --json
+        
+    - name: Upload quality reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: quality-reports
+        path: |
+          coverage/
+          reports/
+        retention-days: 30
+        
+    - name: Create quality summary
+      run: |
+        echo "# Weekly Quality Report" >> quality-summary.md
+        echo "Generated on: $(date)" >> quality-summary.md
+        echo "" >> quality-summary.md
+        
+        # Add test statistics
+        echo "## Test Coverage" >> quality-summary.md
+        npx jest --coverage --silent | tail -n 10 >> quality-summary.md
+        
+        # Add performance metrics
+        echo "" >> quality-summary.md
+        echo "## Performance Metrics" >> quality-summary.md
+        echo "- Emergency services layers tested" >> quality-summary.md
+        echo "- Mapping performance validated" >> quality-summary.md
+        
+    - name: Create issue with quality report
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const summary = fs.readFileSync('./quality-summary.md', 'utf8');
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `Weekly Quality Report - ${new Date().toISOString().split('T')[0]}`,
+            body: summary,
+            labels: ['quality', 'automated']
+          });
+```
+
+### **Development Workflow Integration**
+
+#### **VS Code Integration**
+
+Create `.vscode/tasks.json` for IDE integration:
+
+```json
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Tests",
+      "type": "npm",
+      "script": "test",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Run Tests with Coverage",
+      "type": "npm", 
+      "script": "test:coverage",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Watch Tests",
+      "type": "npm",
+      "script": "test:watch",
+      "group": "test",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Quality Check",
+      "type": "npm",
+      "script": "quality:check", 
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}
+```
+
+Create `.vscode/launch.json` for debugging:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Jest Tests",
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "args": ["--runInBand"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "disableOptimisticBPs": true
+    },
+    {
+      "type": "node", 
+      "request": "launch",
+      "name": "Debug Specific Test",
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "args": ["--runInBand", "${fileBasenameNoExtension}"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ]
+}
+```
+
 ## Troubleshooting
 
 ### **Common Issues**
