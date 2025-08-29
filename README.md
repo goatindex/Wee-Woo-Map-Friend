@@ -96,6 +96,25 @@ An interactive emergency services mapping application for Victoria, Australia, f
 .\scripts\dev-up.ps1
 ```
 
+## 📚 Documentation
+
+### Project Documentation Hub
+
+- **[Project Documentation](project_docs/README.md)** - Comprehensive project documentation, architecture analysis, and development guides
+- **[Documentation Templates](project_docs/templates/)** - Reusable templates for all project documentation needs
+
+### Application Documentation
+
+- **[User Documentation](docs/)** - User-facing features, usage guides, and troubleshooting
+- **[API Reference](docs/api/)** - Technical API documentation and examples
+
+### Quick Navigation
+
+- **Getting Started**: [Quick Start Guide](project_docs/getting-started/quick-start.md)
+- **Architecture**: [System Overview](project_docs/architecture/overview.md)
+- **Development**: [Developer Setup](project_docs/development/setup.md)
+- **Testing**: [Testing Framework](project_docs/templates/testing-template.md)
+
 ## Native Mobile Apps
 
 ### 📱 App Store Deployment

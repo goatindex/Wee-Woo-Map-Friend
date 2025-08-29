@@ -6,75 +6,118 @@
 // Import dependencies - Note: DeviceContext is available globally via window.DeviceContext
 // StateManager and globalEventBus are not yet globally available, so we'll use window globals for now
 
+// Enhanced logging system for deep diagnostics
+const DiagnosticLogger = {
+    enabled: true,
+    level: 'verbose', // 'verbose', 'info', 'warn', 'error'
+    
+    log(level, component, message, data = null) {
+        if (!this.enabled) return;
+        if (this.shouldLog(level)) {
+            const timestamp = new Date().toISOString();
+            const prefix = `🔍 [${timestamp}] [${level.toUpperCase()}] [${component}]`;
+            if (data) {
+                console.log(`${prefix}: ${message}`, data);
+            } else {
+                console.log(`${prefix}: ${message}`);
+            }
+        }
+    },
+    
+    shouldLog(level) {
+        const levels = { verbose: 0, info: 1, warn: 2, error: 3 };
+        return levels[level] >= levels[this.level];
+    },
+    
+    verbose(component, message, data) { this.log('verbose', component, message, data); },
+    info(component, message, data) { this.log('info', component, message, data); },
+    warn(component, message, data) { this.log('warn', component, message, data); },
+    error(component, message, data) { this.log('error', component, message, data); }
+};
+
 // Utility function for debouncing
 function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
     };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
 }
 
 /**
  * Application Bootstrap
  * Handles initialization, device context setup, native features, and application startup
  */
-export const AppBootstrap = {
+const AppBootstrap = {
   
   /**
    * Initialize the application
    */
   async init() {
-    console.log('AppBootstrap: Starting application initialization');
+    DiagnosticLogger.info('AppBootstrap', 'Starting application initialization');
+    const startTime = performance.now();
     
     try {
       // Wait for native features to be ready
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 1: Waiting for native features');
       await this.waitForNativeFeatures();
       
       // Get device context with native info
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 2: Getting device context');
       const deviceContext = window.DeviceContext.getContext();
-      console.log('AppBootstrap: Device context initialized:', deviceContext);
+      DiagnosticLogger.info('AppBootstrap', 'Device context initialized', deviceContext);
       
       // Apply device-specific styling
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 3: Applying device styles');
       this.applyDeviceStyles(deviceContext);
       
       // Initialize responsive breakpoint handling
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 4: Initializing responsive handling');
       this.initResponsiveHandling();
       
       // Set up orientation change handling
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 5: Setting up orientation handling');
       this.setupOrientationHandling();
       
       // Initialize native app integration
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 6: Initializing native integration');
       await this.initNativeIntegration();
       
       // Initialize map
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 7: Initializing map');
       this.initMap();
       
       // Set up collapsibles and UI components
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 8: Setting up UI components');
       this.setupUI();
       
       // Initialize mobile documentation navigation
       if (window.MobileDocsNav) {
-        console.log('AppBootstrap: Initializing mobile documentation navigation');
+        DiagnosticLogger.verbose('AppBootstrap', 'Step 9: Initializing mobile docs navigation');
         window.MobileDocsNav.init();
       }
       
       // Load data and UI components
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 10: Loading application components');
       await this.loadComponents();
       
       // Set up event handlers
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 11: Setting up event handlers');
       this.setupEventHandlers();
       
       // Handle initial geolocation
+      DiagnosticLogger.verbose('AppBootstrap', 'Step 12: Handling initial location');
       this.handleInitialLocation();
       
-      console.log('AppBootstrap: Application initialization complete');
+      const endTime = performance.now();
+      DiagnosticLogger.info('AppBootstrap', `Application initialization complete in ${(endTime - startTime).toFixed(2)}ms`);
       
     } catch (error) {
+      DiagnosticLogger.error('AppBootstrap', 'Initialization failed', error);
       console.error('AppBootstrap: Initialization failed:', error);
       if (window.ErrorUI) {
         window.ErrorUI.showError('Failed to initialize application', error.message);
@@ -403,23 +446,68 @@ export const AppBootstrap = {
     }
     
     // Initialize Documentation and Sidebar FABs via FABManager
+    DiagnosticLogger.verbose('AppBootstrap', 'Step 12.1: Attempting to create FABs');
+    
     setTimeout(() => {
-      console.log('Bootstrap: Attempting to create FABs...');
-      console.log('Bootstrap: FABManager available:', !!window.FABManager);
+      DiagnosticLogger.info('AppBootstrap', 'FAB Creation: Starting FAB initialization');
+      DiagnosticLogger.verbose('AppBootstrap', 'FAB Creation: Checking FABManager availability', {
+        FABManagerAvailable: !!window.FABManager,
+        FABManagerType: typeof window.FABManager,
+        FABManagerKeys: window.FABManager ? Object.keys(window.FABManager) : 'N/A'
+      });
+      
       if (window.FABManager) {
+        DiagnosticLogger.verbose('AppBootstrap', 'FAB Creation: FABManager found, attempting to create FABs');
+        
+        // Create DocsFAB
         try {
+          DiagnosticLogger.verbose('AppBootstrap', 'FAB Creation: Creating DocsFAB');
           const docsFab = window.FABManager.create('docsFab');
-          console.log('Bootstrap: DocsFAB created:', docsFab);
+          DiagnosticLogger.info('AppBootstrap', 'FAB Creation: DocsFAB created successfully', {
+            docsFab: docsFab,
+            docsFabType: typeof docsFab,
+            docsFabKeys: docsFab ? Object.keys(docsFab) : 'N/A'
+          });
         } catch (error) {
-          console.error('Bootstrap: Failed to create DocsFAB:', error);
+          DiagnosticLogger.error('AppBootstrap', 'FAB Creation: Failed to create DocsFAB', {
+            error: error.message,
+            stack: error.stack,
+            FABManagerState: {
+              available: !!window.FABManager,
+              methods: window.FABManager ? Object.getOwnPropertyNames(window.FABManager) : []
+            }
+          });
         }
         
+        // Create SidebarToggleFAB
         try {
+          DiagnosticLogger.verbose('AppBootstrap', 'FAB Creation: Creating SidebarToggleFAB');
           const sidebarFab = window.FABManager.create('sidebarToggle');
-          console.log('Bootstrap: SidebarToggleFAB created:', sidebarFab);
+          DiagnosticLogger.info('AppBootstrap', 'FAB Creation: SidebarToggleFAB created successfully', {
+            sidebarFab: sidebarFab,
+            sidebarFabType: typeof sidebarFab,
+            sidebarFabKeys: sidebarFab ? Object.keys(sidebarFab) : 'N/A'
+          });
         } catch (error) {
-          console.error('Bootstrap: Failed to create SidebarToggleFAB:', error);
+          DiagnosticLogger.error('AppBootstrap', 'FAB Creation: Failed to create SidebarToggleFAB', {
+            error: error.message,
+            stack: error.stack,
+            FABManagerState: {
+              available: !!window.FABManager,
+              methods: window.FABManager ? Object.getOwnPropertyNames(window.FABManager) : []
+            }
+          });
         }
+      } else {
+        DiagnosticLogger.error('AppBootstrap', 'FAB Creation: FABManager not available', {
+          windowKeys: Object.keys(window).filter(key => key.includes('FAB') || key.includes('fab')),
+          globalObjects: {
+            BaseFAB: typeof window.BaseFAB,
+            FABManager: typeof window.FABManager,
+            SidebarToggleFAB: typeof window.SidebarToggleFAB,
+            DocsFAB: typeof window.DocsFAB
+          }
+        });
       }
     }, 100);
   },

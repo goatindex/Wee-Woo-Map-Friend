@@ -2,6 +2,20 @@
  * BaseFAB - Abstract base class for all FAB components
  * Provides lifecycle, state, and DOM management
  */
+
+// Enhanced logging for BaseFAB - defined before class to avoid reference errors
+const BaseFABLogger = {
+    log(component, message, data = null) {
+        const timestamp = new Date().toISOString();
+        const prefix = `🔍 [${timestamp}] [BaseFAB] [${component}]`;
+        if (data) {
+            console.log(`${prefix}: ${message}`, data);
+        } else {
+            console.log(`${prefix}: ${message}`);
+        }
+    }
+};
+
 class BaseFAB {
   constructor(config = {}) {
     this.config = Object.assign(this.getDefaultConfig(), config);
@@ -34,12 +48,29 @@ class BaseFAB {
 
   init() {
     if (this.isInitialized) return;
+    
+    BaseFABLogger.log('Init', 'Initializing BaseFAB', {
+      id: this.id,
+      config: this.config
+    });
+    
     this.createElement();
     this.addEventListeners();
     this.isInitialized = true;
+    
+    BaseFABLogger.log('Init', 'BaseFAB initialization complete', {
+      id: this.id,
+      isInitialized: this.isInitialized
+    });
   }
 
   createElement() {
+    BaseFABLogger.log('CreateElement', 'Creating FAB button element', {
+      id: this.id,
+      className: this.config.className,
+      icon: this.config.icon
+    });
+    
     this.button = this.dom.createElement('button');
     this.button.id = this.id || '';
     this.button.className = this.config.className;
@@ -59,7 +90,14 @@ class BaseFAB {
       zIndex: this.config.zIndex,
       ...this.config.style,
     });
+    
     this.dom.body.appendChild(this.button);
+    
+    BaseFABLogger.log('CreateElement', 'FAB button element created and appended', {
+      id: this.id,
+      elementExists: !!this.button,
+      parentNode: this.button.parentNode ? this.button.parentNode.tagName : 'None'
+    });
   }
 
   addEventListeners() {

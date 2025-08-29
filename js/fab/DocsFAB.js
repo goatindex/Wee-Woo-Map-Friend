@@ -22,5 +22,8 @@ class DocsFAB extends window.BaseFAB {
   }
 }
 
+// Register with FABManager
+console.log('DocsFAB: Registering with FABManager');
 window.FABManager.register('docsFab', DocsFAB);
+console.log('DocsFAB: Registration complete');
 console.log('DocsFAB loaded successfully - version 20250101_004');

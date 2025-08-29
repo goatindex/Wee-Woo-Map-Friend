@@ -1,0 +1,379 @@
+{
+  "sessionId": "SESSION_1756435261657",
+  "timestamp": "2025-08-29T02:41:01.657Z",
+  "environment": {
+    "nodeVersion": "v18.13.0",
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "results": {
+    "consoleLogs": [
+      {
+        "type": "error",
+        "message": "Failed to load resource: net::ERR_FILE_NOT_FOUND",
+        "timestamp": "2025-08-29T02:41:02.949Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "BaseFAB loaded successfully - version 20250101_004",
+        "timestamp": "2025-08-29T02:41:02.951Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "FABManager loaded successfully - version 20250101_004",
+        "timestamp": "2025-08-29T02:41:02.951Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "DocsFAB: Registering with FABManager",
+        "timestamp": "2025-08-29T02:41:02.951Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:02.846Z] [FABManager] [Register]: Registering FAB type JSHandle@object",
+        "timestamp": "2025-08-29T02:41:02.952Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:02.847Z] [FABManager] [Register]: FAB type registered successfully JSHandle@object",
+        "timestamp": "2025-08-29T02:41:02.952Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "DocsFAB: Registration complete",
+        "timestamp": "2025-08-29T02:41:02.952Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "DocsFAB loaded successfully - version 20250101_004",
+        "timestamp": "2025-08-29T02:41:02.952Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "SidebarToggleFAB: Registering with FABManager",
+        "timestamp": "2025-08-29T02:41:02.952Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:02.847Z] [FABManager] [Register]: Registering FAB type JSHandle@object",
+        "timestamp": "2025-08-29T02:41:02.953Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:02.847Z] [FABManager] [Register]: FAB type registered successfully JSHandle@object",
+        "timestamp": "2025-08-29T02:41:02.953Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "SidebarToggleFAB: Registration complete",
+        "timestamp": "2025-08-29T02:41:02.953Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "SidebarToggleFAB loaded successfully - version 20250101_004",
+        "timestamp": "2025-08-29T02:41:02.953Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "Device: Initializing device context system",
+        "timestamp": "2025-08-29T02:41:02.954Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "Device: Current context: JSHandle@object",
+        "timestamp": "2025-08-29T02:41:02.954Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:02.849Z] [INFO] [TestRunner]: Test environment initialized",
+        "timestamp": "2025-08-29T02:41:02.975Z",
+        "testContext": null
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.990Z] [INFO] [TestRunner]: Starting system load test",
+        "timestamp": "2025-08-29T02:41:09.097Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.991Z] [INFO] [TestRunner]: Script device.js: ❌ Not Loaded",
+        "timestamp": "2025-08-29T02:41:09.097Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.994Z] [INFO] [TestRunner]: Script features.js: ❌ Not Loaded",
+        "timestamp": "2025-08-29T02:41:09.098Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.994Z] [INFO] [TestRunner]: Script BaseFAB.js: ✅ Loaded",
+        "timestamp": "2025-08-29T02:41:09.098Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.995Z] [INFO] [TestRunner]: Script FABManager.js: ✅ Loaded",
+        "timestamp": "2025-08-29T02:41:09.098Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.995Z] [INFO] [TestRunner]: Script DocsFAB.js: ❌ Not Loaded",
+        "timestamp": "2025-08-29T02:41:09.098Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.996Z] [INFO] [TestRunner]: Script SidebarToggleFAB.js: ❌ Not Loaded",
+        "timestamp": "2025-08-29T02:41:09.098Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.996Z] [INFO] [TestRunner]: Script bootstrap.js: ❌ Not Loaded",
+        "timestamp": "2025-08-29T02:41:09.098Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.996Z] [INFO] [TestRunner]: Global object DeviceContext: ✅ Available",
+        "timestamp": "2025-08-29T02:41:09.098Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.996Z] [INFO] [TestRunner]: Global object NativeFeatures: ❌ Not Available",
+        "timestamp": "2025-08-29T02:41:09.099Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.996Z] [INFO] [TestRunner]: Global object BaseFAB: ✅ Available",
+        "timestamp": "2025-08-29T02:41:09.099Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.996Z] [INFO] [TestRunner]: Global object FABManager: ✅ Available",
+        "timestamp": "2025-08-29T02:41:09.099Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.997Z] [INFO] [TestRunner]: Global object DocsFAB: ❌ Not Available",
+        "timestamp": "2025-08-29T02:41:09.099Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.997Z] [INFO] [TestRunner]: Global object SidebarToggleFAB: ❌ Not Available",
+        "timestamp": "2025-08-29T02:41:09.099Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:08.997Z] [INFO] [TestRunner]: Global object AppBootstrap: ❌ Not Available",
+        "timestamp": "2025-08-29T02:41:09.099Z",
+        "testContext": "System Load Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:12.836Z] [INFO] [TestRunner]: Starting FAB framework test",
+        "timestamp": "2025-08-29T02:41:12.944Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:12.837Z] [INFO] [TestRunner]: Testing FAB registration JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.945Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.837Z] [FABManager] [Create]: Creating FAB instance JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.945Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.837Z] [FABManager] [Create]: Instantiating FAB class JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.945Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.838Z] [BaseFAB] [Init]: Initializing BaseFAB JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.945Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.838Z] [BaseFAB] [CreateElement]: Creating FAB button element JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.945Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.838Z] [BaseFAB] [CreateElement]: FAB button element created and appended JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.945Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.838Z] [BaseFAB] [Init]: BaseFAB initialization complete JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.945Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.838Z] [FABManager] [Create]: FAB instance created successfully JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.946Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:12.838Z] [INFO] [TestRunner]: DocsFAB created successfully JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.946Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.839Z] [FABManager] [Create]: Creating FAB instance JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.946Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.839Z] [FABManager] [Create]: Instantiating FAB class JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.946Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.840Z] [BaseFAB] [Init]: Initializing BaseFAB JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.946Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.840Z] [BaseFAB] [CreateElement]: Creating FAB button element JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.946Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.840Z] [BaseFAB] [CreateElement]: FAB button element created and appended JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.946Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.840Z] [BaseFAB] [Init]: BaseFAB initialization complete JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.947Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "🔍 [2025-08-29T02:41:12.840Z] [FABManager] [Create]: FAB instance created successfully JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.947Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:12.840Z] [INFO] [TestRunner]: SidebarToggleFAB created successfully JSHandle@object",
+        "timestamp": "2025-08-29T02:41:12.947Z",
+        "testContext": "FAB Framework Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:17.583Z] [INFO] [TestRunner]: Starting bootstrap initialization test",
+        "timestamp": "2025-08-29T02:41:17.690Z",
+        "testContext": "Bootstrap Init Test"
+      },
+      {
+        "type": "log",
+        "message": "[2025-08-29T02:41:17.583Z] [ERROR] [TestRunner]: AppBootstrap not available",
+        "timestamp": "2025-08-29T02:41:17.690Z",
+        "testContext": "Bootstrap Init Test"
+      }
+    ],
+    "pageErrors": [
+      {
+        "message": "Duplicate parameter name not allowed in this context",
+        "stack": "SyntaxError: Duplicate parameter name not allowed in this context",
+        "timestamp": "2025-08-29T02:41:02.954Z",
+        "testContext": null
+      }
+    ],
+    "systemLoadTest": {
+      "success": true,
+      "systemStatus": "\n        System Status\n        \n                Scripts: 3/7 loaded\n            \n                    FAB Types: 2 registered\n                \n                    FAB Instances: 0 created\n                \n    ",
+      "diagnosticLogs": "\n        Diagnostic Logs\n        [2025-08-29T02:41:02.849Z] [INFO] [TestRunner]: Test environment initialized[2025-08-29T02:41:08.990Z] [INFO] [TestRunner]: Starting system load test[2025-08-29T02:41:08.991Z] [INFO] [TestRunner]: Script device.js: ❌ Not Loaded[2025-08-29T02:41:08.994Z] [INFO] [TestRunner]: Script features.js: ❌ Not Loaded[2025-08-29T02:41:08.994Z] [INFO] [TestRunner]: Script BaseFAB.js: ✅ Loaded[2025-08-29T02:41:08.995Z] [INFO] [TestRunner]: Script FABManager.js: ✅ Loaded[2025-08-29T02:41:08.995Z] [INFO] [TestRunner]: Script DocsFAB.js: ❌ Not Loaded[2025-08-29T02:41:08.996Z] [INFO] [TestRunner]: Script SidebarToggleFAB.js: ❌ Not Loaded[2025-08-29T02:41:08.996Z] [INFO] [TestRunner]: Script bootstrap.js: ❌ Not Loaded[2025-08-29T02:41:08.996Z] [INFO] [TestRunner]: Global object DeviceContext: ✅ Available[2025-08-29T02:41:08.996Z] [INFO] [TestRunner]: Global object NativeFeatures: ❌ Not Available[2025-08-29T02:41:08.996Z] [INFO] [TestRunner]: Global object BaseFAB: ✅ Available[2025-08-29T02:41:08.996Z] [INFO] [TestRunner]: Global object FABManager: ✅ Available[2025-08-29T02:41:08.997Z] [INFO] [TestRunner]: Global object DocsFAB: ❌ Not Available[2025-08-29T02:41:08.997Z] [INFO] [TestRunner]: Global object SidebarToggleFAB: ❌ Not Available[2025-08-29T02:41:08.997Z] [INFO] [TestRunner]: Global object AppBootstrap: ❌ Not Available\n    ",
+      "duration": 3842,
+      "timestamp": "2025-08-29T02:41:11.425Z"
+    },
+    "fabFrameworkTest": {
+      "success": true,
+      "fabResults": {
+        "fabManagerAvailable": true,
+        "baseFABAvailable": true,
+        "docsFABAvailable": false,
+        "sidebarToggleFABAvailable": false,
+        "fabElementsInDOM": 2,
+        "registeredTypes": []
+      },
+      "duration": 4747,
+      "timestamp": "2025-08-29T02:41:16.173Z"
+    },
+    "bootstrapInitTest": {
+      "success": true,
+      "bootstrapResults": {
+        "appBootstrapAvailable": false
+      },
+      "duration": 6744,
+      "timestamp": "2025-08-29T02:41:22.917Z"
+    },
+    "performanceMetrics": {
+      "navigationStart": 1756435262837,
+      "loadEventEnd": 1756435262869,
+      "domContentLoaded": 1756435262869,
+      "memory": {
+        "usedJSHeapSize": 10000000,
+        "totalJSHeapSize": 10000000,
+        "jsHeapSizeLimit": 3760000000
+      },
+      "navigation": {},
+      "success": true,
+      "duration": 108,
+      "timestamp": "2025-08-29T02:41:23.025Z"
+    }
+  },
+  "breakpoints": [],
+  "selfCriticChecks": [],
+  "summary": {
+    "totalTests": 6,
+    "successfulTests": 6,
+    "failedTests": 0,
+    "totalDuration": 15441,
+    "breakpointsHit": 0,
+    "selfCriticChecks": 0
+  }
+}
