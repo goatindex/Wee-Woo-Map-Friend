@@ -3,9 +3,25 @@
  * Adds expand/collapse behavior to sidebar sections with sticky header classes.
  */
 window.setupCollapsible = function(headerId,listId,expanded=false){
+  console.log('setupCollapsible called with:', { headerId, listId, expanded });
+  
   const header = document.getElementById(headerId);
   const list = document.getElementById(listId);
-  if (!header || !list) return;
+  
+  console.log('setupCollapsible elements found:', { 
+    header: !!header, 
+    list: !!list,
+    headerElement: header,
+    listElement: list
+  });
+  
+  if (!header || !list) {
+    console.error('setupCollapsible: Missing elements, returning early');
+    return;
+  }
+  
+  console.log('setupCollapsible: Setting up collapsible for', headerId);
+  
   if (!expanded) {
     header.classList.add('collapsed');
     list.style.display = 'none';
@@ -15,6 +31,8 @@ window.setupCollapsible = function(headerId,listId,expanded=false){
   }
 
   header.addEventListener('click', () => {
+    console.log('setupCollapsible: Header clicked:', headerId);
+    
     // Only collapse other sections if this is not 'activeHeader'
     if (headerId !== 'activeHeader') {
       // Collapse all other sections except 'activeHeader' and the one being clicked
@@ -31,7 +49,15 @@ window.setupCollapsible = function(headerId,listId,expanded=false){
     // Toggle this section
     header.classList.toggle('collapsed');
     list.style.display = list.style.display === 'none' ? '' : 'none';
+    
+    console.log('setupCollapsible: After toggle:', {
+      headerClasses: header.className,
+      listDisplay: list.style.display
+    });
   });
+  
+  console.log('setupCollapsible: Event listener attached to', headerId);
+  
   // Initial sticky classes
   setTimeout(() => {
     const allHeaders = Array.from(document.querySelectorAll('.sidebar-headers h4'));

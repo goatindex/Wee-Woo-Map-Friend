@@ -56,56 +56,71 @@ window.loadPolygonCategory = async function(category, url) {
 
     // Store features by clean name as key
     geojson.features.forEach(feature => {
-      let rawName = feature.properties[meta.nameProp];
-      if (!rawName) return;
-      
-      // For coordinates: handle different projection systems
-      if (feature.geometry.type === 'Point' && category !== 'ambulance') {
-        const coords = feature.geometry.coordinates;
-        if (coords.length >= 2 && coords[0] > 1000) {
-          // Looks like MGA94/UTM coordinates, convert to lat/lng
-          try {
-            const latLng = window.convertMGA94ToLatLon(coords[0], coords[1]);
-            feature.geometry.coordinates = [latLng.lng, latLng.lat];
-          } catch (e) {
-            console.warn(`Failed to convert coordinates for ${rawName}:`, e);
+      try {
+        // Validate feature structure
+        if (!feature || !feature.geometry || !feature.properties) {
+          console.warn(`Invalid feature structure in ${category}:`, feature);
+          return;
+        }
+        
+        let rawName = feature.properties[meta.nameProp];
+        if (!rawName) return;
+        
+        // For coordinates: handle different projection systems
+        if (feature.geometry.type === 'Point' && category !== 'ambulance') {
+          const coords = feature.geometry.coordinates;
+          if (coords.length >= 2 && coords[0] > 1000) {
+            // Looks like MGA94/UTM coordinates, convert to lat/lng
+            try {
+              const latLng = window.convertMGA94ToLatLon(coords[0], coords[1]);
+              feature.geometry.coordinates = [latLng.lng, latLng.lat];
+            } catch (e) {
+              console.warn(`Failed to convert coordinates for ${rawName}:`, e);
+            }
           }
         }
-      }
-      
-      const cleanName = rawName.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-      const key = cleanName.toLowerCase().replace(/\s+/g, '_');
-      
-      if (window.featureLayers[category][key]) {
-        window.featureLayers[category][key].push(feature);
-      } else {
-        window.featureLayers[category][key] = [feature];
-      }
-      
-      // Store SES facility coordinates for chevron display
-      if (category === 'ses') {
-        const normalizedName = normaliseSes(cleanName);
-        if (normalizedName && !window.sesFacilityCoords[normalizedName]) {
-          // Calculate centroid for chevron placement if not available from facilities
-          if (feature.geometry.type === 'Point') {
-            window.sesFacilityCoords[normalizedName] = {
-              lat: feature.geometry.coordinates[1],
-              lng: feature.geometry.coordinates[0]
-            };
+        
+        const cleanName = rawName.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+        const key = cleanName.toLowerCase().replace(/\s+/g, '_');
+        
+        if (window.featureLayers[category][key]) {
+          window.featureLayers[category][key].push(feature);
+        } else {
+          window.featureLayers[category][key] = [feature];
+        }
+        
+        // Store SES facility coordinates for chevron display
+        if (category === 'ses') {
+          const normalizedName = normaliseSes(cleanName);
+          if (normalizedName && !window.sesFacilityCoords[normalizedName]) {
+            // Calculate centroid for chevron placement if not available from facilities
+            if (feature.geometry.type === 'Point') {
+              window.sesFacilityCoords[normalizedName] = {
+                lat: feature.geometry.coordinates[1],
+                lng: feature.geometry.coordinates[0]
+              };
+            }
           }
         }
+      } catch (error) {
+        console.warn(`Error processing feature in ${category}:`, feature, error);
       }
     });
 
     // Create layers
     Object.keys(window.featureLayers[category]).forEach(key => {
       window.featureLayers[category][key] = window.featureLayers[category][key].map(feature => {
-        const style = meta.styleFn ? meta.styleFn() : {};
-        return L.geoJSON(feature, {
-          style,
-          pane: category
-        });
-      });
+        try {
+          const style = meta.styleFn ? meta.styleFn() : {};
+          return L.geoJSON(feature, {
+            style,
+            pane: category
+          });
+        } catch (error) {
+          console.warn(`Invalid GeoJSON feature for ${category}/${key}:`, feature, error);
+          return null; // Return null for invalid features
+        }
+      }).filter(layer => layer !== null); // Remove null layers
     });
 
     // Populate namesByCategory for sidebar display

@@ -37,10 +37,10 @@ function createTestContainer() {
       <p>Test content</p>
     </div>
     <div class="docs-toc">
-      <a href="#docs/intro" data-doc="intro" class="active">Introduction</a>
-      <a href="#docs/usage" data-doc="usage">Usage Guide</a>
-      <a href="#docs/layers" data-doc="layers">Layer Information</a>
-      <a href="#docs/troubleshooting" data-doc="troubleshooting">Troubleshooting</a>
+      <a href="#in_app_docs/intro" data-doc="intro" class="active">Introduction</a>
+<a href="#in_app_docs/usage" data-doc="usage">Usage Guide</a>
+<a href="#in_app_docs/layers" data-doc="layers">Layer Information</a>
+<a href="#in_app_docs/troubleshooting" data-doc="troubleshooting">Troubleshooting</a>
     </div>
   `;
   document.body.appendChild(container);
@@ -574,7 +574,7 @@ describe('MobileDocsNavManager', () => {
       // Add a new navigation item to the TOC
       const toc = document.querySelector('.docs-toc');
       const newLink = document.createElement('a');
-      newLink.href = '#docs/api';
+      newLink.href = '#in_app_docs/api';
       newLink.setAttribute('data-doc', 'api');
       newLink.textContent = 'API Reference';
       toc.appendChild(newLink);

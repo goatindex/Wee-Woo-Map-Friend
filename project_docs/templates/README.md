@@ -165,7 +165,7 @@ This guide explains how to use the standardized documentation templates effectiv
 
 ### **External References**
 
-- **Link to application docs** (`docs/`) when appropriate
+- **Link to application docs** (`in_app_docs/`) when appropriate
 - **Reference external resources** with clear context
 - **Include version information** for external links
 - **Document access requirements** for external resources

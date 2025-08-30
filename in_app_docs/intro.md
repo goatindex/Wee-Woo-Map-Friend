@@ -20,4 +20,4 @@ Tip: If you get lost, press ♻️ Reset to go back to the default view.
 
 Preview:
 
-![Sidebar and All Active](docs/assets/sidebar-all-active.svg)
+![Sidebar and All Active](in_app_docs/assets/sidebar-all-active.svg)

@@ -46,7 +46,7 @@ Hit the **♻️ button** to return to a fresh starting state. This will:
 
 ## Example Workflow
 
-![Searching and activating a layer](docs/assets/search-activate.svg)
+![Searching and activating a layer](in_app_docs/assets/search-activate.svg)
 
 1. **Search** for your area of interest (e.g., "Frankston")
 2. **Click** the search result to add it to your map

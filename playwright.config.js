@@ -16,15 +16,15 @@ module.exports = defineConfig({
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
-    ['html'],
-    ['json', { outputFile: 'test-results/e2e-results.json' }],
-    ['junit', { outputFile: 'test-results/e2e-results.xml' }]
+    ['list'], // Built-in list reporter for real-time output
+    ['html'], // HTML report for detailed analysis
+    ['./tests/e2e/progress-reporter.js', { verbose: true }] // Custom progress reporter
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:8000',
-    
+
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
     
@@ -33,10 +33,6 @@ module.exports = defineConfig({
     
     /* Record video on failure */
     video: 'retain-on-failure',
-    
-    /* Global test timeout */
-    actionTimeout: 10000,
-    navigationTimeout: 15000,
   },
 
   /* Configure projects for major browsers */
@@ -61,7 +57,6 @@ module.exports = defineConfig({
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
     },
-
     {
       name: 'Mobile Safari',
       use: { ...devices['iPhone 12'] },
@@ -83,6 +78,18 @@ module.exports = defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:8000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    timeout: 120 * 1000, // 2 minutes to start server
   },
+  
+  /* Global test timeout */
+  timeout: 60000, // 60 seconds per test
+  
+  /* Expect timeout for assertions */
+  expect: {
+    timeout: 10000, // 10 seconds for expect operations
+  },
+  
+  /* Global setup and teardown */
+  globalSetup: require.resolve('./tests/e2e/global-setup.js'),
+  globalTeardown: require.resolve('./tests/e2e/global-teardown.js'),
 });

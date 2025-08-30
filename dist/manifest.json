@@ -26,7 +26,7 @@
   ],
   "screenshots": [
     {
-      "src": "docs/assets/sidebar-all-active.svg",
+      "src": "in_app_docs/assets/sidebar-all-active.svg",
       "sizes": "1280x720",
       "type": "image/svg+xml",
       "form_factor": "wide",
@@ -53,7 +53,7 @@
       "name": "Documentation",
       "short_name": "Docs",
       "description": "View application documentation and help",
-      "url": "/#docs/intro",
+      "url": "/#in_app_docs/intro",
       "icons": [
         {
           "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzE5NzZkMiI+PHBhdGggZD0iTTE0IDJIMmMtMS4xIDAtMiAuOS0yIDJ2MTZjMCAxLjEuODkgMiAyIDJoMjBjMS4xIDAgMi0uOSAyLTJWOGwtNi02ek0xOCAxOEg2di0yaDEydjJ6bTAtNEg2di0yaDEydjJ6bS0yLThWM2w1IDVoLTV6Ii8+PC9zdmc+",

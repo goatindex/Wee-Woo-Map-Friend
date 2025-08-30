@@ -4,6 +4,8 @@
 
 This directory contains comprehensive project documentation organized for both **AI IDE efficiency** and **human reader clarity**. All documentation follows standardized templates and patterns for consistency and maintainability.
 
+**📖 Important**: All documentation must follow the **[Terms of Reference](terms-of-reference.md)** for consistent terminology and vocabulary.
+
 ## 🗂️ **Documentation Structure**
 
 ### **Getting Started** (`getting-started/`)
@@ -152,9 +154,34 @@ This directory contains comprehensive project documentation organized for both *
 
 ### **Missing Information**
 
-- Check if content should be in application docs (`docs/`) vs project docs (`project_docs/`)
+- Check if content should be in application docs (`in_app_docs/`) vs project docs (`project_docs/`)
 - Application docs: User-facing features and functionality
 - Project docs: Development, architecture, and project management
+
+## 📊 **Documentation Status**
+
+### **Completed Documentation**
+
+- ✅ **[Testing Framework](development/testing.md)** - Comprehensive testing guide with 4-stage evolution
+- ✅ **[E2E Troubleshooting Guide](development/e2e-troubleshooting-guide.md)** - E2E testing issue resolution
+- ✅ **[Testing Completion Summary](development/testing-completion-summary.md)** - Summary of testing documentation work
+- ✅ **[Development Setup](development/setup.md)** - Developer environment configuration
+- ✅ **[API Reference](api/)** - API documentation and examples
+- ✅ **[Deployment Guide](deployment/)** - Production deployment and troubleshooting
+- ✅ **[AppBootstrap System](architecture/app-bootstrap.md)** - Application initialization and bootstrap architecture
+- ✅ **[Data Loading Architecture](architecture/data-loading.md)** - GeoJSON loading, coordinate conversion, and error handling
+- ✅ **[Performance Baselines](templates/performance-baselines.md)** - Performance measurement and monitoring standards
+- ✅ **[Terms of Reference](terms-of-reference.md)** - Standardized terminology and vocabulary reference
+
+### **In Progress**
+
+- 🔄 **[Architecture Documentation](architecture/)** - System architecture analysis and design
+
+### **Planned**
+
+- 📋 **[Component Architecture](architecture/components.md)** - Detailed component breakdown
+- 📋 **[Data Flow Analysis](architecture/data-flow.md)** - System data flow documentation
+- 📋 **[Code Style Guide](development/code-style.md)** - Coding standards and patterns
 
 ## 📅 **Maintenance**
 

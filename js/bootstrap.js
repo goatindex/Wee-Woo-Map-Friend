@@ -526,8 +526,17 @@ const AppBootstrap = {
   setupUI() {
     console.log('AppBootstrap: Setting up UI components');
     
+    // Debug: Check if setupCollapsible is available
+    console.log('AppBootstrap: setupCollapsible check:', {
+      exists: typeof window.setupCollapsible,
+      isFunction: typeof window.setupCollapsible === 'function',
+      value: window.setupCollapsible
+    });
+    
     // Set up collapsible sections
     if (window.setupCollapsible) {
+      console.log('AppBootstrap: setupCollapsible is available, calling it...');
+      
       // Start All Active collapsed; it will auto-expand when the first item is added
       window.setupCollapsible('activeHeader', 'activeList', false);
       window.setupCollapsible('showAllHeader', 'showAllList');
@@ -537,6 +546,11 @@ const AppBootstrap = {
       window.setupCollapsible('policeHeader', 'policeList');
       window.setupCollapsible('ambulanceHeader', 'ambulanceList');
       window.setupCollapsible('frvHeader', 'frvList');
+      
+      console.log('AppBootstrap: All setupCollapsible calls completed');
+    } else {
+      console.error('AppBootstrap: setupCollapsible is NOT available!');
+      console.error('AppBootstrap: Available window functions:', Object.keys(window).filter(key => typeof window[key] === 'function'));
     }
     
     // Initialize other UI managers
@@ -708,7 +722,7 @@ const AppBootstrap = {
           window.NativeFeatures.hapticFeedback('light');
         }
         
-        history.replaceState(null, '', `#docs/${slug}`);
+        history.replaceState(null, '', `#in_app_docs/${slug}`);
         this.openDocs(slug);
       });
     });
@@ -810,7 +824,7 @@ const AppBootstrap = {
    * Modal and drawer management
    */
   openDocs(slug = 'intro') {
-    fetch(`docs/${slug}.md`)
+            fetch(`in_app_docs/${slug}.md`)
       .then(response => response.text())
       .then(content => {
         const contentEl = document.getElementById('docsContent');
@@ -830,8 +844,8 @@ const AppBootstrap = {
         }
         
         // Update URL hash to reflect current page
-        if (window.location.hash !== `#docs/${slug}`) {
-          history.replaceState(null, '', `#docs/${slug}`);
+        if (window.location.hash !== `#in_app_docs/${slug}`) {
+          history.replaceState(null, '', `#in_app_docs/${slug}`);
         }
         
         const closeBtn = document.getElementById('docsClose');
@@ -919,12 +933,7 @@ const AppBootstrap = {
   }
 };
 
-// Auto-initialize when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => AppBootstrap.init());
-} else {
-  AppBootstrap.init();
-}
+// Auto-initialize when DOM is ready (moved to end of file)
 
 // Harden: align outlineColors with each category's styleFn color (prevents drift)
 (() => {
@@ -1253,7 +1262,7 @@ async function ensureMdDeps() {
 async function renderDoc(slug) {
 	try {
 		await ensureMdDeps();
-		const resp = await fetch(`docs/${slug}.md`, { cache: 'no-cache' });
+		        const resp = await fetch(`in_app_docs/${slug}.md`, { cache: 'no-cache' });
 		const md = await resp.text();
 		const html = window.DOMPurify.sanitize(window.marked.parse(md));
 		const cont = document.getElementById('docsContent');
@@ -1339,7 +1348,7 @@ window.addEventListener('DOMContentLoaded', () => {
 			e.preventDefault();
 			const slug = a.getAttribute('data-doc');
 			if (!slug) return;
-			history.replaceState(null, '', `#docs/${slug}`);
+			        history.replaceState(null, '', `#in_app_docs/${slug}`);
 			openDocs(slug);
 			
 			// Haptic feedback for mobile

@@ -476,7 +476,7 @@ window.AppBootstrap = {
           window.NativeFeatures.hapticFeedback('light');
         }
         
-        history.replaceState(null, '', `#docs/${slug}`);
+        history.replaceState(null, '', `#in_app_docs/${slug}`);
         this.openDocs(slug);
       });
     });
@@ -578,7 +578,7 @@ window.AppBootstrap = {
    * Modal and drawer management
    */
   openDocs(slug = 'intro') {
-    fetch(`docs/${slug}.md`)
+            fetch(`in_app_docs/${slug}.md`)
       .then(response => response.text())
       .then(content => {
         const contentEl = document.getElementById('docsContent');
@@ -598,8 +598,8 @@ window.AppBootstrap = {
         }
         
         // Update URL hash to reflect current page
-        if (window.location.hash !== `#docs/${slug}`) {
-          history.replaceState(null, '', `#docs/${slug}`);
+        if (window.location.hash !== `#in_app_docs/${slug}`) {
+          history.replaceState(null, '', `#in_app_docs/${slug}`);
         }
         
         const closeBtn = document.getElementById('docsClose');
@@ -988,7 +988,7 @@ async function ensureMdDeps() {
 async function renderDoc(slug) {
 	try {
 		await ensureMdDeps();
-		const resp = await fetch(`docs/${slug}.md`, { cache: 'no-cache' });
+		        const resp = await fetch(`in_app_docs/${slug}.md`, { cache: 'no-cache' });
 		const md = await resp.text();
 		const html = window.DOMPurify.sanitize(window.marked.parse(md));
 		const cont = document.getElementById('docsContent');
@@ -1074,7 +1074,7 @@ window.addEventListener('DOMContentLoaded', () => {
 			e.preventDefault();
 			const slug = a.getAttribute('data-doc');
 			if (!slug) return;
-			history.replaceState(null, '', `#docs/${slug}`);
+			        history.replaceState(null, '', `#in_app_docs/${slug}`);
 			openDocs(slug);
 			
 			// Haptic feedback for mobile

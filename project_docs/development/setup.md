@@ -416,13 +416,13 @@ npm run test         # Run tests
 - **Configuration**: `js/config.js`
 - **Backend**: `backend/` directory
 - **Scripts**: `scripts/` directory
-- **Documentation**: `docs/` and `project_docs/` directories
+- **Documentation**: `in_app_docs/` and `project_docs/` directories
 
 ### Development URLs
 
 - **Frontend**: `http://127.0.0.1:8000`
 - **Backend**: `http://127.0.0.1:5000` (if running)
-- **Documentation**: `http://127.0.0.1:8000/docs/`
+- **Documentation**: `http://127.0.0.1:8000/in_app_docs/`
 
 ---
 

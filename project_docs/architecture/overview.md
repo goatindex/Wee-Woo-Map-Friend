@@ -189,7 +189,10 @@ WeeWoo Map Friend is built on a modern, responsive architecture that prioritizes
 
 - **[Component Architecture](components.md)** - Detailed component design and patterns
 - **[Data Flow & State Management](data-flow.md)** - In-depth state management and data flow
-- **[Performance & Optimization](performance.md)** - Performance strategies and optimization techniques
+- **[AppBootstrap System](app-bootstrap.md)** - Application initialization and bootstrap architecture
+- **[Data Loading Architecture](data-loading.md)** - GeoJSON loading, coordinate conversion, and error handling
+- **[Performance Baselines](../templates/performance-baselines.md)** - Performance measurement and monitoring standards
+- **[Terms of Reference](../terms-of-reference.md)** - Standardized terminology and vocabulary reference
 - **[Mobile & PWA Architecture](mobile-pwa.md)** - Progressive web app and native mobile architecture
 - **[Development Workflows](../development/workflows.md)** - Development processes and best practices
 
