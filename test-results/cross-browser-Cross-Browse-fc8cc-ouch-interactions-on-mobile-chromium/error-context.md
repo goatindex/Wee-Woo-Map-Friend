@@ -1,0 +1,48 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - button "Zoom in" [ref=e4] [cursor=pointer]:
+      - generic [ref=e5] [cursor=pointer]: +
+    - button "Zoom out" [ref=e6] [cursor=pointer]:
+      - generic [ref=e7] [cursor=pointer]: −
+  - generic:
+    - generic:
+      - generic:
+        - generic: 🚨🗺️🫶
+        - text: "| WeeWoo Map Friend"
+      - generic:
+        - button: ℹ️
+        - button: 📚
+        - button: ♻️
+      - generic:
+        - textbox
+    - heading [level=4]:
+      - generic: ▼
+      - text: 📌 All Active
+    - heading [level=4]:
+      - generic: ▼
+      - text: 🧾 Show All
+    - heading [level=4]:
+      - generic: ▼
+      - text: 👷 SES Response Areas
+    - heading [level=4]:
+      - generic: ▼
+      - text: 🏛️ Local Government Areas
+    - heading [level=4]:
+      - generic: ▼
+      - text: 🔥 CFA Response Areas
+    - heading [level=4]:
+      - generic: ▼
+      - text: 🚑 Ambulance Stations
+    - heading [level=4]:
+      - generic: ▼
+      - text: 👮 Police Stations
+    - heading [level=4]:
+      - generic: ▼
+      - text: � Fire Rescue Victoria
+  - text: 💡 Tap the blue 'Documentation Pages' button above to navigate between topics
+  - button "Open documentation" [expanded] [ref=e8] [cursor=pointer]: 📄
+  - button "Toggle sidebar" [ref=e9] [cursor=pointer]: ☰
+```

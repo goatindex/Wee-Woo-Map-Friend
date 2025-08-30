@@ -203,7 +203,7 @@ const AppBootstrap = {
     body.classList.remove('context-portrait', 'context-landscape');
     
     // Add current device classes
-    body.classList.add(`device-${deviceContext.device}`);
+    body.classList.add(`device-${deviceContext.breakpoint}`);
     body.classList.add(`platform-${deviceContext.platform}`);
     body.classList.add(`context-${deviceContext.orientation}`);
     
@@ -569,68 +569,67 @@ const AppBootstrap = {
     // Initialize Documentation and Sidebar FABs via FABManager
     DiagnosticLogger.verbose('AppBootstrap', 'Step 13.1: Attempting to create FABs');
     
-    setTimeout(() => {
-      DiagnosticLogger.info('AppBootstrap', 'FAB Creation: Starting FAB initialization');
-      DiagnosticLogger.verbose('AppBootstrap', 'FAB Creation: Checking FABManager availability', {
-        FABManagerAvailable: !!window.FABManager,
-        FABManagerType: typeof window.FABManager,
-        FABManagerKeys: window.FABManager ? Object.keys(window.FABManager) : 'N/A'
-      });
+    // Create FABs immediately instead of using setTimeout
+    DiagnosticLogger.info('AppBootstrap', 'FAB Creation: Starting FAB initialization');
+    DiagnosticLogger.verbose('AppBootstrap', 'FAB Creation: Checking FABManager availability', {
+      FABManagerAvailable: !!window.FABManager,
+      FABManagerType: typeof window.FABManager,
+      FABManagerKeys: window.FABManager ? Object.keys(window.FABManager) : 'N/A'
+    });
+    
+    if (window.FABManager) {
+      DiagnosticLogger.verbose('AppBootstrap', 'FAB Creation: FABManager found, attempting to create FABs');
       
-      if (window.FABManager) {
-        DiagnosticLogger.verbose('AppBootstrap', 'FAB Creation: FABManager found, attempting to create FABs');
-        
-        // Create DocsFAB
-        try {
-          DiagnosticLogger.verbose('AppBootstrap', 'FAB Creation: Creating DocsFAB');
-          const docsFab = window.FABManager.create('docsFab');
-          DiagnosticLogger.info('AppBootstrap', 'FAB Creation: DocsFAB created successfully', {
-            docsFab: docsFab,
-            docsFabType: typeof docsFab,
-            docsFabKeys: docsFab ? Object.keys(docsFab) : 'N/A'
-          });
-        } catch (error) {
-          DiagnosticLogger.error('AppBootstrap', 'FAB Creation: Failed to create DocsFAB', {
-            error: error.message,
-            stack: error.stack,
-            FABManagerState: {
-              available: !!window.FABManager,
-              methods: window.FABManager ? Object.getOwnPropertyNames(window.FABManager) : []
-            }
-          });
-        }
-        
-        // Create SidebarToggleFAB
-        try {
-          DiagnosticLogger.verbose('AppBootstrap', 'FAB Creation: Creating SidebarToggleFAB');
-          const sidebarFab = window.FABManager.create('sidebarToggle');
-          DiagnosticLogger.info('AppBootstrap', 'FAB Creation: SidebarToggleFAB created successfully', {
-            sidebarFab: sidebarFab,
-            sidebarFabType: typeof sidebarFab,
-            sidebarFabKeys: sidebarFab ? Object.keys(sidebarFab) : 'N/A'
-          });
-        } catch (error) {
-          DiagnosticLogger.error('AppBootstrap', 'FAB Creation: Failed to create SidebarToggleFAB', {
-            error: error.message,
-            stack: error.stack,
-            FABManagerState: {
-              available: !!window.FABManager,
-              methods: window.FABManager ? Object.getOwnPropertyNames(window.FABManager) : []
-            }
-          });
-        }
-      } else {
-        DiagnosticLogger.error('AppBootstrap', 'FAB Creation: FABManager not available', {
-          windowKeys: Object.keys(window).filter(key => key.includes('FAB') || key.includes('fab')),
-          globalObjects: {
-            BaseFAB: typeof window.BaseFAB,
-            FABManager: typeof window.FABManager,
-            SidebarToggleFAB: typeof window.SidebarToggleFAB,
-            DocsFAB: typeof window.DocsFAB
+      // Create DocsFAB
+      try {
+        DiagnosticLogger.verbose('AppBootstrap', 'FAB Creation: Creating DocsFAB');
+        const docsFab = window.FABManager.create('docsFab');
+        DiagnosticLogger.info('AppBootstrap', 'FAB Creation: DocsFAB created successfully', {
+          docsFab: docsFab,
+          docsFabType: typeof docsFab,
+          docsFabKeys: docsFab ? Object.keys(docsFab) : 'N/A'
+        });
+      } catch (error) {
+        DiagnosticLogger.error('AppBootstrap', 'FAB Creation: Failed to create DocsFAB', {
+          error: error.message,
+          stack: error.stack,
+          FABManagerState: {
+            available: !!window.FABManager,
+            methods: window.FABManager ? Object.getOwnPropertyNames(window.FABManager) : []
           }
         });
       }
-    }, 100);
+      
+      // Create SidebarToggleFAB
+      try {
+        DiagnosticLogger.verbose('AppBootstrap', 'FAB Creation: Creating SidebarToggleFAB');
+        const sidebarFab = window.FABManager.create('sidebarToggle');
+        DiagnosticLogger.info('AppBootstrap', 'FAB Creation: SidebarToggleFAB created successfully', {
+          sidebarFab: sidebarFab,
+          sidebarFabType: typeof sidebarFab,
+          sidebarFabKeys: sidebarFab ? Object.keys(sidebarFab) : 'N/A'
+        });
+      } catch (error) {
+        DiagnosticLogger.error('AppBootstrap', 'FAB Creation: Failed to create SidebarToggleFAB', {
+          error: error.message,
+          stack: error.stack,
+          FABManagerState: {
+            available: !!window.FABManager,
+            methods: window.FABManager ? Object.getOwnPropertyNames(window.FABManager) : []
+          }
+        });
+      }
+    } else {
+      DiagnosticLogger.error('AppBootstrap', 'FAB Creation: FABManager not available', {
+        windowKeys: Object.keys(window).filter(key => key.includes('FAB') || key.includes('fab')),
+        globalObjects: {
+          BaseFAB: typeof window.BaseFAB,
+          FABManager: typeof window.FABManager,
+          SidebarToggleFAB: typeof window.SidebarToggleFAB,
+          DocsFAB: typeof window.DocsFAB
+        }
+      });
+    }
   },
   
   /**

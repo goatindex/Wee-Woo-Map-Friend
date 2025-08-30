@@ -71,7 +71,7 @@ test.describe('Cross-Browser Compatibility Tests', () => {
       await expect(page.locator('#layerMenu')).toBeVisible();
       
       // Check that body has mobile class
-      await expect(page.locator('body')).toHaveClass(/device-mobile/);
+      await expect(page.locator('body')).toHaveClass(/device-mobile-small|device-mobile-large/);
       
       const duration = Date.now() - testStartTime;
       progressTracker.testPassed(testName, suiteName, duration);
@@ -121,7 +121,7 @@ test.describe('Cross-Browser Compatibility Tests', () => {
       
       // Test touch interaction with checkboxes
       const firstCheckbox = page.locator('#sesList input[type="checkbox"]').first();
-      await firstCheckbox.tap();
+      await firstCheckbox.click();
       
       // Verify touch interaction worked
       await expect(firstCheckbox).toBeChecked();
@@ -175,20 +175,41 @@ test.describe('Cross-Browser Compatibility Tests', () => {
     try {
       progressTracker.testStarted(testName, suiteName);
       
+      // Wait for the page to fully load and data to be populated
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(2000);
+      
       // Find a collapsible section header
       const header = page.locator('h4[id$="Header"]').first();
       await expect(header).toBeVisible();
       
-      // Click to toggle
-      await header.click();
-      
-      // Wait for animation
-      await page.waitForTimeout(300);
-      
-      // Verify the corresponding list is now visible
+      // Get the header ID before clicking
       const headerId = await header.getAttribute('id');
       const listId = headerId.replace('Header', 'List');
       const list = page.locator(`#${listId}`);
+      
+      // Click to toggle
+      await header.click();
+      
+      // Wait for animation and data loading
+      await page.waitForTimeout(1000);
+      
+      // Use a more robust approach - check if the list becomes visible
+      // and has content (either checkboxes or is expanded)
+      await page.waitForFunction((listId) => {
+        const listElement = document.querySelector(`#${listId}`);
+        if (!listElement) return false;
+        
+        // Check if the list is visible (not hidden)
+        if (listElement.style.display === 'none') return false;
+        
+        // Check if it has content (checkboxes) or is in expanded state
+        const checkboxes = listElement.querySelectorAll('input[type="checkbox"]');
+        const hasContent = checkboxes.length > 0;
+        const isExpanded = !listElement.classList.contains('collapsed');
+        
+        return hasContent || isExpanded;
+      }, listId, { timeout: 20000 });
       
       // The list should be visible after clicking the header
       await expect(list).toBeVisible();

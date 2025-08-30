@@ -22,6 +22,11 @@ class ProgressReporter {
   onTestBegin(test, result) {
     this.currentTest = test;
     
+    // Track test start in progress tracker
+    const testName = test.title;
+    const suiteName = test.parent.title || 'unknown';
+    progressTracker.testStarted(testName, suiteName);
+    
     if (this.verbose) {
       console.log(`\n📋 Starting test: ${test.title}`);
       console.log(`   File: ${test.location.file}`);
@@ -82,6 +87,9 @@ class ProgressReporter {
       console.log(`   Total: ${result.status === 'passed' ? 'All tests passed' : 'Some tests failed'}`);
       console.log(`   Duration: ${Math.round(result.duration / 1000)}s`);
     }
+    
+    // Ensure we exit cleanly
+    console.log('\n🏁 Test execution completed - exiting...');
   }
 
   onError(error) {
