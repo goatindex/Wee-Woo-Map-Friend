@@ -63,7 +63,7 @@ const modernConfig = {
         { src: 'css/**/*', dest: 'dist/css' },
         // Note: GeoJSON files (103+ MB) are served directly from source for performance
         // They are loaded dynamically via fetch() and don't need to be bundled
-        { src: 'docs/**/*', dest: 'dist/docs' },
+        { src: 'in_app_docs/**/*', dest: 'dist/in_app_docs' },
         { src: 'manifest.json', dest: 'dist' },
         { src: 'sw.js', dest: 'dist' },
         { src: 'browserconfig.xml', dest: 'dist' },

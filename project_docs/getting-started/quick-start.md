@@ -116,7 +116,7 @@ project_docs/
 
 ### **External References**
 
-- Link to **application docs** (`docs/`) when appropriate
+- Link to **application docs** (`in_app_docs/`) when appropriate
 - Reference **external resources** with clear context
 - Include **version information** for external links
 - Document **access requirements** for external resources
@@ -199,7 +199,7 @@ project_docs/
 
 ### **Missing Information**
 
-- Check if content should be in application docs (`docs/`) vs project docs (`project_docs/`)
+- Check if content should be in application docs (`in_app_docs/`) vs project docs (`project_docs/`)
 - Application docs: User-facing features and functionality
 - Project docs: Development, architecture, and project management
 

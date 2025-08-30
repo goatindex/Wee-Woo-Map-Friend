@@ -172,7 +172,7 @@ This project is a Leaflet.js-based web map for visualizing SES, LGA, CFA, and Am
 
 This project now uses a **dual documentation system** for maximum clarity and efficiency:
 
-#### **Application Documentation (`docs/`)**
+#### **Application Documentation (`in_app_docs/`)**
 
 - **Purpose**: User-facing features, functionality, and troubleshooting
 - **Content**: User guides, API reference, feature documentation
@@ -211,7 +211,7 @@ When working with documentation:
 
 ### **Documentation Location Logic**
 
-- **User features, API endpoints, troubleshooting** → `docs/`
+- **User features, API endpoints, troubleshooting** → `in_app_docs/`
 - **Architecture analysis, development guides, project management** → `project_docs/`
 - **Templates and standards** → `project_docs/templates/`
 - **Project-specific analysis** → `project_docs/` with appropriate template

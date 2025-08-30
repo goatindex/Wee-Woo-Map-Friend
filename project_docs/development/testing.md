@@ -346,16 +346,22 @@ Total Coverage: 105 tests with comprehensive testing pyramid
 
 ### **Phase 4: End-to-End Testing (User Experience Validation)**
 
-#### **Current Status: ✅ COMPLETE**
+#### **Current Status: ✅ COMPLETE WITH PROGRESS TRACKING**
 
 **Test Files:**
-- `tests/e2e/user-journey.spec.js` - 6 tests
+- `tests/e2e/user-journey.spec.js` - 6 tests (including emergency services workflow)
 - `tests/e2e/cross-browser.spec.js` - 8 tests  
 - `tests/e2e/performance-accessibility.spec.js` - 8 tests
 
 **Coverage:** Comprehensive (user workflows, cross-browser, accessibility)  
 **Quality:** High - testing real user experience in actual browsers  
 **Risk:** LOW - validates complete user journey and cross-platform compatibility
+
+**Progress Tracking System:**
+- **Custom Playwright Reporter**: Real-time progress feedback with percentage completion
+- **Phase Monitoring**: Track test execution across all E2E test phases
+- **Performance Metrics**: Monitor test execution times and identify bottlenecks
+- **Error Reporting**: Detailed error tracking with context and recommendations
 
 **Test Categories:**
 - **User Journey Testing**: Complete workflows from map loading to feature interaction
@@ -1972,6 +1978,130 @@ test('should be performant', () => {
 });
 ```
 
+### **Systematic Investigation Approach**
+
+When encountering repeated test failures or unexpected behavior, use this systematic approach instead of rapid fix attempts:
+
+#### **10-Step Systematic Investigation Process**
+
+1. **Document the Pattern**: Record what's happening, when, and how often
+2. **Identify Failure Points**: Note specific error messages and failure locations
+3. **Check Tool Behavior**: Investigate if development tools are causing issues
+4. **Analyze Root Causes**: Look beyond symptoms to underlying problems
+5. **Verify Current State**: Confirm what's actually working vs. what's broken
+6. **Research Solutions**: Find proven approaches rather than guessing
+7. **Implement Targeted Fixes**: Apply minimal, focused solutions
+8. **Test Incrementally**: Verify each fix before proceeding
+9. **Document Solutions**: Record what worked and why
+10. **Prevent Recurrence**: Implement safeguards and monitoring
+
+#### **When to Apply Systematic Investigation**
+
+- **Tool Resistance**: When development tools behave unexpectedly
+- **Repeated Failures**: When the same issue occurs multiple times
+- **Regression Patterns**: When fixes are undone or reverted
+- **Inconsistent Behavior**: When behavior varies across attempts
+- **Complex Failures**: When multiple issues appear simultaneously
+
+#### **Benefits of Systematic Approach**
+
+- **Faster Resolution**: Addresses root causes instead of symptoms
+- **Prevents Loops**: Breaks cycles of repeated fix attempts
+- **Builds Knowledge**: Creates reusable troubleshooting patterns
+- **Reduces Risk**: Minimizes chance of introducing new problems
+
+### **E2E Testing Troubleshooting**
+
+#### **❌ Element Not Found or Hidden**
+
+**Problem**: `Error: expect(locator).toBeVisible() failed` for elements that should be visible
+
+**Common Causes:**
+- **Dynamic Content**: Elements are populated after page load
+- **Collapsible Sections**: Elements start hidden and need user interaction
+- **Timing Issues**: Tests run before JavaScript initialization completes
+
+**Solutions:**
+```javascript
+// Wait for dynamic content to populate
+await page.waitForFunction(() => {
+  const element = document.querySelector('#targetElement');
+  return element && element.children.length > 0;
+}, { timeout: 10000 });
+
+// Handle collapsible sections
+const header = page.locator('#sectionHeader');
+await header.click();
+await expect(page.locator('#sectionContent')).toBeVisible();
+
+// Wait for page to fully load
+await page.waitForLoadState('networkidle');
+await page.waitForTimeout(2000); // Allow JavaScript to complete
+```
+
+#### **❌ Double Bootstrap Execution**
+
+**Problem**: `Error: Map container is already initialized`
+
+**Cause**: `AppBootstrap.init()` being called multiple times
+
+**Solution**: Ensure single initialization point:
+```javascript
+// In bootstrap.js - remove duplicate calls
+// Remove any duplicate AppBootstrap.init() calls
+// Keep only the main initialization in the main execution flow
+```
+
+#### **❌ GeoJSON Data Corruption**
+
+**Problem**: `Error: Invalid GeoJSON object` during feature loading
+
+**Cause**: Corrupted or malformed GeoJSON files
+
+**Solution**: Add robust error handling:
+```javascript
+// In loaders/polygons.js
+try {
+  const layer = L.geoJSON(feature, { style, pane: category });
+  return layer;
+} catch (error) {
+  console.warn(`Invalid GeoJSON feature:`, feature, error);
+  return null; // Filter out invalid features
+}
+```
+
+#### **❌ Test Selector Mismatches**
+
+**Problem**: Tests fail because selectors don't match actual HTML structure
+
+**Cause**: HTML structure changed or tests use outdated selectors
+
+**Solution**: Always verify current HTML structure:
+```bash
+# Check actual HTML structure
+grep -r "id=" index.html
+grep -r "class=" index.html
+
+# Update test selectors to match current structure
+# Example: #sidebar → #layerMenu, #ses-section → #sesList
+```
+
+#### **❌ Progress Tracking System Errors**
+
+**Problem**: `TypeError` in global setup/teardown or reporter
+
+**Cause**: Incorrect API usage of progress tracking classes
+
+**Solution**: Use correct class methods:
+```javascript
+// Correct usage
+progressTracker.init();
+progressTracker.startPhase('Phase Name');
+progressTracker.testStarted('Test Name');
+progressTracker.testPassed('Test Name');
+progressTracker.displayFinalSummary();
+```
+
 ## Summary
 
 ### **Dual Testing Approach Benefits**
@@ -2008,9 +2138,13 @@ Our dual testing strategy provides the best of both worlds:
 1. ✅ **Expand real-code testing** to other critical app files (COMPLETED - activeList.js)
 2. ✅ **Add integration tests** for component interactions (COMPLETED - Phase 3)
 3. ✅ **Implement end-to-end tests** for user workflows (COMPLETED - Phase 4)
-4. **Regular test quality audits** to maintain standards (ONGOING)
-5. **Performance optimization** based on end-to-end test results (NEXT)
-6. **Accessibility improvements** based on accessibility test findings (NEXT)
+4. ✅ **Progress tracking system** for E2E tests (COMPLETED - Custom Playwright reporter)
+5. ✅ **Systematic investigation approach** for troubleshooting (COMPLETED - 10-step process)
+6. **Regular test quality audits** to maintain standards (ONGOING)
+7. **Performance optimization** based on end-to-end test results (NEXT)
+8. **Accessibility improvements** based on accessibility test findings (NEXT)
+9. **Preventive testing** to avoid common issues (NEXT)
+10. **Monitoring and alerting** for test stability (NEXT)
 
 ### **Testing Philosophy**
 
@@ -2018,9 +2152,68 @@ Our dual testing strategy provides the best of both worlds:
 - **Balanced approach**: Use both testing strategies for complementary benefits
 - **Continuous improvement**: Regular quality audits and strategy refinement
 - **Real validation**: Ensure tests reflect actual app behavior
+- **Systematic problem-solving**: Use structured investigation over rapid fix attempts
+- **Tool awareness**: Understand development tool behavior to prevent regressions
+- **Prevention over reaction**: Implement safeguards to avoid common issues
+
+### **Lessons Learned from Recent Debugging**
+
+#### **The "Cascading Failure Pattern"**
+
+We identified a critical pattern where rapid fix attempts led to tool reversions, creating regressions that required re-fixing multiple files. This revealed the importance of:
+
+- **Recognizing patterns early**: Tool resistance should trigger systematic investigation
+- **Addressing root causes**: Fixing symptoms without understanding causes leads to cycles
+- **Documenting tool behavior**: Understanding development tool quirks prevents future issues
+
+#### **Key Insights**
+
+1. **Systematic investigation should be the first response** to repeated failures, not a last resort
+2. **Tool behavior patterns** can be as important as code issues in debugging
+3. **Preventive measures** (like error handling and validation) are more valuable than reactive fixes
+4. **Documentation of solutions** prevents knowledge loss and enables faster future resolution
+
+#### **Best Practices Established**
+
+- **Always investigate tool behavior** when unexpected reversions occur
+- **Use systematic investigation** for any repeated failure pattern
+- **Implement robust error handling** to prevent cascading failures
+- **Document troubleshooting patterns** for future reference
+
+## Recent Fixes and Improvements
+
+### **Critical Issues Resolved (2025-01-01)**
+
+#### **1. Double Bootstrap Execution**
+- **Problem**: `AppBootstrap.init()` was called multiple times, causing "Map container already initialized" errors
+- **Solution**: Removed duplicate initialization calls in `js/bootstrap.js`
+- **Impact**: Eliminated application startup instability and test failures
+
+#### **2. GeoJSON Data Corruption**
+- **Problem**: Invalid GeoJSON features caused `L.geoJSON()` to throw errors, preventing feature loading
+- **Solution**: Added robust `try-catch` blocks and filtering in `js/loaders/polygons.js`
+- **Impact**: Application now gracefully handles corrupted data and continues functioning
+
+#### **3. E2E Test Selector Mismatches**
+- **Problem**: Tests used outdated selectors that didn't match current HTML structure
+- **Solution**: Updated all Playwright selectors to match actual DOM elements
+- **Impact**: All E2E tests now pass consistently
+
+#### **4. Progress Tracking System Integration**
+- **Problem**: Custom progress tracking had API mismatches causing `TypeError`s
+- **Solution**: Aligned all progress tracking code with `E2EProgressTracker` class API
+- **Impact**: Real-time progress feedback now works reliably
+
+### **Files Modified**
+- `js/bootstrap.js` - Removed duplicate initialization
+- `js/loaders/polygons.js` - Added error handling for invalid GeoJSON
+- `tests/e2e/user-journey.spec.js` - Fixed selectors and test logic
+- `tests/e2e/cross-browser.spec.js` - Updated selectors and progress tracking
+- `tests/e2e/performance-accessibility.spec.js` - Updated selectors and progress tracking
 
 ## Related Documentation
 
+- **[E2E Troubleshooting Guide](./e2e-troubleshooting-guide.md)**: Comprehensive guide for resolving E2E testing issues
 - **[Performance Baselines](../../README.md#performance)**: Performance optimization and monitoring (*Documentation planned*)
 - **[Component Architecture](../../docs/intro.md)**: Component design patterns and system overview
 - **[Development Setup](../../README.md#quick-start)**: Development environment setup and local development

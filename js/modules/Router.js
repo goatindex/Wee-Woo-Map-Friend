@@ -18,7 +18,7 @@ export class Router extends EventBus {
     this.routes = new Map();
     this.currentRoute = null;
     this.defaultRoute = 'intro';
-    this.basePath = '#docs/';
+    this.basePath = '#in_app_docs/';
     
     // Bind methods
     this.handleHashChange = this.handleHashChange.bind(this);
@@ -31,7 +31,7 @@ export class Router extends EventBus {
   
   /**
    * Register a route
-   * @param {string} path - Route path (without #docs/ prefix)
+   * @param {string} path - Route path (without #in_app_docs/ prefix)
    * @param {Function} handler - Route handler function
    * @param {Object} options - Route options
    */
@@ -250,7 +250,7 @@ export class DocsRouter extends Router {
     try {
       this.emit('docs:loading', { filename, title });
       
-      const response = await fetch(`docs/${filename}`);
+      const response = await fetch(`in_app_docs/${filename}`);
       if (!response.ok) {
         throw new Error(`Failed to load ${filename}: ${response.status}`);
       }

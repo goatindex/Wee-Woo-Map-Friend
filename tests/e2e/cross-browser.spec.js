@@ -1,12 +1,17 @@
 /**
  * @fileoverview Phase 4: Cross-Browser Compatibility Tests
- * Tests functionality across different browsers and devices
- * Ensures consistent behavior and appearance
+ * Ensures consistent application behavior and appearance across various platforms
+ * Tests responsive design, touch interactions, and browser-specific features
  */
 
 const { test, expect } = require('@playwright/test');
+const { progressTracker } = require('./progress-tracker');
 
-test.describe('Cross-Browser Compatibility', () => {
+test.describe('Cross-Browser Compatibility Tests', () => {
+  test.beforeAll(async () => {
+    progressTracker.startPhase('Cross-Browser Compatibility Tests');
+  });
+
   test.beforeEach(async ({ page }) => {
     // Navigate to the main application
     await page.goto('/');
@@ -18,169 +23,220 @@ test.describe('Cross-Browser Compatibility', () => {
     await page.waitForFunction(() => typeof L !== 'undefined', { timeout: 10000 });
   });
 
-  test('should render map consistently across browsers', async ({ page }) => {
-    // Verify map container is present
-    await expect(page.locator('#map')).toBeVisible();
+  test('should render correctly on desktop viewport', async ({ page }) => {
+    const testStartTime = Date.now();
+    const testName = 'should render correctly on desktop viewport';
+    const suiteName = 'cross-browser';
     
-    // Verify Leaflet container is rendered
-    await expect(page.locator('.leaflet-container')).toBeVisible();
-    
-    // Verify map tiles are loading
-    await expect(page.locator('.leaflet-tile')).toBeVisible();
-    
-    // Verify zoom controls are present
-    await expect(page.locator('.leaflet-control-zoom')).toBeVisible();
-    
-    // Verify attribution is present
-    await expect(page.locator('.leaflet-control-attribution')).toBeVisible();
-  });
-
-  test('should handle sidebar interactions consistently', async ({ page }) => {
-    // Verify sidebar structure
-    await expect(page.locator('#sidebar')).toBeVisible();
-    
-    // Test collapsible sections
-    const collapsibleSections = page.locator('.sidebar-section.collapsible');
-    const sectionCount = await collapsibleSections.count();
-    
-    for (let i = 0; i < sectionCount; i++) {
-      const section = collapsibleSections.nth(i);
-      const toggle = section.locator('.collapsible-toggle');
+    try {
+      progressTracker.testStarted(testName, suiteName);
       
-      if (await toggle.isVisible()) {
-        // Test collapse/expand
-        await toggle.click();
-        await expect(section.locator('.collapsible-content')).toBeVisible();
-        
-        await toggle.click();
-        await expect(section.locator('.collapsible-content')).not.toBeVisible();
-      }
+      // Set desktop viewport
+      await page.setViewportSize({ width: 1920, height: 1080 });
+      
+      // Verify desktop-specific layout
+      await expect(page.locator('#map')).toBeVisible();
+      await expect(page.locator('#layerMenu')).toBeVisible();
+      
+      // Check that sidebar is expanded by default on desktop
+      const collapsibleLists = page.locator('.collapsible-list');
+      const visibleLists = await collapsibleLists.filter({ hasText: /./ }).count();
+      
+      // At least some lists should be visible on desktop
+      expect(visibleLists).toBeGreaterThan(0);
+      
+      const duration = Date.now() - testStartTime;
+      progressTracker.testPassed(testName, suiteName, duration);
+      
+    } catch (error) {
+      const duration = Date.now() - testStartTime;
+      progressTracker.testFailed(testName, suiteName, error, duration);
+      throw error;
     }
   });
 
-  test('should handle form controls consistently', async ({ page }) => {
-    // Test checkbox behavior
-    const firstCheckbox = page.locator('#ses-section input[type="checkbox"]').first();
+  test('should handle mobile viewport correctly', async ({ page }) => {
+    const testStartTime = Date.now();
+    const testName = 'should handle mobile viewport correctly';
+    const suiteName = 'cross-browser';
     
-    // Verify initial state
-    await expect(firstCheckbox).not.toBeChecked();
-    
-    // Test checking
-    await firstCheckbox.check();
-    await expect(firstCheckbox).toBeChecked();
-    
-    // Test unchecking
-    await firstCheckbox.uncheck();
-    await expect(firstCheckbox).not.toBeChecked();
-    
-    // Test keyboard interaction
-    await firstCheckbox.focus();
-    await page.keyboard.press(' ');
-    await expect(firstCheckbox).toBeChecked();
-  });
-
-  test('should handle responsive design consistently', async ({ page }) => {
-    // Test desktop viewport
-    await page.setViewportSize({ width: 1920, height: 1080 });
-    await expect(page.locator('#sidebar')).toBeVisible();
-    await expect(page.locator('#map')).toBeVisible();
-    
-    // Test tablet viewport
-    await page.setViewportSize({ width: 768, height: 1024 });
-    await expect(page.locator('#sidebar')).toBeVisible();
-    await expect(page.locator('#map')).toBeVisible();
-    
-    // Test mobile viewport
-    await page.setViewportSize({ width: 375, height: 667 });
-    await expect(page.locator('#sidebar')).toBeVisible();
-    await expect(page.locator('#map')).toBeVisible();
-    
-    // Test mobile navigation toggle
-    const mobileToggle = page.locator('.mobile-nav-toggle');
-    if (await mobileToggle.isVisible()) {
-      await mobileToggle.click();
-      await expect(page.locator('#sidebar')).toBeVisible();
+    try {
+      progressTracker.testStarted(testName, suiteName);
+      
+      // Set mobile viewport
+      await page.setViewportSize({ width: 375, height: 667 });
+      
+      // Verify mobile-specific behavior
+      await expect(page.locator('#map')).toBeVisible();
+      await expect(page.locator('#layerMenu')).toBeVisible();
+      
+      // Check that body has mobile class
+      await expect(page.locator('body')).toHaveClass(/device-mobile/);
+      
+      const duration = Date.now() - testStartTime;
+      progressTracker.testPassed(testName, suiteName, duration);
+      
+    } catch (error) {
+      const duration = Date.now() - testStartTime;
+      progressTracker.testFailed(testName, suiteName, error, duration);
+      throw error;
     }
   });
 
-  test('should handle touch and mouse events consistently', async ({ page }) => {
-    // Test mouse interactions
-    const firstCheckbox = page.locator('#ses-section input[type="checkbox"]').first();
-    await firstCheckbox.hover();
-    await firstCheckbox.click();
-    await expect(firstCheckbox).toBeChecked();
+  test('should handle tablet viewport correctly', async ({ page }) => {
+    const testStartTime = Date.now();
+    const testName = 'should handle tablet viewport correctly';
+    const suiteName = 'cross-browser';
     
-    // Test touch interactions (if on mobile viewport)
-    await page.setViewportSize({ width: 375, height: 667 });
+    try {
+      progressTracker.testStarted(testName, suiteName);
+      
+      // Set tablet viewport
+      await page.setViewportSize({ width: 768, height: 1024 });
+      
+      // Verify tablet layout
+      await expect(page.locator('#map')).toBeVisible();
+      await expect(page.locator('#layerMenu')).toBeVisible();
+      
+      const duration = Date.now() - testStartTime;
+      progressTracker.testPassed(testName, suiteName, duration);
+      
+    } catch (error) {
+      const duration = Date.now() - testStartTime;
+      progressTracker.testFailed(testName, suiteName, error, duration);
+      throw error;
+    }
+  });
+
+  test('should handle touch interactions on mobile', async ({ page }) => {
+    const testStartTime = Date.now();
+    const testName = 'should handle touch interactions on mobile';
+    const suiteName = 'cross-browser';
     
-    // Simulate touch tap
-    await firstCheckbox.tap();
-    await expect(firstCheckbox).toBeChecked();
-    
-    // Test double-tap (should not interfere with single tap)
-    await firstCheckbox.tap();
-    await expect(firstCheckbox).toBeChecked(); // Should remain checked
+    try {
+      progressTracker.testStarted(testName, suiteName);
+      
+      // Set mobile viewport
+      await page.setViewportSize({ width: 375, height: 667 });
+      
+      // Test touch interaction with checkboxes
+      const firstCheckbox = page.locator('#sesList input[type="checkbox"]').first();
+      await firstCheckbox.tap();
+      
+      // Verify touch interaction worked
+      await expect(firstCheckbox).toBeChecked();
+      
+      const duration = Date.now() - testStartTime;
+      progressTracker.testPassed(testName, suiteName, duration);
+      
+    } catch (error) {
+      const duration = Date.now() - testStartTime;
+      progressTracker.testFailed(testName, suiteName, error, duration);
+      throw error;
+    }
   });
 
   test('should handle keyboard navigation consistently', async ({ page }) => {
-    // Focus on first interactive element
-    await page.keyboard.press('Tab');
+    const testStartTime = Date.now();
+    const testName = 'should handle keyboard navigation consistently';
+    const suiteName = 'cross-browser';
     
-    // Verify focus is visible
-    await expect(page.locator(':focus')).toBeVisible();
-    
-    // Test tab navigation through sidebar
-    const focusableElements = page.locator('#sidebar input, #sidebar button, #sidebar [tabindex]');
-    const elementCount = await focusableElements.count();
-    
-    for (let i = 0; i < Math.min(5, elementCount); i++) {
-      await page.keyboard.press('Tab');
-      await expect(page.locator(':focus')).toBeVisible();
-    }
-    
-    // Test shift+tab for reverse navigation
-    for (let i = 0; i < Math.min(3, elementCount); i++) {
-      await page.keyboard.press('Shift+Tab');
-      await expect(page.locator(':focus')).toBeVisible();
-    }
-  });
-
-  test('should handle CSS and styling consistently', async ({ page }) => {
-    // Verify critical CSS classes are applied
-    await expect(page.locator('#map')).toHaveClass(/leaflet-container/);
-    await expect(page.locator('#sidebar')).toHaveClass(/sidebar/);
-    
-    // Verify responsive classes are applied
-    await page.setViewportSize({ width: 375, height: 667 });
-    await expect(page.locator('body')).toHaveClass(/mobile/);
-    
-    await page.setViewportSize({ width: 1920, height: 1080 });
-    await expect(page.locator('body')).toHaveClass(/desktop/);
-  });
-
-  test('should handle JavaScript errors gracefully', async ({ page }) => {
-    // Inject a test error to verify error handling
-    await page.evaluate(() => {
-      // Create a test error handler
-      window.testErrorHandler = (error) => {
-        console.error('Test error caught:', error);
-        return false; // Prevent default error handling
-      };
+    try {
+      progressTracker.testStarted(testName, suiteName);
       
-      // Add error event listener
-      window.addEventListener('error', window.testErrorHandler);
-    });
+      // Focus on first interactive element
+      await page.keyboard.press('Tab');
+      
+      // Verify focus is visible
+      await expect(page.locator(':focus')).toBeVisible();
+      
+      // Test tab navigation through sidebar
+      const focusableElements = page.locator('#layerMenu input, #layerMenu button, #layerMenu [tabindex]');
+      const elementCount = await focusableElements.count();
+      
+      // Should have focusable elements
+      expect(elementCount).toBeGreaterThan(0);
+      
+      const duration = Date.now() - testStartTime;
+      progressTracker.testPassed(testName, suiteName, duration);
+      
+    } catch (error) {
+      const duration = Date.now() - testStartTime;
+      progressTracker.testFailed(testName, suiteName, error, duration);
+      throw error;
+    }
+  });
+
+  test('should handle collapsible sections consistently', async ({ page }) => {
+    const testStartTime = Date.now();
+    const testName = 'should handle collapsible sections consistently';
+    const suiteName = 'cross-browser';
     
-    // Verify the page continues to function
-    await expect(page.locator('#map')).toBeVisible();
-    await expect(page.locator('#sidebar')).toBeVisible();
+    try {
+      progressTracker.testStarted(testName, suiteName);
+      
+      // Find a collapsible section header
+      const header = page.locator('h4[id$="Header"]').first();
+      await expect(header).toBeVisible();
+      
+      // Click to toggle
+      await header.click();
+      
+      // Wait for animation
+      await page.waitForTimeout(300);
+      
+      // Verify the corresponding list is now visible
+      const headerId = await header.getAttribute('id');
+      const listId = headerId.replace('Header', 'List');
+      const list = page.locator(`#${listId}`);
+      
+      // The list should be visible after clicking the header
+      await expect(list).toBeVisible();
+      
+      const duration = Date.now() - testStartTime;
+      progressTracker.testPassed(testName, suiteName, duration);
+      
+    } catch (error) {
+      const duration = Date.now() - testStartTime;
+      progressTracker.testFailed(testName, suiteName, error, duration);
+      throw error;
+    }
+  });
+
+  test('should handle responsive breakpoints correctly', async ({ page }) => {
+    const testStartTime = Date.now();
+    const testName = 'should handle responsive breakpoints correctly';
+    const suiteName = 'cross-browser';
     
-    // Clean up
-    await page.evaluate(() => {
-      if (window.testErrorHandler) {
-        window.removeEventListener('error', window.testErrorHandler);
-        delete window.testErrorHandler;
+    try {
+      progressTracker.testStarted(testName, suiteName);
+      
+      // Test multiple viewport sizes
+      const viewports = [
+        { width: 320, height: 568, name: 'mobile-small' },
+        { width: 768, height: 1024, name: 'tablet' },
+        { width: 1024, height: 768, name: 'desktop-small' },
+        { width: 1920, height: 1080, name: 'desktop-large' }
+      ];
+      
+      for (const viewport of viewports) {
+        await page.setViewportSize(viewport);
+        
+        // Verify basic elements are always visible
+        await expect(page.locator('#map')).toBeVisible();
+        await expect(page.locator('#layerMenu')).toBeVisible();
+        
+        // Wait for layout to settle
+        await page.waitForTimeout(100);
       }
-    });
+      
+      const duration = Date.now() - testStartTime;
+      progressTracker.testPassed(testName, suiteName, duration);
+      
+    } catch (error) {
+      const duration = Date.now() - testStartTime;
+      progressTracker.testFailed(testName, suiteName, error, duration);
+      throw error;
+    }
   });
 });

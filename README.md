@@ -110,7 +110,7 @@ python backend/app.py
 
 ### Application Documentation
 
-- **[User Documentation](docs/)** - User-facing features, usage guides, and troubleshooting
+- **[User Documentation](in_app_docs/)** - User-facing features, usage guides, and troubleshooting
 - **[Quick Start Guide](project_docs/getting-started/quick-start.md)** - Get up and running quickly
 
 ### Quick Navigation
@@ -245,9 +245,9 @@ For detailed development information, architecture analysis, and technical speci
 
 ## Screenshots
 
-![Sidebar showing All Active and Docs](docs/assets/sidebar-all-active.svg)
+![Sidebar showing All Active and Docs](in_app_docs/assets/sidebar-all-active.svg)
 
-![Searching and activating a layer](docs/assets/search-activate.svg)
+![Searching and activating a layer](in_app_docs/assets/search-activate.svg)
 
 ### Automated Screenshots
 
