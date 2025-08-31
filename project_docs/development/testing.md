@@ -2211,6 +2211,19 @@ We identified a critical pattern where rapid fix attempts led to tool reversions
 - `tests/e2e/cross-browser.spec.js` - Updated selectors and progress tracking
 - `tests/e2e/performance-accessibility.spec.js` - Updated selectors and progress tracking
 
+### **Architecture Rationalization Success (2025-08-30)**
+
+#### **E2E Testing Achievement**
+- **Goal**: Achieve 90% E2E test success rate
+- **Result**: **90% achieved** ✅ (18/20 tests passing)
+- **Improvement**: +10% from initial state (80% → 90%)
+- **Key Fixes Implemented**:
+  - Checkbox visibility issues resolved
+  - Form labels test fixed
+  - Section expansion logic corrected
+  - Progress tracking system simplified
+- **Lessons Documented**: See [Architecture Rationalization Lessons](./architecture-rationalization-lessons.md)
+
 ## Related Documentation
 
 - **[E2E Troubleshooting Guide](./e2e-troubleshooting-guide.md)**: Comprehensive guide for resolving E2E testing issues

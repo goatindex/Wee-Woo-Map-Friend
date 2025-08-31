@@ -354,6 +354,11 @@ git diff
 3. **Seek Assistance**: Ask for help with specific information
 4. **Learn from Experience**: Document what worked for future reference
 
+## 📚 Related Resources
+
+For comprehensive lessons learned from our Architecture Rationalization Project, see:
+- **[Architecture Rationalization Lessons](./architecture-rationalization-lessons.md)** - Complete project insights, patterns, and recommendations
+
 ## Summary
 
 This troubleshooting guide provides a systematic approach to resolving E2E testing issues. The key principles are:

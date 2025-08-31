@@ -4,19 +4,42 @@
  */
 // ...existing code...
 
-// Bulk update guard to avoid repeatedly rebuilding the list on mass toggles
+// Bulk update guard - now integrated with BulkOperationManager
 let _bulkActive = false;
 let _bulkPending = false;
 
 window.beginActiveListBulk = function(){
-	_bulkActive = true;
+	// Check if we're already in a bulk operation
+	if (window.BulkOperationManager && window.BulkOperationManager.isActive()) {
+		console.log('🔄 Active list bulk operation started (within existing bulk operation)');
+		_bulkActive = true;
+		// Mark that we need an active list update when the bulk operation ends
+		window.BulkOperationManager.markActiveListUpdatePending();
+	} else {
+		console.log('🔄 Active list bulk operation started (standalone)');
+		_bulkActive = true;
+	}
 }
 
 window.endActiveListBulk = function(){
+	console.log('endActiveListBulk called, _bulkActive:', _bulkActive, '_bulkPending:', _bulkPending);
 	_bulkActive = false;
 	const pending = _bulkPending;
 	_bulkPending = false;
-	if (pending) updateActiveList();
+	
+	// If we're in a unified bulk operation, the manager will handle the update
+	if (window.BulkOperationManager && window.BulkOperationManager.isActive()) {
+		console.log('🔄 Active list bulk operation ended (within unified bulk operation)');
+		// The BulkOperationManager will call updateActiveList when it ends
+	} else {
+		console.log('🔄 Active list bulk operation ended (standalone)');
+		if (pending) {
+			console.log('Pending update detected, calling updateActiveList');
+			updateActiveList();
+		} else {
+			console.log('No pending update, not calling updateActiveList');
+		}
+	}
 }
 
 
@@ -260,7 +283,7 @@ function addItems(category, container) {
 		const sevenCb = document.createElement('input');
 		sevenCb.type = 'checkbox';
 		sevenCb.className = 'sevenSevenCheckbox';
-	sevenCb.title = 'Show 7-day weather';
+sevenCb.title = 'Show 7-day weather';
 		sevenCb.style.width = '18px';
 		sevenCb.style.height = '18px';
 		sevenCb.style.margin = '0';
