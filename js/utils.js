@@ -64,6 +64,73 @@ window.toTitleCase = function(str){
 window.formatFrvName = function(name) {
   return name === 'FRV' ? 'Fire Rescue Victoria' : name;
 }
+
+/**
+ * Format LGA name for display
+ * @param {string} name - The raw LGA name
+ * @returns {string} - Formatted display name
+ */
+window.formatLgaName = function(name) {
+  // Basic formatting - can be enhanced later
+  return name || 'Unknown LGA';
+}
+
+/**
+ * Check if the application is currently offline
+ * @returns {boolean} - True if offline, false if online
+ */
+window.isOffline = function() {
+  return !navigator.onLine;
+}
+
+/**
+ * Show an error message in the sidebar
+ * @param {string} message - Error message to display
+ */
+window.showSidebarError = function(message) {
+  console.error('Sidebar Error:', message);
+  
+  // Try to find an error display area in the sidebar
+  const sidebar = document.getElementById('layerMenu') || document.querySelector('.sidebar');
+  if (sidebar) {
+    // Create or update error message
+    let errorDiv = sidebar.querySelector('.sidebar-error');
+    if (!errorDiv) {
+      errorDiv = document.createElement('div');
+      errorDiv.className = 'sidebar-error';
+      errorDiv.style.cssText = 'background:#f8d7da;color:#721c24;padding:10px;margin:10px;border-radius:4px;border:1px solid #f5c6cb;';
+      sidebar.insertBefore(errorDiv, sidebar.firstChild);
+    }
+    errorDiv.textContent = `⚠️ ${message}`;
+    
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+      if (errorDiv && errorDiv.parentNode) {
+        errorDiv.remove();
+      }
+    }, 10000);
+  }
+}
+
+/**
+ * Convert MGA94 coordinates to Lat/Lng
+ * @param {number} easting - MGA94 easting coordinate
+ * @param {number} northing - MGA94 northing coordinate
+ * @returns {Object} - {lat: number, lng: number}
+ */
+window.convertMGA94ToLatLon = function(easting, northing) {
+  // This is a simplified conversion - for production use a proper geodetic library
+  // For now, return approximate values (this should be replaced with proper conversion)
+  console.warn('MGA94 coordinate conversion not implemented - using approximate values');
+  
+  // Very rough approximation for Victoria, Australia
+  // In production, use a proper geodetic library like proj4js
+  const lat = -37.8136 + (northing - 5000000) / 100000;
+  const lng = 144.9631 + (easting - 500000) / 100000;
+  
+  return { lat, lng };
+}
+
 /**
  * Create a labeled checkbox element.
  * @param {string} id - Input id attribute.

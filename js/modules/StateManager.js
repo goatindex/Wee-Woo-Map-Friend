@@ -97,6 +97,9 @@ export class StateManager extends EventBus {
     
     // Initialize with legacy state from window globals
     this._migrateLegacyState();
+    
+    // Set up legacy compatibility layer
+    this._setupLegacyCompatibility();
   }
   
   /**
@@ -107,8 +110,9 @@ export class StateManager extends EventBus {
     // Migrate existing global state
     if (typeof window !== 'undefined') {
       const legacyGlobals = [
-        'map', 'featureLayers', 'layerNames', 'emphasized', 
-        'pendingLabels', 'markersLayer', 'categoryMeta', 'outlineColors'
+        'map', 'featureLayers', 'namesByCategory', 'nameToKey', 'emphasised', 
+        'nameLabelMarkers', 'pendingLabels', 'markersLayer', 'categoryMeta', 
+        'outlineColors', 'baseOpacities', 'labelColorAdjust', 'headerColorAdjust'
       ];
       
       legacyGlobals.forEach(globalName => {
@@ -118,11 +122,58 @@ export class StateManager extends EventBus {
       });
       
       // Initialize empty structures if they don't exist
-      this._state.featureLayers = this._state.featureLayers || {};
-      this._state.layerNames = this._state.layerNames || {};
-      this._state.emphasized = this._state.emphasized || {};
+      this._state.featureLayers = this._state.featureLayers || { ses:{}, lga:{}, cfa:{}, ambulance:{}, police:{}, frv:{} };
+      this._state.namesByCategory = this._state.namesByCategory || { ses:[], lga:[], cfa:[], ambulance:[], police:[], frv:[] };
+      this._state.nameToKey = this._state.nameToKey || { ses:{}, lga:{}, cfa:{}, ambulance:{}, police:{}, frv:{} };
+      this._state.emphasised = this._state.emphasised || { ses:{}, lga:{}, cfa:{}, ambulance:{}, police:{}, frv:{} };
+      this._state.nameLabelMarkers = this._state.nameLabelMarkers || { ses:{}, lga:{}, cfa:{}, ambulance:{}, police:{}, frv:{} };
       this._state.pendingLabels = this._state.pendingLabels || [];
+      
+      // UI and application state
+      this._state.activeListFilter = window.activeListFilter || '';
+      this._state.sidebarVisible = window.sidebarVisible !== undefined ? window.sidebarVisible : true;
+      this._state.isBulkOperation = window.isBulkOperation || false;
+      
+      // Device and responsive state
+      this._state.deviceContext = window.DeviceContext ? window.DeviceContext.getContext() : null;
+      this._state.windowSize = {
+        width: window.innerWidth,
+        height: window.innerHeight
+      };
+      
+      // Application state
+      this._state.appInitialized = false;
+      this._state.mapReady = false;
+      this._state.dataLoaded = false;
+      this._state.errorState = null;
     }
+    
+    console.log('✅ StateManager: Legacy state migration complete');
+  }
+  
+  /**
+   * Set up legacy compatibility layer
+   * Maintains backward compatibility with window globals
+   */
+  _setupLegacyCompatibility() {
+    if (typeof window === 'undefined') return;
+    
+    // Create legacy compatibility functions
+    window.setActiveListFilter = (v) => {
+      this.set('activeListFilter', v);
+    };
+    
+    // Create legacy compatibility properties
+    Object.defineProperty(window, 'activeListFilter', {
+      get: () => this.get('activeListFilter'),
+      set: (v) => this.set('activeListFilter', v),
+      configurable: true
+    });
+    
+    // Create computed properties for legacy compatibility
+    this.computed('activeListFilter', () => this.get('activeListFilter'), []);
+    
+    console.log('✅ StateManager: Legacy compatibility layer ready');
   }
   
   /**

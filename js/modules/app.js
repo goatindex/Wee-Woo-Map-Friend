@@ -8,6 +8,7 @@ import { stateManager } from './StateManager.js';
 import { docsRouter } from './Router.js';
 import { globalEventBus } from './EventBus.js';
 import { legacyBridge } from './LegacyBridge.js';
+import { es6IntegrationManager } from './ES6IntegrationManager.js';
 import { HamburgerMenu } from '../components/HamburgerMenu.js';
 import { CollapsibleManager } from '../components/CollapsibleManager.js';
 import { SearchManager } from '../components/SearchManager.js';
@@ -60,14 +61,17 @@ class App {
       await this.waitForDOM();
       await this.waitForLegacyDependencies();
       
-      // Phase 4: Initialize modern components (non-conflicting)
+      // Phase 4: Initialize ES6 module integration
+      await this.initES6Integration();
+      
+      // Phase 5: Initialize modern components (non-conflicting)
       await this.initStateManager();
       await this.initLegacyBridge();
       
-      // Phase 5: Initialize device context (from legacy)
+      // Phase 6: Initialize device context (from legacy)
       await this.initDeviceContext();
       
-      // Phase 6: Set up modern enhancements
+      // Phase 7: Set up modern enhancements
       await this.initModernComponents();
       
       // Phase 7: Set up global event listeners
@@ -90,6 +94,31 @@ class App {
       // Attempt fallback to legacy system
       await this.fallbackToLegacy(error);
       throw error; // Re-throw to trigger index.html fallback
+    }
+  }
+  
+  /**
+   * Initialize ES6 module integration
+   * @returns {Promise<void>}
+   * @private
+   */
+  async initES6Integration() {
+    try {
+      console.log('🔧 App: Initializing ES6 module integration...');
+      
+      // Initialize the ES6 integration manager
+      await es6IntegrationManager.init();
+      
+      // Wait for integration to be ready
+      if (!es6IntegrationManager.isReady()) {
+        throw new Error('ES6 integration failed to initialize');
+      }
+      
+      console.log('✅ App: ES6 module integration complete');
+      
+    } catch (error) {
+      console.error('🚨 App: ES6 module integration failed:', error);
+      throw error;
     }
   }
   

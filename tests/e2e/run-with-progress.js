@@ -7,7 +7,7 @@
  */
 
 const { execSync } = require('child_process');
-const { progressTracker } = require('./progress-tracker');
+// Progress tracking is now handled by the simplified reporter
 
 // Parse command line arguments
 const args = process.argv.slice(2);

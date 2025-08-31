@@ -71,6 +71,7 @@
 ### **New Files**
 - `project_docs/development/e2e-troubleshooting-guide.md` - Comprehensive E2E troubleshooting
 - `project_docs/development/testing-completion-summary.md` - This summary document
+- `project_docs/development/architecture-rationalization-lessons.md` - Complete project insights and lessons learned
 
 ## Current Testing Status
 

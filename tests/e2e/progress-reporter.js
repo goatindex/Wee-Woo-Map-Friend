@@ -1,15 +1,15 @@
 /**
- * @fileoverview Custom Playwright Reporter with Progress Tracking
- * Integrates with E2EProgressTracker for enhanced test reporting
+ * @fileoverview Simplified Playwright Reporter with Basic Progress Tracking
+ * Provides basic test progress without complex phase management
  */
-
-const { progressTracker } = require('./progress-tracker');
 
 class ProgressReporter {
   constructor(options = {}) {
     this.verbose = options.verbose || false;
-    this.currentSuite = null;
-    this.currentTest = null;
+    this.testCount = 0;
+    this.passedCount = 0;
+    this.failedCount = 0;
+    this.skippedCount = 0;
   }
 
   onBegin(config, suite) {
@@ -20,55 +20,28 @@ class ProgressReporter {
   }
 
   onTestBegin(test, result) {
-    this.currentTest = test;
-    
-    // Track test start in progress tracker
-    const testName = test.title;
-    const suiteName = test.parent.title || 'unknown';
-    progressTracker.testStarted(testName, suiteName);
-    
+    this.testCount++;
     if (this.verbose) {
-      console.log(`\n📋 Starting test: ${test.title}`);
-      console.log(`   File: ${test.location.file}`);
-      console.log(`   Line: ${test.location.line}`);
+      console.log(`\n📋 Starting test ${this.testCount}: ${test.title}`);
     }
   }
 
   onTestEnd(test, result) {
-    const testName = test.title;
-    const suiteName = test.parent.title || 'unknown';
-    const duration = result.duration;
-    
     if (result.status === 'passed') {
-      progressTracker.testPassed(testName, suiteName, duration);
+      this.passedCount++;
+      console.log(`✅ Test ${this.testCount} passed: ${test.title}`);
     } else if (result.status === 'failed') {
-      const error = result.error || new Error('Test failed');
-      progressTracker.testFailed(testName, suiteName, error, duration);
+      this.failedCount++;
+      console.log(`❌ Test ${this.testCount} failed: ${test.title}`);
     } else if (result.status === 'skipped') {
-      progressTracker.testSkipped(testName, suiteName);
+      this.skippedCount++;
+      console.log(`⏭️ Test ${this.testCount} skipped: ${test.title}`);
     }
     
-    this.currentTest = null;
-  }
-
-  onSuiteBegin(suite) {
-    if (suite.title && suite.title !== '') {
-      this.currentSuite = suite.title;
-      progressTracker.startPhase(suite.title);
-      
-      if (this.verbose) {
-        console.log(`\n📁 Suite: ${suite.title}`);
-        console.log(`   Tests: ${suite.suites.length + suite.tests.length}`);
-      }
-    }
-  }
-
-  onSuiteEnd(suite) {
-    if (suite.title && suite.title !== '') {
-      if (this.verbose) {
-        console.log(`\n✅ Suite completed: ${suite.title}`);
-      }
-    }
+    // Show progress
+    const completed = this.passedCount + this.failedCount + this.skippedCount;
+    const progressPercent = Math.round((completed / this.testCount) * 100);
+    console.log(`📊 Progress: ${completed}/${this.testCount} (${progressPercent}%) - Passed: ${this.passedCount}, Failed: ${this.failedCount}, Skipped: ${this.skippedCount}`);
   }
 
   onEnd(result) {
@@ -76,17 +49,12 @@ class ProgressReporter {
     console.log('🏁 E2E TESTING COMPLETE - FINAL REPORT');
     console.log('🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉');
     
-    try {
-      // Display final summary from progress tracker
-      progressTracker.displayFinalSummary();
-    } catch (error) {
-      console.error('Error generating final report:', error.message);
-      
-      // Fallback summary
-      console.log('\n📊 Basic Test Results:');
-      console.log(`   Total: ${result.status === 'passed' ? 'All tests passed' : 'Some tests failed'}`);
-      console.log(`   Duration: ${Math.round(result.duration / 1000)}s`);
-    }
+    console.log('\n📊 FINAL STATISTICS:');
+    console.log(`   Total Tests: ${this.testCount}`);
+    console.log(`   Passed: ${this.passedCount} ✅`);
+    console.log(`   Failed: ${this.failedCount} ❌`);
+    console.log(`   Skipped: ${this.skippedCount} ⏭️`);
+    console.log(`   Success Rate: ${this.testCount > 0 ? Math.round((this.passedCount / this.testCount) * 100) : 0}%`);
     
     // Ensure we exit cleanly
     console.log('\n🏁 Test execution completed - exiting...');

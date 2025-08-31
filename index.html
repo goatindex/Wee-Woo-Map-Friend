@@ -96,49 +96,64 @@
   <!-- Proj4 for coordinate conversion (required by coordConvert.js) -->
   <script src="https://cdn.jsdelivr.net/npm/proj4@2.9.2/dist/proj4.min.js"></script>
   
-  <!-- Core state and configuration -->
-  <script src="js/state.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/utils.js"></script>
-  <script src="js/device.js"></script>
-  <script src="js/native/features.js"></script>
+  <!-- ES6 Module System -->
+  <script type="module" src="js/modules/main.js"></script>
   
-  <!-- Utilities -->
-  <script src="js/utils/coordConvert.js"></script>
-  <script src="js/utils/errorUI.js"></script>
-  
-  <!-- Feature management -->
-  <script src="js/labels.js"></script>
-  <script src="js/emphasise.js"></script>
-  <script src="js/polygonPlus.js"></script>
-  
-  <!-- Data loaders -->
-  <script src="js/loaders/polygons.js"></script>
-  <script src="js/loaders/ambulance.js"></script>
-  <script src="js/loaders/police.js"></script>
-  <script src="js/loaders/sesFacilities.js"></script>
-  <script src="js/loaders/cfaFacilities.js"></script>
-  <script src="js/loaders/sesUnits.js"></script>
-  <script src="js/loaders/waterwaycent.js"></script>
-  
-  <!-- UI components -->
-  <script src="js/ui/collapsible.js"></script>
-  <script src="js/ui/search.js"></script>
-  <script src="js/ui/activeList.js"></script>
-  <script src="js/ui/mobileDocsNav.js"></script>
-  <!-- Unified FAB framework -->
-  <script src="js/fab/BaseFAB.js?v=20250101_004"></script>
-  <script src="js/fab/FABManager.js?v=20250101_004"></script>
-  <script src="js/fab/DocsFAB.js?v=20250101_004"></script>
-  <script src="js/fab/SidebarToggleFAB.js?v=20250101_004"></script>
-
-  <!-- Preloader and bootstrap -->
-  <script src="js/preloader.js"></script>
-  <script src="js/bootstrap.js"></script>
-  
-  <!-- Phase 1 Test Framework -->
-  <script src="js/testing/Phase1TestFramework.js"></script>
-  <script src="js/testing/run-phase1-tests.js"></script>
+  <!-- Legacy Fallback (loaded only if ES6 fails) -->
+  <script>
+    // Check if ES6 system is working
+    window.addEventListener('app:es6error', () => {
+      console.log('🔄 Loading legacy system as fallback...');
+      loadLegacySystem();
+    });
+    
+    // Load legacy system if ES6 fails to start within timeout
+    setTimeout(() => {
+      if (!window.ES6Bootstrap || !window.ES6Bootstrap.isReady()) {
+        console.log('⏰ ES6 system timeout, loading legacy system...');
+        loadLegacySystem();
+      }
+    }, 5000);
+    
+    function loadLegacySystem() {
+      // Load legacy scripts dynamically
+      const legacyScripts = [
+        'js/state.js',
+        'js/config.js',
+        'js/utils.js',
+        'js/device.js',
+        'js/native/features.js',
+        'js/utils/coordConvert.js',
+        'js/utils/errorUI.js',
+        'js/labels.js',
+        'js/emphasise.js',
+        'js/polygonPlus.js',
+        'js/loaders/polygons.js',
+        'js/loaders/ambulance.js',
+        'js/loaders/police.js',
+        'js/loaders/sesFacilities.js',
+        'js/loaders/cfaFacilities.js',
+        'js/loaders/sesUnits.js',
+        'js/loaders/waterwaycent.js',
+        'js/ui/collapsible.js',
+        'js/ui/search.js',
+        'js/ui/activeList.js',
+        'js/ui/mobileDocsNav.js',
+        'js/fab/BaseFAB.js',
+        'js/fab/FABManager.js',
+        'js/fab/DocsFAB.js',
+        'js/fab/SidebarToggleFAB.js',
+        'js/preloader.js',
+        'js/bootstrap.js'
+      ];
+      
+      legacyScripts.forEach(src => {
+        const script = document.createElement('script');
+        script.src = src;
+        document.head.appendChild(script);
+      });
+    }
+  </script>
   
   <!-- Service Worker Registration -->
   <script>

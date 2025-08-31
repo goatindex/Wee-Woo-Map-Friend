@@ -165,6 +165,7 @@ This directory contains comprehensive project documentation organized for both *
 - ✅ **[Testing Framework](development/testing.md)** - Comprehensive testing guide with 4-stage evolution
 - ✅ **[E2E Troubleshooting Guide](development/e2e-troubleshooting-guide.md)** - E2E testing issue resolution
 - ✅ **[Testing Completion Summary](development/testing-completion-summary.md)** - Summary of testing documentation work
+- ✅ **[Architecture Rationalization Lessons](development/architecture-rationalization-lessons.md)** - Lessons learned from 2025 stabilization project (90% E2E test success achieved!)
 - ✅ **[Development Setup](development/setup.md)** - Developer environment configuration
 - ✅ **[API Reference](api/)** - API documentation and examples
 - ✅ **[Deployment Guide](deployment/)** - Production deployment and troubleshooting

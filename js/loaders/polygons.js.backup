@@ -231,11 +231,8 @@ window.loadPolygonCategory = async function(category, url) {
         toggleAll.disabled = true;
         toggleAll.title = `${on ? 'Loading' : 'Unloading'} ${items.length} ${category} items...`;
         
-        // Begin unified bulk operation for performance
-        const bulkStarted = window.BulkOperationManager.begin('toggleAll', items.length);
-        if (!bulkStarted) {
-          console.warn('⚠️ Bulk operation already active, proceeding without bulk optimization');
-        }
+        // Begin bulk operation for performance
+        window.beginBulkOperation();
         window.beginActiveListBulk();
         
         try {
@@ -249,7 +246,6 @@ window.loadPolygonCategory = async function(category, url) {
             'police': 20
           };
           const batchSize = batchSizes[category] || 10;
-          
           for (let i = 0; i < items.length; i += batchSize) {
             const batch = items.slice(i, i + batchSize);
             
@@ -264,12 +260,12 @@ window.loadPolygonCategory = async function(category, url) {
                 rowCb = container; // it's already the input
               }
               
-              // Update checkbox state WITHOUT dispatching change event during bulk operation
+              // Update checkbox state
               if (rowCb) {
                 rowCb.checked = on;
-                console.log(`✅ Updated checkbox ${category}_${key}: ${on} (bulk operation)`);
-                // NOTE: We DON'T dispatch change event during bulk operation
-                // The active list will be updated after bulk operation completes
+                // Dispatch change event to trigger updateActiveList
+                console.log(`🎯 Dispatching change event for ${category}_${key}, checked: ${on}`);
+                rowCb.dispatchEvent(new Event('change', { bubbles: true }));
               } else {
                 console.warn(`⚠️ No checkbox found for ${category}_${key}`);
               }
@@ -284,8 +280,8 @@ window.loadPolygonCategory = async function(category, url) {
                   if (window.categoryMeta[category].type === 'polygon') {
                     const labelName = (category === 'lga') ? window.formatLgaName(n) : 
                                       (category === 'frv') ? window.formatFrvName(n) : n;
-                    if (window.BulkOperationManager.isActive()) {
-                      window.BulkOperationManager.addPendingLabel({category, key, labelName, isPoint: false, layer: l});
+                    if (window.isBulkOperation) {
+                      window.pendingLabels.push({category, key, labelName, isPoint: false, layer: l});
                     } else {
                       window.ensureLabel(category, key, labelName, false, l);
                     }
@@ -295,10 +291,8 @@ window.loadPolygonCategory = async function(category, url) {
                   if (category === 'ambulance') window.removePolygonPlus(l, map);
                   if (category === 'ses') { hideSesChevron(key, map); }
                   // Clean up emphasis and labels
-                  if (window.emphasised?.[category]) {
-                    window.emphasised[category][key] = false;
-                  }
-                  if (window.nameLabelMarkers?.[category]?.[key]) {
+                  window.emphasised[category][key] = false;
+                  if (window.nameLabelMarkers[category][key]) {
                     map.removeLayer(window.nameLabelMarkers[category][key]);
                     window.nameLabelMarkers[category][key] = null;
                   }
@@ -327,17 +321,20 @@ window.loadPolygonCategory = async function(category, url) {
           console.error(`Error during ${category} bulk ${on ? 'loading' : 'unloading'}:`, error);
         } finally {
           // End bulk operations and process deferred items
+          window.endBulkOperation();
           window.endActiveListBulk();
-          window.BulkOperationManager.end(); // This will handle labels and active list updates
+          
+          // Ensure the active list is updated after bulk operation
+          window.updateActiveList();
           
           // Restore toggle state
           toggleAll.disabled = false;
           toggleAll.title = `Toggle all ${category} items`;
         }
-      }); // Close the addEventListener callback
+      });
     } // Close the if (toggleAll && !toggleAll._bound) block
 
-    console.log(`Loaded ${geojson.features.length} ${category} items`);
+    console.log(`Loaded ${geojson.features.length} ${category} features`);
   } catch (error) {
     console.error(`Error loading ${category}:`, error);
     window.showSidebarError(`Failed to load ${category} data. Please try again.`);
