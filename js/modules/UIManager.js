@@ -1,0 +1,368 @@
+/**
+ * @module modules/UIManager
+ * Modern ES6-based UI management for WeeWoo Map Friend
+ * Coordinates all UI components and provides unified interface
+ */
+
+import { globalEventBus } from './EventBus.js';
+import { stateManager } from './StateManager.js';
+import { collapsibleManager } from './CollapsibleManager.js';
+import { searchManager } from './SearchManager.js';
+import { fabManager } from './FABManager.js';
+
+/**
+ * @class UIManager
+ * Coordinates all UI components and provides unified management
+ */
+export class UIManager {
+  constructor() {
+    this.initialized = false;
+    this.components = new Map();
+    this.uiState = new Map();
+    this.responsiveBreakpoints = new Map();
+    
+    // Bind methods
+    this.init = this.init.bind(this);
+    this.initComponents = this.initComponents.bind(this);
+    this.setupResponsiveHandling = this.setupResponsiveHandling.bind(this);
+    this.handleResize = this.handleResize.bind(this);
+    this.updateUIState = this.updateUIState.bind(this);
+    this.getStatus = this.getStatus.bind(this);
+    
+    console.log('🎨 UIManager: UI management system initialized');
+  }
+  
+  /**
+   * Initialize the UI manager
+   */
+  async init() {
+    if (this.initialized) {
+      console.warn('UIManager: Already initialized');
+      return;
+    }
+    
+    try {
+      console.log('🔧 UIManager: Starting initialization...');
+      
+      // Set up responsive handling
+      this.setupResponsiveHandling();
+      
+      // Initialize UI components
+      await this.initComponents();
+      
+      // Set up global event listeners
+      this.setupEventListeners();
+      
+      // Initialize UI state
+      this.initializeUIState();
+      
+      this.initialized = true;
+      console.log('✅ UIManager: UI management system ready');
+      
+    } catch (error) {
+      console.error('🚨 UIManager: Failed to initialize:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Initialize all UI components
+   */
+  async initComponents() {
+    console.log('🔧 UIManager: Initializing UI components...');
+    
+    const componentPromises = [];
+    
+    // Initialize collapsible manager
+    if (collapsibleManager && typeof collapsibleManager.init === 'function') {
+      componentPromises.push(
+        collapsibleManager.init().then(() => {
+          this.components.set('collapsible', collapsibleManager);
+          console.log('✅ UIManager: Collapsible manager ready');
+        }).catch(error => {
+          console.error('❌ UIManager: Collapsible manager failed:', error);
+        })
+      );
+    }
+    
+    // Initialize search manager
+    if (searchManager && typeof searchManager.init === 'function') {
+      componentPromises.push(
+        searchManager.init().then(() => {
+          this.components.set('search', searchManager);
+          console.log('✅ UIManager: Search manager ready');
+        }).catch(error => {
+          console.error('❌ UIManager: Search manager failed:', error);
+        })
+      );
+    }
+    
+    // Initialize FAB manager
+    if (fabManager && typeof fabManager.init === 'function') {
+      componentPromises.push(
+        fabManager.init().then(() => {
+          this.components.set('fab', fabManager);
+          console.log('✅ UIManager: FAB manager ready');
+        }).catch(error => {
+          console.error('❌ UIManager: FAB manager failed:', error);
+        })
+      );
+    }
+    
+    // Wait for all components to initialize
+    await Promise.allSettled(componentPromises);
+    
+    console.log('✅ UIManager: All UI components initialized');
+  }
+  
+  /**
+   * Set up responsive handling
+   */
+  setupResponsiveHandling() {
+    // Define responsive breakpoints
+    this.responsiveBreakpoints.set('mobile', 768);
+    this.responsiveBreakpoints.set('tablet', 1024);
+    this.responsiveBreakpoints.set('desktop', 1440);
+    
+    // Set up resize handler with debouncing
+    let resizeTimeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => this.handleResize(), 150);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // Initial call
+    this.handleResize();
+    
+    console.log('✅ UIManager: Responsive handling setup complete');
+  }
+  
+  /**
+   * Handle window resize
+   */
+  handleResize() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    
+    // Determine current breakpoint
+    let currentBreakpoint = 'desktop';
+    for (const [breakpoint, minWidth] of this.responsiveBreakpoints.entries()) {
+      if (width < minWidth) {
+        currentBreakpoint = breakpoint;
+        break;
+      }
+    }
+    
+    // Update UI state
+    this.updateUIState('breakpoint', currentBreakpoint);
+    this.updateUIState('dimensions', { width, height });
+    
+    // Emit responsive change event
+    globalEventBus.emit('ui:responsiveChange', {
+      breakpoint: currentBreakpoint,
+      width,
+      height
+    });
+    
+    // Update component positions if needed
+    this.updateComponentPositions(currentBreakpoint);
+  }
+  
+  /**
+   * Update component positions based on breakpoint
+   */
+  updateComponentPositions(breakpoint) {
+    // Update FAB positions
+    if (fabManager && fabManager.updatePositions) {
+      fabManager.updatePositions();
+    }
+    
+    // Update other component positions as needed
+    this.components.forEach((component, name) => {
+      if (component.updatePosition && typeof component.updatePosition === 'function') {
+        component.updatePosition(breakpoint);
+      }
+    });
+  }
+  
+  /**
+   * Set up global event listeners
+   */
+  setupEventListeners() {
+    // Listen for UI state changes
+    globalEventBus.on('ui:stateChange', ({ component, state }) => {
+      this.updateUIState(component, state);
+    });
+    
+    // Listen for component ready events
+    globalEventBus.on('ui:componentReady', ({ component, instance }) => {
+      this.components.set(component, instance);
+      console.log('✅ UIManager: Component ready:', component);
+    });
+    
+    // Listen for device context changes
+    globalEventBus.on('device:breakpointChange', ({ newBreakpoint }) => {
+      this.updateUIState('breakpoint', newBreakpoint);
+      this.updateComponentPositions(newBreakpoint);
+    });
+    
+    // Listen for orientation changes
+    globalEventBus.on('device:orientationChange', ({ newOrientation }) => {
+      this.updateUIState('orientation', newOrientation);
+      this.handleOrientationChange(newOrientation);
+    });
+  }
+  
+  /**
+   * Handle orientation change
+   */
+  handleOrientationChange(orientation) {
+    // Update component layouts for orientation
+    this.components.forEach((component, name) => {
+      if (component.handleOrientationChange && typeof component.handleOrientationChange === 'function') {
+        component.handleOrientationChange(orientation);
+      }
+    });
+    
+    // Emit UI orientation change event
+    globalEventBus.emit('ui:orientationChange', { orientation });
+  }
+  
+  /**
+   * Initialize UI state
+   */
+  initializeUIState() {
+    // Initialize with current values
+    this.updateUIState('breakpoint', this.getCurrentBreakpoint());
+    this.updateUIState('dimensions', {
+      width: window.innerWidth,
+      height: window.innerHeight
+    });
+    this.updateUIState('orientation', window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
+    this.updateUIState('components', Array.from(this.components.keys()));
+    
+    console.log('✅ UIManager: UI state initialized');
+  }
+  
+  /**
+   * Get current breakpoint
+   */
+  getCurrentBreakpoint() {
+    const width = window.innerWidth;
+    for (const [breakpoint, minWidth] of this.responsiveBreakpoints.entries()) {
+      if (width < minWidth) {
+        return breakpoint;
+      }
+    }
+    return 'desktop';
+  }
+  
+  /**
+   * Update UI state
+   */
+  updateUIState(key, value) {
+    this.uiState.set(key, value);
+    
+    // Emit state change event
+    globalEventBus.emit('ui:stateUpdated', { key, value });
+    
+    // Store in state manager for other components
+    stateManager.set(`ui.${key}`, value);
+  }
+  
+  /**
+   * Get UI state
+   */
+  getUIState(key) {
+    return this.uiState.get(key);
+  }
+  
+  /**
+   * Get all UI state
+   */
+  getAllUIState() {
+    const state = {};
+    for (const [key, value] of this.uiState.entries()) {
+      state[key] = value;
+    }
+    return state;
+  }
+  
+  /**
+   * Get component by name
+   */
+  getComponent(name) {
+    return this.components.get(name);
+  }
+  
+  /**
+   * Get all components
+   */
+  getAllComponents() {
+    return Array.from(this.components.entries());
+  }
+  
+  /**
+   * Show all UI components
+   */
+  showAll() {
+    this.components.forEach((component, name) => {
+      if (component.show && typeof component.show === 'function') {
+        component.show();
+      }
+    });
+  }
+  
+  /**
+   * Hide all UI components
+   */
+  hideAll() {
+    this.components.forEach((component, name) => {
+      if (component.hide && typeof component.hide === 'function') {
+        component.hide();
+      }
+    });
+  }
+  
+  /**
+   * Refresh all UI components
+   */
+  refreshAll() {
+    this.components.forEach((component, name) => {
+      if (component.refresh && typeof component.refresh === 'function') {
+        component.refresh();
+      }
+    });
+  }
+  
+  /**
+   * Get UI manager status
+   */
+  getStatus() {
+    return {
+      initialized: this.initialized,
+      totalComponents: this.components.size,
+      componentNames: Array.from(this.components.keys()),
+      uiState: this.getAllUIState(),
+      responsiveBreakpoints: Object.fromEntries(this.responsiveBreakpoints),
+      currentBreakpoint: this.getCurrentBreakpoint()
+    };
+  }
+  
+  /**
+   * Check if UI manager is ready
+   */
+  isReady() {
+    return this.initialized;
+  }
+}
+
+// Export singleton instance
+export const uiManager = new UIManager();
+
+// Export for legacy compatibility
+if (typeof window !== 'undefined') {
+  window.UIManager = uiManager;
+}

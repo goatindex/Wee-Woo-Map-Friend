@@ -21,17 +21,18 @@ Comprehensive testing guide for WeeWoo Map Friend, covering Jest setup, componen
 
 ## Testing Philosophy
 
-WeeWoo Map Friend follows a **dual testing approach** that balances **speed** and **quality**:
+WeeWoo Map Friend follows a **dual testing approach** that balances **speed** and **quality**, with enhanced support for modern ES6 modules:
 
 ### **Core Principles**
 
-- **🧩 Component Reliability**: Each UI component works correctly in isolation
+- **🧩 Component Reliability**: Each UI component and ES6 module works correctly in isolation
 - **🗺️ Map Integration**: Mapping functionality behaves as expected
 - **📱 Cross-Platform Compatibility**: Tests work across web and native environments
 - **⚡ Performance Standards**: Tests validate performance requirements
 - **🔄 Regression Prevention**: Changes don't break existing functionality
 - **✅ Quality Assurance**: Tests validate real implementation, not mock logic
 - **⚡ Rapid Feedback**: Fast execution for development iteration
+- **🔧 ES6 Module Testing**: Comprehensive testing of modern ES6 architecture
 
 ### **Dual Testing Strategy**
 
@@ -67,13 +68,67 @@ WeeWoo Map Friend follows a **dual testing approach** that balances **speed** an
 tests/
 ├── setup.js              # Global test configuration and mocks
 ├── ComponentBase.test.js  # Base component system tests
+├── ES6Module.test.js     # ES6 module system tests
 └── HamburgerMenu.test.js  # UI component tests
 
 js/
 ├── modules/
-│   └── *.test.js         # Module-specific tests (optional)
+│   ├── ES6Bootstrap.test.js    # ES6 bootstrap tests
+│   ├── StateManager.test.js    # State management tests
+│   ├── UIManager.test.js       # UI management tests
+│   └── *.test.js              # Other module tests
 └── components/
-    └── *.test.js         # Component-specific tests (optional)
+    └── *.test.js              # Component-specific tests (optional)
+```
+
+### **ES6 Module Testing**
+
+#### **Testing ES6 Modules**
+
+ES6 modules can be tested directly with Jest's ES6 support:
+
+```javascript
+// ES6Bootstrap.test.js
+import { ES6Bootstrap } from './ES6Bootstrap.js';
+
+describe('ES6Bootstrap', () => {
+  let bootstrap;
+
+  beforeEach(() => {
+    bootstrap = new ES6Bootstrap();
+  });
+
+  test('should initialize successfully', async () => {
+    await expect(bootstrap.init()).resolves.not.toThrow();
+  });
+
+  test('should have all required modules', () => {
+    expect(bootstrap.stateManager).toBeDefined();
+    expect(bootstrap.uiManager).toBeDefined();
+    expect(bootstrap.mapManager).toBeDefined();
+  });
+});
+```
+
+#### **Testing Module Integration**
+
+Test how modules work together:
+
+```javascript
+// ModuleIntegration.test.js
+import { stateManager } from './StateManager.js';
+import { uiManager } from './UIManager.js';
+
+describe('Module Integration', () => {
+  test('state changes should trigger UI updates', async () => {
+    const mockCallback = jest.fn();
+    stateManager.subscribe('test:state', mockCallback);
+    
+    stateManager.setState('test:state', 'new value');
+    
+    expect(mockCallback).toHaveBeenCalledWith('new value');
+  });
+});
 ```
 
 ## Environment Setup
@@ -2228,7 +2283,7 @@ We identified a critical pattern where rapid fix attempts led to tool reversions
 
 - **[E2E Troubleshooting Guide](./e2e-troubleshooting-guide.md)**: Comprehensive guide for resolving E2E testing issues
 - **[Performance Baselines](../../README.md#performance)**: Performance optimization and monitoring (*Documentation planned*)
-- **[Component Architecture](../../docs/intro.md)**: Component design patterns and system overview
+- **[Component Architecture](../architecture/components.md)**: Component design patterns and system overview
 - **[Development Setup](../../README.md#quick-start)**: Development environment setup and local development
 - **[API Reference](../../README.md#api-reference)**: API documentation and usage examples
 

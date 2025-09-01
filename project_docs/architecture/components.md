@@ -2,35 +2,73 @@
 
 ## Overview
 
-The WeeWoo Map Friend application uses a unified component architecture built around `ComponentBase`, a powerful base class that provides consistent lifecycle management, event handling, and state management for all UI components. This architecture ensures maintainability, consistency, and extensibility across the entire application.
+The WeeWoo Map Friend application uses a modern ES6 module architecture that provides clear separation of concerns, event-driven communication, and unified state management. This architecture ensures maintainability, consistency, and extensibility across the entire application while maintaining backward compatibility with legacy systems.
 
 ## Core Principles
 
-### 1. **Inheritance-Based Architecture**
+### 1. **ES6 Module Architecture**
 
-- All UI components extend `ComponentBase`
-- Consistent interface and behavior across components
-- Shared functionality reduces code duplication
+- Modern ES6 modules with clear separation of concerns
+- Consistent interface and behavior across modules
+- Shared functionality through well-defined APIs
 
 ### 2. **Lifecycle Management**
 
 - Standardized initialization, rendering, and cleanup
 - Automatic resource management and memory leak prevention
-- Predictable component behavior
+- Predictable module behavior
 
 ### 3. **Event-Driven Communication**
 
-- Loose coupling between components via EventBus
-- Publish/subscribe pattern for component interaction
+- Loose coupling between modules via globalEventBus
+- Publish/subscribe pattern for module interaction
 - Namespaced events for organized communication
 
 ### 4. **State Management**
 
-- Centralized state with reactive updates
+- Centralized state with reactive updates through StateManager
 - Automatic re-rendering on state changes
 - State persistence and restoration capabilities
 
-## ComponentBase Class
+## Modern ES6 Module Architecture
+
+### **Module Hierarchy**
+
+```
+ES6Bootstrap (Central Coordinator)
+    ↓
+Specialized Managers (UIManager, StateManager, etc.)
+    ↓
+Feature Modules (CollapsibleManager, SearchManager, etc.)
+    ↓
+Legacy Compatibility Layer (Backward Compatibility)
+```
+
+### **Core ES6 Modules**
+
+#### **ES6Bootstrap**
+- Central coordination of all modern modules
+- Phased initialization and dependency management
+- Legacy system integration and fallback handling
+
+#### **UIManager**
+- Unified UI component coordination
+- Responsive breakpoint management
+- Component lifecycle and state coordination
+
+#### **StateManager**
+- Centralized state management
+- Reactive updates and change propagation
+- State persistence and restoration
+
+#### **Specialized Managers**
+- **CollapsibleManager**: Sidebar section management
+- **SearchManager**: Advanced search functionality
+- **FABManager**: Floating action button management
+- **MapManager**: Map system coordination
+- **LayerManager**: Layer management and optimization
+
+## Legacy ComponentBase Class (Maintained for Compatibility)
 
 ### **Class Hierarchy**
 
@@ -69,7 +107,55 @@ Specific Components (UI Implementation)
 - State change events
 - State persistence capabilities
 
-## Component Lifecycle
+## ES6 Migration Status
+
+### **Migration Completion: 95-98% Complete**
+
+The project has successfully completed a comprehensive migration to ES6 modules:
+
+#### **Completed Phases**
+- ✅ **Phase 1**: Dependency Resolution & Function Registry
+- ✅ **Phase 2**: State Management & Configuration
+- ✅ **Phase 3**: Active List System Migration
+- ✅ **Phase 4**: Map Integration & Layer Management
+- ✅ **Phase 5**: Legacy Function Migration
+- ✅ **Phase 6**: Core Map System Migration
+- ✅ **Phase 7**: UI Components Migration
+
+#### **Migration Benefits**
+- **Maintainability**: Clear module boundaries and responsibilities
+- **Performance**: Modern JavaScript engine optimizations
+- **Scalability**: Easy to add new features and modules
+- **Testing**: Improved testability with modular architecture
+- **Development Experience**: Better debugging and development tools
+
+## Modern ES6 Module Lifecycle
+
+### **1. Module Initialization**
+
+```javascript
+// Modern ES6 module initialization
+import { UIManager } from './UIManager.js';
+
+class MyModule {
+  async init() {
+    await UIManager.init();
+    // Module setup
+  }
+}
+```
+
+### **2. Event-Driven Communication**
+
+```javascript
+// Using globalEventBus for module communication
+import { globalEventBus } from './globalEventBus.js';
+
+globalEventBus.emit('ui:component:ready', { component: 'sidebar' });
+globalEventBus.on('state:updated', this.handleStateChange.bind(this));
+```
+
+## Legacy Component Lifecycle (Maintained for Compatibility)
 
 ### **1. Construction**
 
@@ -848,7 +934,7 @@ console.log('Component container:', component.container);
 - **[Data Flow & State Management](data-flow.md)** - State management patterns
 - **[Development Setup](../development/setup.md)** - Component development setup
 - **[Testing Framework](../templates/testing-template.md)** - Component testing
-- **[Event System](../architecture/event-system.md)** - Detailed event system documentation
+- **[Event System](../architecture/overview.md#event-flow)** - Event system documentation in architecture overview
 
 ## Quick Reference
 

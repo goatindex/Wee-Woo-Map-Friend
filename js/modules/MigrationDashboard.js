@@ -148,7 +148,11 @@ export class MigrationDashboard {
       textFormatter: !!window.textFormatter,
       featureEnhancer: !!window.featureEnhancer,
       AppBootstrap: !!window.AppBootstrap,
-      DeviceManager: !!window.DeviceManager
+      DeviceManager: !!window.DeviceManager,
+      UIManager: !!window.UIManager,
+      CollapsibleManager: !!window.CollapsibleManager,
+      SearchManager: !!window.SearchManager,
+      FABManager: !!window.FABManager
     };
     
     console.log('📊 MigrationDashboard: Available managers:', availableManagers);
@@ -171,6 +175,10 @@ export class MigrationDashboard {
       featureEnhancer: window.featureEnhancer ? window.featureEnhancer.getStatus() : null,
       appBootstrap: window.AppBootstrap ? window.AppBootstrap.getStatus() : null,
       deviceManager: window.DeviceManager ? window.DeviceManager.getStatus() : null,
+      uiManager: window.UIManager ? window.UIManager.getStatus() : null,
+      collapsibleManager: window.CollapsibleManager ? window.CollapsibleManager.getStatus() : null,
+      searchManager: window.SearchManager ? window.SearchManager.getStatus() : null,
+      fabManager: window.FABManager ? window.FABManager.getStatus() : null,
       legacyBootstrap: window.AppBootstrap ? 'Available' : 'Not Available',
       modules: this.getModuleStatus(),
       system: this.getSystemStatus()
@@ -200,6 +208,10 @@ export class MigrationDashboard {
         'featureEnhancer',
         'AppBootstrap',
         'DeviceManager',
+        'UIManager',
+        'CollapsibleManager',
+        'SearchManager',
+        'FABManager',
         'globalEventBus'
       ];
     
@@ -413,18 +425,68 @@ export class MigrationDashboard {
                 ` : '<div style="color: #f44336;">❌ Not Available</div>'}
               </div>
               
-              <div style="margin-bottom: 16px;">
-                <h4 style="margin: 0 0 8px 0; color: #2196F3;">📱 Device Manager</h4>
-                ${status.deviceManager ? `
-                  <div style="background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
-                    <div><strong>Status:</strong> <span style="color: ${status.deviceManager.initialized ? '#4CAF50' : '#FF9800'}">${status.deviceManager.initialized ? '✅ Ready' : '⏳ Initializing'}</span></div>
-                    <div><strong>Device:</strong> <span style="color: #FF9800">${status.deviceManager.deviceContext ? status.deviceManager.deviceContext.device : 'N/A'}</span></div>
-                    <div><strong>Platform:</strong> <span style="color: #FF9800">${status.deviceManager.deviceContext ? status.deviceManager.deviceContext.platform : 'N/A'}</span></div>
-                    <div><strong>Orientation:</strong> <span style="color: #FF9800">${status.deviceManager.deviceContext ? status.deviceManager.deviceContext.orientation : 'N/A'}</span></div>
-                    <div><strong>Touch:</strong> <span style="color: #FF9800">${status.deviceManager.deviceContext ? (status.deviceManager.deviceContext.hasTouch ? 'Yes' : 'No') : 'N/A'}</span></div>
-                  </div>
-                ` : '<div style="color: #f44336;">❌ Not Available</div>'}
-              </div>
+                             <div style="margin-bottom: 16px;">
+                 <h4 style="margin: 0 0 8px 0; color: #2196F3;">📱 Device Manager</h4>
+                 ${status.deviceManager ? `
+                   <div style="background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                     <div><strong>Status:</strong> <span style="color: ${status.deviceManager.initialized ? '#4CAF50' : '#FF9800'}">${status.deviceManager.initialized ? '✅ Ready' : '⏳ Initializing'}</span></div>
+                     <div><strong>Device:</strong> <span style="color: #FF9800">${status.deviceManager.deviceContext ? status.deviceManager.deviceContext.device : 'N/A'}</span></div>
+                     <div><strong>Platform:</strong> <span style="color: #FF9800">${status.deviceManager.deviceContext ? status.deviceManager.deviceContext.platform : 'N/A'}</span></div>
+                     <div><strong>Orientation:</strong> <span style="color: #FF9800">${status.deviceManager.deviceContext ? status.deviceManager.deviceContext.orientation : 'N/A'}</span></div>
+                     <div><strong>Touch:</strong> <span style="color: #FF9800">${status.deviceManager.deviceContext ? (status.deviceManager.deviceContext.hasTouch ? 'Yes' : 'No') : 'N/A'}</span></div>
+                   </div>
+                 ` : '<div style="color: #f44336;">❌ Not Available</div>'}
+               </div>
+               
+               <div style="margin-bottom: 16px;">
+                 <h4 style="margin: 0 0 8px 0; color: #2196F3;">🎨 UI Manager</h4>
+                 ${status.uiManager ? `
+                   <div style="background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                     <div><strong>Status:</strong> <span style="color: ${status.uiManager.initialized ? '#4CAF50' : '#FF9800'}">${status.uiManager.initialized ? '✅ Ready' : '⏳ Initializing'}</span></div>
+                     <div><strong>Components:</strong> <span style="color: #FF9800">${status.uiManager.totalComponents}</span></div>
+                     <div><strong>Breakpoint:</strong> <span style="color: #FF9800">${status.uiManager.currentBreakpoint}</span></div>
+                     <div><strong>Component Names:</strong> <span style="color: #FF9800">${status.uiManager.componentNames.join(', ')}</span></div>
+                   </div>
+                 ` : '<div style="color: #f44336;">❌ Not Available</div>'}
+               </div>
+               
+               <div style="margin-bottom: 16px;">
+                 <h4 style="margin: 0 0 8px 0; color: #2196F3;">📁 Collapsible Manager</h4>
+                 ${status.collapsibleManager ? `
+                   <div style="background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                     <div><strong>Status:</strong> <span style="color: ${status.collapsibleManager.initialized ? '#4CAF50' : '#FF9800'}">${status.collapsibleManager.initialized ? '✅ Ready' : '⏳ Initializing'}</span></div>
+                     <div><strong>Total Sections:</strong> <span style="color: #FF9800">${status.collapsibleManager.totalSections}</span></div>
+                     <div><strong>Sticky Headers:</strong> <span style="color: #FF9800">${status.collapsibleManager.stickyHeaders}</span></div>
+                     <div><strong>Active Section:</strong> <span style="color: #FF9800">${status.collapsibleManager.activeSection || 'None'}</span></div>
+                   </div>
+                 ` : '<div style="color: #f44336;">❌ Not Available</div>'}
+               </div>
+               
+               <div style="margin-bottom: 16px;">
+                 <h4 style="margin: 0 0 8px 0; color: #2196F3;">🔍 Search Manager</h4>
+                 ${status.searchManager ? `
+                   <div style="background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                     <div><strong>Status:</strong> <span style="color: ${status.searchManager.initialized ? '#4CAF50' : '#FF9800'}">${status.searchManager.initialized ? '✅ Ready' : '⏳ Initializing'}</span></div>
+                     <div><strong>Search Box:</strong> <span style="color: ${status.searchManager.searchBox ? '#4CAF50' : '#f44336'}">${status.searchManager.searchBox ? '✅ Found' : '❌ Not Found'}</span></div>
+                     <div><strong>Dropdown:</strong> <span style="color: ${status.searchManager.dropdown ? '#4CAF50' : '#f44336'}">${status.searchManager.dropdown ? '✅ Found' : '❌ Not Found'}</span></div>
+                     <div><strong>Search Index:</strong> <span style="color: #FF9800">${status.searchManager.searchIndexSize}</span></div>
+                     <div><strong>Last Query:</strong> <span style="color: #FF9800">${status.searchManager.lastQuery || 'None'}</span></div>
+                   </div>
+                 ` : '<div style="color: #f44336;">❌ Not Available</div>'}
+               </div>
+               
+               <div style="margin-bottom: 16px;">
+                 <h4 style="margin: 0 0 8px 0; color: #2196F3;">🔘 FAB Manager</h4>
+                 ${status.fabManager ? `
+                   <div style="background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                     <div><strong>Status:</strong> <span style="color: ${status.fabManager.initialized ? '#4CAF50' : '#FF9800'}">${status.fabManager.initialized ? '✅ Ready' : '⏳ Initializing'}</span></div>
+                     <div><strong>Total Types:</strong> <span style="color: #FF9800">${status.fabManager.totalTypes}</span></div>
+                     <div><strong>Total Instances:</strong> <span style="color: #FF9800">${status.fabManager.totalInstances}</span></div>
+                     <div><strong>FAB Container:</strong> <span style="color: ${status.fabManager.fabContainer ? '#4CAF50' : '#f44336'}">${status.fabManager.fabContainer ? '✅ Found' : '❌ Not Found'}</span></div>
+                     <div><strong>Registered Types:</strong> <span style="color: #FF9800">${status.fabManager.registeredTypes.join(', ')}</span></div>
+                   </div>
+                 ` : '<div style="color: #f44336;">❌ Not Available</div>'}
+               </div>
               
               <div style="margin-bottom: 16px;">
                 <h4 style="margin: 0 0 8px 0; color: #2196F3;">📦 Module Status</h4>
