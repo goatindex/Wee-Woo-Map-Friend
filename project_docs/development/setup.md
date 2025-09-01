@@ -2,7 +2,35 @@
 
 ## Overview
 
-This guide provides comprehensive setup instructions for developers working on WeeWoo Map Friend. It covers local development, testing, code quality tools, and deployment workflows.
+This guide provides comprehensive setup instructions for developers working on WeeWoo Map Friend. It covers local development, testing, code quality tools, and deployment workflows. The project has completed a comprehensive ES6 migration, providing modern JavaScript architecture and improved development experience.
+
+## ES6 Architecture Overview
+
+### **Migration Status: 95-98% Complete**
+
+The project has successfully completed a comprehensive migration to ES6 modules:
+
+#### **Completed Phases**
+- ✅ **Phase 1**: Dependency Resolution & Function Registry
+- ✅ **Phase 2**: State Management & Configuration
+- ✅ **Phase 3**: Active List System Migration
+- ✅ **Phase 4**: Map Integration & Layer Management
+- ✅ **Phase 5**: Legacy Function Migration
+- ✅ **Phase 6**: Core Map System Migration
+- ✅ **Phase 7**: UI Components Migration
+
+#### **Modern ES6 Architecture**
+- **ES6Bootstrap**: Central coordination of all modern modules
+- **Modular Design**: 15+ ES6 modules with clear separation of concerns
+- **Event-Driven**: globalEventBus for loose coupling between modules
+- **Legacy Compatibility**: Backward compatibility maintained for existing functionality
+
+#### **Development Benefits**
+- **Modern JavaScript**: ES6+ features and optimizations
+- **Module System**: Clear imports/exports and dependency management
+- **Event-Driven**: Loose coupling and reactive updates
+- **Testing**: Improved testability with modular architecture
+- **Debugging**: Better development tools and error tracking
 
 ## Prerequisites
 
@@ -53,6 +81,87 @@ php -S localhost:8000
 ### 3. Open in Browser
 
 Navigate to `http://127.0.0.1:8000` in your browser.
+
+## ES6 Module Development
+
+### **Module Structure**
+
+The project uses a modern ES6 module architecture:
+
+```
+js/modules/
+├── ES6Bootstrap.js      # Central coordination
+├── AppBootstrap.js      # Core application initialization
+├── StateManager.js      # State management
+├── UIManager.js         # UI coordination
+├── CollapsibleManager.js # Sidebar management
+├── SearchManager.js     # Search functionality
+├── FABManager.js        # Floating action buttons
+├── MapManager.js        # Map system management
+├── LayerManager.js      # Layer management
+├── PolygonLoader.js     # Data loading
+├── CoordinateConverter.js # Coordinate conversion
+├── ErrorUI.js           # Error handling
+├── TextFormatter.js     # Text formatting
+├── FeatureEnhancer.js   # Feature enhancements
+└── DeviceManager.js     # Device management
+```
+
+### **Working with ES6 Modules**
+
+#### **Adding New Modules**
+
+```javascript
+// Create a new module
+export class MyNewModule {
+  constructor() {
+    this.isReady = false;
+  }
+
+  async init() {
+    // Initialize module
+    this.isReady = true;
+  }
+
+  getStatus() {
+    return { isReady: this.isReady };
+  }
+}
+
+// Export singleton instance
+export const myNewModule = new MyNewModule();
+```
+
+#### **Integrating with ES6Bootstrap**
+
+```javascript
+// In ES6Bootstrap.js
+import { myNewModule } from './MyNewModule.js';
+
+// Add to initialization sequence
+async initMyNewModule() {
+  try {
+    console.log('🎯 ES6Bootstrap: Initializing MyNewModule...');
+    await myNewModule.init();
+    console.log('✅ ES6Bootstrap: MyNewModule ready');
+  } catch (error) {
+    console.error('🚨 ES6Bootstrap: MyNewModule initialization failed:', error);
+    throw error;
+  }
+}
+```
+
+#### **Event-Driven Communication**
+
+```javascript
+import { globalEventBus } from './globalEventBus.js';
+
+// Emit events
+globalEventBus.emit('mymodule:ready', { module: 'MyNewModule' });
+
+// Listen for events
+globalEventBus.on('state:updated', this.handleStateChange.bind(this));
+```
 
 ## Development Scripts
 
@@ -395,9 +504,9 @@ this.components.push(
 
 - **[Architecture Overview](../architecture/overview.md)** - System architecture and design
 - **[Development Workflows](workflows.md)** - Detailed development processes
-- **[API Reference](../api/reference.md)** - API documentation and examples
+- **[API Reference](../api/README.md)** - API documentation and examples
 - **[Testing Framework](../templates/testing-template.md)** - Testing procedures and tools
-- **[Deployment Guide](../deployment/guide.md)** - Production deployment procedures
+- **[Deployment Guide](../deployment/README.md)** - Production deployment procedures
 
 ## Quick Reference
 

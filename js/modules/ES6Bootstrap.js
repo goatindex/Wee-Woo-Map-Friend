@@ -20,6 +20,7 @@ import { textFormatter } from './TextFormatter.js';
 import { featureEnhancer } from './FeatureEnhancer.js';
 import { appBootstrap } from './AppBootstrap.js';
 import { deviceManager } from './DeviceManager.js';
+import { uiManager } from './UIManager.js';
 
 /**
  * @class ES6Bootstrap
@@ -49,7 +50,8 @@ export class ES6Bootstrap {
         textFormatter: !!textFormatter,
         featureEnhancer: !!featureEnhancer,
         appBootstrap: !!appBootstrap,
-        deviceManager: !!deviceManager
+        deviceManager: !!deviceManager,
+        uiManager: !!uiManager
       });
     
     console.log('🚀 ES6Bootstrap: Modern bootstrap system initialized');
@@ -83,22 +85,25 @@ export class ES6Bootstrap {
       // Phase 5: Set up legacy integration
       this.setupLegacyIntegration();
       
-      // Phase 6: Initialize core ES6 systems
+      // Phase 6: Initialize UI components
+      await this.initUIComponents();
+      
+      // Phase 7: Initialize core ES6 systems
       await this.initCoreSystems();
       
-      // Phase 7: Initialize legacy compatibility
+      // Phase 8: Initialize legacy compatibility
       await this.initLegacyCompatibility();
       
-      // Phase 8: Initialize active list manager
+      // Phase 9: Initialize active list manager
       await this.initActiveListManager();
       
-      // Phase 9: Initialize map integration modules
+      // Phase 10: Initialize map integration modules
       await this.initMapIntegration();
       
-      // Phase 10: Initialize legacy function migration modules
+      // Phase 11: Initialize legacy function migration modules
       await this.initLegacyFunctionMigration();
       
-      // Phase 11: Mark as initialized
+      // Phase 12: Mark as initialized
       this.initialized = true;
       this.migrationPhase = 'complete';
       
@@ -254,6 +259,34 @@ export class ES6Bootstrap {
       
     } catch (error) {
       console.error('🚨 ES6Bootstrap: Modern AppBootstrap failed:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Initialize UI components
+   */
+  async initUIComponents() {
+    try {
+      console.log('🎨 ES6Bootstrap: Initializing UI components...');
+      
+      // Initialize UI manager
+      if (uiManager && typeof uiManager.init === 'function') {
+        await uiManager.init();
+        
+        if (!uiManager.isReady()) {
+          throw new Error('UI manager failed to initialize');
+        }
+        
+        console.log('✅ ES6Bootstrap: UI manager ready');
+      } else {
+        console.warn('⚠️ ES6Bootstrap: UI manager not available or missing init method');
+      }
+      
+      console.log('✅ ES6Bootstrap: UI components ready');
+      
+    } catch (error) {
+      console.error('🚨 ES6Bootstrap: UI components initialization failed:', error);
       throw error;
     }
   }

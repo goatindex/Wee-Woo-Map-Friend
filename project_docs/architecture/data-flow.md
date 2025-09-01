@@ -2,23 +2,24 @@
 
 ## Overview
 
-The WeeWoo Map Friend application uses a sophisticated state management system that combines legacy window globals with modern reactive state management. This system ensures data consistency, performance optimization, and maintainable code architecture across the entire application.
+The WeeWoo Map Friend application uses a sophisticated state management system that combines modern ES6 module-based state management with legacy compatibility layers. This system ensures data consistency, performance optimization, and maintainable code architecture across the entire application while providing a smooth migration path from legacy systems.
 
 ## State Architecture
 
-### **Dual State System**
+### **Modern ES6 State System**
 
-The application uses a hybrid approach combining legacy and modern state management:
+The application uses a modern ES6 module-based state management system with legacy compatibility:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    State Management                        │
 ├─────────────────────────────────────────────────────────────┤
-│  Legacy State (window globals)  │  Modern State (StateManager) │
-│  • Immediate compatibility      │  • Reactive updates          │
-│  • Performance optimized        │  • Middleware support        │
-│  • Bulk operations             │  • Computed properties       │
-│  • Label management            │  • Watchers & observers      │
+│  Modern ES6 State (StateManager)  │  Legacy Compatibility Layer │
+│  • Reactive updates               │  • Backward compatibility   │
+│  • Middleware support             │  • Performance optimized    │
+│  • Computed properties            │  • Bulk operations          │
+│  • Watchers & observers           │  • Label management         │
+│  • Event-driven updates           │  • Window global fallbacks  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -82,21 +83,54 @@ window.isBulkOperation = false; // Bulk operation flag
 window.pendingLabels = []; // Deferred label creation
 ```
 
-## State Management Patterns
+## ES6 State Management System
 
-### **1. Legacy State Management**
+### **1. Modern StateManager**
 
-#### **Direct State Access**
+The application now uses a modern ES6 StateManager for primary state management:
 
 ```javascript
+// Import StateManager
+import { stateManager } from './StateManager.js';
+
 // Read state
-const sesNames = window.namesByCategory.ses;
-const isEmphasised = window.emphasised.ses['ses_001'];
+const sesNames = stateManager.getState('namesByCategory.ses');
+const isEmphasised = stateManager.getState('emphasised.ses.ses_001');
 
 // Write state
-window.emphasised.ses['ses_001'] = true;
-window.activeListFilter = 'melbourne';
+stateManager.setState('emphasised.ses.ses_001', true);
+stateManager.setState('activeListFilter', 'melbourne');
+
+// Subscribe to state changes
+stateManager.subscribe('emphasised.ses', (newValue) => {
+  console.log('SES emphasis state changed:', newValue);
+});
 ```
+
+### **2. Event-Driven State Updates**
+
+State changes are now propagated through the globalEventBus:
+
+```javascript
+import { globalEventBus } from './globalEventBus.js';
+
+// Emit state change events
+globalEventBus.emit('state:emphasised:changed', {
+  category: 'ses',
+  key: 'ses_001',
+  value: true
+});
+
+// Listen for state changes
+globalEventBus.on('state:emphasised:changed', (data) => {
+  // Handle state change
+  updateUI(data);
+});
+```
+
+### **3. Legacy State Management (Maintained for Compatibility)**
+
+#### **Direct State Access**
 
 #### **State Update Functions**
 
