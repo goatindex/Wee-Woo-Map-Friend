@@ -29,6 +29,7 @@ module.exports = {
   // Test file patterns (exclude Playwright tests)
   testMatch: [
     '<rootDir>/tests/**/*.test.js',
+    '<rootDir>/tests/integration/**/*.test.js',
     '<rootDir>/js/modules/**/*.test.js',
     '<rootDir>/js/components/**/*.test.js'
   ],
@@ -36,6 +37,7 @@ module.exports = {
   // Exclude Playwright tests from Jest
   testPathIgnorePatterns: [
     '/node_modules/',
+    '/tests/e2e/',
     '/tests/integration/',
     '/tests/es6-modules/',
     '/tests/console/',

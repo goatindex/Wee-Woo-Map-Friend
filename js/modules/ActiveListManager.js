@@ -7,6 +7,7 @@
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
 import { configurationManager } from './ConfigurationManager.js';
+import { logger } from './StructuredLogger.js';
 
 /**
  * @class ActiveListManager
@@ -19,6 +20,9 @@ export class ActiveListManager {
     this.weatherBox = null;
     this.bulkOperationActive = false;
     this.pendingUpdates = new Set();
+    
+    // Create module-specific logger
+    this.logger = logger.createChild({ module: 'ActiveListManager' });
     
     // Bind methods
     this.init = this.init.bind(this);

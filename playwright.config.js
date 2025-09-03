@@ -89,7 +89,7 @@ module.exports = defineConfig({
   
   // Global setup and teardown
   globalSetup: require.resolve('./tests/global-setup.js'),
-  globalTeardown: require.resolve('./tests/global-teardown.js'),
+  globalTeardown: require.resolve('./tests/e2e/global-teardown.js'),
   
   // Test timeout
   timeout: 30000,
