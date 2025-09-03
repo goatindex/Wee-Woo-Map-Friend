@@ -406,6 +406,27 @@ export class ConfigurationManager {
   }
   
   /**
+   * Get style function for a category
+   * @param {string} category - Category name (e.g., 'ses', 'lga', 'cfa', 'frv')
+   * @returns {Function|null} Style function or null if not found
+   */
+  getStyle(category) {
+    const styleFnName = this.get(`categoryMeta.${category}.styleFn`);
+    if (styleFnName && this._config.styles && this._config.styles[styleFnName]) {
+      return this._config.styles[styleFnName];
+    }
+    return null;
+  }
+  
+  /**
+   * Get color adjustment utility function
+   * @returns {Function} Color adjustment function
+   */
+  getColorAdjuster() {
+    return this._config.utils.adjustHexColor;
+  }
+  
+  /**
    * Check if configuration manager is ready
    * @returns {boolean} True if initialized
    */
@@ -436,4 +457,49 @@ export const configurationManager = new ConfigurationManager();
 // Export for global access
 if (typeof window !== 'undefined') {
   window.configurationManager = configurationManager;
+  
+  // Legacy compatibility layer - proxy old window globals to new ES6 system
+  console.log('🔧 ConfigurationManager: Setting up legacy compatibility layer');
+  
+  // Proxy legacy configuration variables
+  Object.defineProperty(window, 'outlineColors', {
+    get: () => configurationManager.get('outlineColors'),
+    set: (value) => configurationManager.set('outlineColors', value),
+    configurable: true
+  });
+  
+  Object.defineProperty(window, 'baseOpacities', {
+    get: () => configurationManager.get('baseOpacities'),
+    set: (value) => configurationManager.set('baseOpacities', value),
+    configurable: true
+  });
+  
+  Object.defineProperty(window, 'labelColorAdjust', {
+    get: () => configurationManager.get('labelColorAdjust'),
+    set: (value) => configurationManager.set('labelColorAdjust', value),
+    configurable: true
+  });
+  
+  Object.defineProperty(window, 'headerColorAdjust', {
+    get: () => configurationManager.get('headerColorAdjust'),
+    set: (value) => configurationManager.set('headerColorAdjust', value),
+    configurable: true
+  });
+  
+  Object.defineProperty(window, 'categoryMeta', {
+    get: () => configurationManager.get('categoryMeta'),
+    set: (value) => configurationManager.set('categoryMeta', value),
+    configurable: true
+  });
+  
+  // Proxy legacy utility functions
+  window.adjustHexColor = configurationManager.getColorAdjuster();
+  
+  // Proxy legacy style functions
+  window.sesStyle = () => configurationManager.getStyle('ses')();
+  window.lgaStyle = () => configurationManager.getStyle('lga')();
+  window.cfaStyle = () => configurationManager.getStyle('cfa')();
+  window.frvStyle = () => configurationManager.getStyle('frv')();
+  
+  console.log('✅ ConfigurationManager: Legacy compatibility layer active');
 }
