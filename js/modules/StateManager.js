@@ -137,6 +137,11 @@ export class StateManager extends EventBus {
       this._state.sidebarVisible = window.sidebarVisible !== undefined ? window.sidebarVisible : true;
       this._state.isBulkOperation = window.isBulkOperation || false;
       
+      // Legacy facility coordinate variables
+      this._state.sesFacilityCoords = window.sesFacilityCoords || {};
+      this._state.sesFacilityMarkers = window.sesFacilityMarkers || {};
+      this._state.cfaFacilityCoords = window.cfaFacilityCoords || {};
+      
       // Device and responsive state
       this._state.deviceContext = window.DeviceContext ? window.DeviceContext.getContext() : null;
       this._state.windowSize = {
@@ -161,22 +166,72 @@ export class StateManager extends EventBus {
   _setupLegacyCompatibility() {
     if (typeof window === 'undefined') return;
     
-    // Create legacy compatibility functions
+    console.log('🔧 StateManager: Setting up legacy compatibility layer');
+    
+    // Legacy state variables - proxy to StateManager
+    const legacyStateVars = [
+      'featureLayers', 'namesByCategory', 'nameToKey', 'emphasised', 
+      'nameLabelMarkers', 'pendingLabels', 'activeListFilter', 'isBulkOperation'
+    ];
+    
+    legacyStateVars.forEach(varName => {
+      Object.defineProperty(window, varName, {
+        get: () => this.get(varName),
+        set: (value) => this.set(varName, value),
+        configurable: true
+      });
+    });
+    
+    // Legacy facility coordinate variables
+    Object.defineProperty(window, 'sesFacilityCoords', {
+      get: () => this.get('sesFacilityCoords', {}),
+      set: (value) => this.set('sesFacilityCoords', value),
+      configurable: true
+    });
+    
+    Object.defineProperty(window, 'sesFacilityMarkers', {
+      get: () => this.get('sesFacilityMarkers', {}),
+      set: (value) => this.set('sesFacilityMarkers', value),
+      configurable: true
+    });
+    
+    Object.defineProperty(window, 'cfaFacilityCoords', {
+      get: () => this.get('cfaFacilityCoords', {}),
+      set: (value) => this.set('cfaFacilityCoords', value),
+      configurable: true
+    });
+    
+    // Legacy map functions
+    window.setMap = (map) => {
+      this.set('map', map);
+    };
+    
+    window.getMap = () => {
+      const map = this.get('map');
+      if (!map) throw new Error('Map not initialised yet');
+      return map;
+    };
+    
+    // Legacy filter function
     window.setActiveListFilter = (v) => {
       this.set('activeListFilter', v);
     };
     
-    // Create legacy compatibility properties
-    Object.defineProperty(window, 'activeListFilter', {
-      get: () => this.get('activeListFilter'),
-      set: (v) => this.set('activeListFilter', v),
-      configurable: true
-    });
+    // Legacy BulkOperationManager - proxy to StateManager methods
+    window.BulkOperationManager = {
+      begin: (operationType, itemCount) => this.beginBulkOperation(operationType, itemCount),
+      end: () => this.endBulkOperation(),
+      isActive: () => this.isBulkOperationActive(),
+      addPendingLabel: (labelData) => this.addPendingLabel(labelData),
+      markActiveListUpdatePending: () => this.markActiveListUpdatePending(),
+      getStatus: () => this.getBulkOperationStatus()
+    };
     
-    // Create computed properties for legacy compatibility
-    this.computed('activeListFilter', () => this.get('activeListFilter'), []);
+    // Legacy bulk operation functions
+    window.beginBulkOperation = () => this.beginBulkOperation('legacy');
+    window.endBulkOperation = () => this.endBulkOperation();
     
-    console.log('✅ StateManager: Legacy compatibility layer ready');
+    console.log('✅ StateManager: Legacy compatibility layer active');
   }
   
   /**
@@ -420,6 +475,206 @@ export class StateManager extends EventBus {
     }
     
     return { ...this._state };
+  }
+  
+  /**
+   * Begin a bulk operation
+   * @param {string} operationType - Type of operation (e.g., 'toggleAll', 'import', 'reset')
+   * @param {number} itemCount - Number of items to be processed
+   * @returns {boolean} True if operation started successfully
+   */
+  beginBulkOperation(operationType, itemCount = 0) {
+    if (this.get('isBulkOperation')) {
+      console.warn('⚠️ Bulk operation already active, nested calls not supported');
+      return false;
+    }
+    
+    this.set('isBulkOperation', true);
+    this.set('bulkOperationType', operationType);
+    this.set('bulkOperationItemCount', itemCount);
+    this.set('bulkOperationStartTime', Date.now());
+    this.set('bulkOperationPendingLabels', []);
+    this.set('bulkOperationPendingActiveListUpdate', false);
+    
+    console.log(`🚀 Bulk operation started: ${operationType} (${itemCount} items)`);
+    this.emit('bulkOperation:started', { operationType, itemCount });
+    return true;
+  }
+  
+  /**
+   * End a bulk operation and process deferred items
+   */
+  endBulkOperation() {
+    if (!this.get('isBulkOperation')) {
+      console.warn('⚠️ No bulk operation active to end');
+      return;
+    }
+    
+    const operationType = this.get('bulkOperationType');
+    const startTime = this.get('bulkOperationStartTime');
+    const duration = Date.now() - startTime;
+    
+    console.log(`✅ Bulk operation completed: ${operationType} in ${duration}ms`);
+    
+    // Process deferred labels first
+    const pendingLabels = this.get('bulkOperationPendingLabels', []);
+    if (pendingLabels.length > 0) {
+      console.log(`📝 Processing ${pendingLabels.length} deferred labels`);
+      this._processDeferredLabels(pendingLabels);
+    }
+    
+    // Process active list update if pending
+    if (this.get('bulkOperationPendingActiveListUpdate')) {
+      console.log(`🔄 Processing pending active list update`);
+      this._processActiveListUpdate();
+    }
+    
+    // Clear bulk operation state
+    this.set('isBulkOperation', false);
+    this.set('bulkOperationType', null);
+    this.set('bulkOperationItemCount', 0);
+    this.set('bulkOperationStartTime', null);
+    this.set('bulkOperationPendingLabels', []);
+    this.set('bulkOperationPendingActiveListUpdate', false);
+    
+    this.emit('bulkOperation:ended', { operationType, duration });
+  }
+  
+  /**
+   * Check if a bulk operation is currently active
+   * @returns {boolean} True if bulk operation is active
+   */
+  isBulkOperationActive() {
+    return this.get('isBulkOperation', false);
+  }
+  
+  /**
+   * Add a pending label for deferred creation
+   * @param {Object} labelData - Label data object
+   */
+  addPendingLabel(labelData) {
+    if (!this.get('isBulkOperation')) {
+      console.warn('⚠️ Cannot add pending label outside of bulk operation');
+      return;
+    }
+    
+    const pendingLabels = this.get('bulkOperationPendingLabels', []);
+    pendingLabels.push(labelData);
+    this.set('bulkOperationPendingLabels', pendingLabels);
+  }
+  
+  /**
+   * Mark active list update as pending
+   */
+  markActiveListUpdatePending() {
+    if (!this.get('isBulkOperation')) {
+      console.warn('⚠️ Cannot mark active list update pending outside of bulk operation');
+      return;
+    }
+    this.set('bulkOperationPendingActiveListUpdate', true);
+  }
+  
+  /**
+   * Process deferred labels in optimized batches
+   * @private
+   * @param {Array} labels - Array of label data objects
+   */
+  async _processDeferredLabels(labels) {
+    if (labels.length === 0) return;
+    
+    // Category-specific batch sizes for label creation
+    const labelBatchSizes = {
+      'lga': 1,   // Process LGA labels one at a time due to extreme complexity
+      'cfa': 8,   // Larger batches for CFA since we use pre-calculated coordinates
+      'ses': 8,   // Larger batches for SES since we use pre-calculated coordinates
+      'ambulance': 10,
+      'police': 10
+    };
+    
+    // Group labels by category for optimized processing
+    const labelsByCategory = {};
+    labels.forEach(label => {
+      if (!labelsByCategory[label.category]) {
+        labelsByCategory[label.category] = [];
+      }
+      labelsByCategory[label.category].push(label);
+    });
+    
+    // Process each category with its optimal batch size
+    const categoryKeys = Object.keys(labelsByCategory);
+    let totalBatches = 0;
+    let currentBatch = 0;
+    
+    // Calculate total number of batches for progress tracking
+    categoryKeys.forEach(category => {
+      const categoryLabels = labelsByCategory[category];
+      const batchSize = labelBatchSizes[category] || 10;
+      totalBatches += Math.ceil(categoryLabels.length / batchSize);
+    });
+    
+    console.log(`📦 Processing ${labels.length} labels in ${totalBatches} batches`);
+    
+    for (let catIndex = 0; catIndex < categoryKeys.length; catIndex++) {
+      const category = categoryKeys[catIndex];
+      const categoryLabels = labelsByCategory[category];
+      const batchSize = labelBatchSizes[category] || 10;
+      
+      for (let i = 0; i < categoryLabels.length; i += batchSize) {
+        const batch = categoryLabels.slice(i, i + batchSize);
+        currentBatch++;
+        
+        // Process current batch
+        batch.forEach(({category, key, labelName, isPoint, layer}) => {
+          const featureLayers = this.get('featureLayers', {});
+          if (featureLayers[category] && featureLayers[category][key] && 
+              featureLayers[category][key].some(l => l._map)) {
+            // Only create label if the layer is still on the map
+            if (window.ensureLabel) {
+              window.ensureLabel(category, key, labelName, isPoint, layer);
+            }
+          }
+        });
+        
+        // Yield between all batches except the very last one
+        if (currentBatch < totalBatches) {
+          if (category === 'lga') {
+            await new Promise(resolve => setTimeout(resolve, 10)); // 10ms delay for LGA
+          } else {
+            await new Promise(resolve => requestAnimationFrame(resolve));
+          }
+        }
+      }
+    }
+    
+    console.log(`✅ All deferred labels processed`);
+  }
+  
+  /**
+   * Process pending active list update
+   * @private
+   */
+  _processActiveListUpdate() {
+    if (window.updateActiveList) {
+      console.log(`🔄 Calling updateActiveList after bulk operation`);
+      window.updateActiveList();
+    } else {
+      console.warn(`⚠️ updateActiveList function not found`);
+    }
+  }
+  
+  /**
+   * Get current bulk operation status
+   * @returns {Object} Bulk operation status information
+   */
+  getBulkOperationStatus() {
+    return {
+      isActive: this.get('isBulkOperation', false),
+      operationType: this.get('bulkOperationType'),
+      itemCount: this.get('bulkOperationItemCount', 0),
+      duration: this.get('bulkOperationStartTime') ? Date.now() - this.get('bulkOperationStartTime') : 0,
+      pendingLabels: this.get('bulkOperationPendingLabels', []).length,
+      pendingActiveListUpdate: this.get('bulkOperationPendingActiveListUpdate', false)
+    };
   }
   
   /**
