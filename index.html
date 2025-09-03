@@ -99,60 +99,19 @@
   <!-- ES6 Module System -->
   <script type="module" src="js/modules/main.js"></script>
   
-  <!-- Legacy Fallback (loaded only if ES6 fails) -->
+  <!-- ES6-ONLY MODE: Legacy fallback completely disabled -->
   <script>
-    // Check if ES6 system is working
-    window.addEventListener('app:es6error', () => {
-      console.log('🔄 Loading legacy system as fallback...');
-      loadLegacySystem();
+    console.log('🚀 ES6-ONLY MODE: Legacy fallback disabled for full migration');
+    console.log('⚠️  System will be non-functional until ES6 modules are fixed');
+    
+    // Monitor ES6 system startup
+    window.addEventListener('app:es6ready', () => {
+      console.log('✅ ES6 system ready - migration successful!');
     });
     
-    // Load legacy system if ES6 fails to start within timeout
-    setTimeout(() => {
-      if (!window.ES6Bootstrap || !window.ES6Bootstrap.isReady()) {
-        console.log('⏰ ES6 system timeout, loading legacy system...');
-        loadLegacySystem();
-      }
-    }, 5000);
-    
-    function loadLegacySystem() {
-      // Load legacy scripts dynamically
-      const legacyScripts = [
-        'js/state.js',
-        'js/config.js',
-        'js/utils.js',
-        'js/device.js',
-        'js/native/features.js',
-        'js/utils/coordConvert.js',
-        'js/utils/errorUI.js',
-        'js/labels.js',
-        'js/emphasise.js',
-        'js/polygonPlus.js',
-        'js/loaders/polygons.js',
-        'js/loaders/ambulance.js',
-        'js/loaders/police.js',
-        'js/loaders/sesFacilities.js',
-        'js/loaders/cfaFacilities.js',
-        'js/loaders/sesUnits.js',
-        'js/loaders/waterwaycent.js',
-        'js/ui/collapsible.js',
-        'js/ui/search.js',
-        'js/ui/activeList.js',
-        'js/ui/mobileDocsNav.js',
-        'js/fab/BaseFAB.js',
-        'js/fab/FABManager.js',
-        'js/fab/DocsFAB.js',
-        'js/fab/SidebarToggleFAB.js',
-        'js/preloader.js',
-        'js/bootstrap.js'
-      ];
-      
-      legacyScripts.forEach(src => {
-        const script = document.createElement('script');
-        script.src = src;
-        document.head.appendChild(script);
-      });
-    }
+    window.addEventListener('app:es6error', (event) => {
+      console.error('🚨 ES6 system failed - debugging required:', event.detail);
+    });
   </script>
   
   <!-- Service Worker Registration -->

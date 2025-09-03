@@ -6,8 +6,8 @@ This directory contains comprehensive project documentation organized for both *
 
 **📖 Important**: All documentation must follow the **[Terms of Reference](terms-of-reference.md)** for consistent terminology and vocabulary.
 
-**🎉 ES6 Migration Status: 95-98% Complete**
-The project has successfully completed a comprehensive migration to modern ES6 modules, providing improved performance, maintainability, and developer experience.
+**🔄 Current System State: Hybrid Legacy/ES6 Architecture**
+The project is in a transitional state with modern ES6 modules providing new functionality while legacy systems continue to handle core operations. This hybrid approach ensures stability while enabling gradual modernization.
 
 ## 🗂️ **Documentation Structure**
 
@@ -27,6 +27,7 @@ The project has successfully completed a comprehensive migration to modern ES6 m
 ### **Development** (`development/`)
 
 - **[Setup](development/setup.md)** - Developer environment setup
+- **[Migration Progress](development/migration-progress.md)** - Legacy to ES6 migration tracking
 - **[Contributing](development/contributing.md)** - Contribution guidelines
 - **[Code Style](development/code-style.md)** - Coding standards & patterns
 - **[Testing](development/testing.md)** - Testing framework & procedures
@@ -86,43 +87,48 @@ The project has successfully completed a comprehensive migration to modern ES6 m
 1. Review **[Architecture Decisions](architecture/decisions.md)**
 2. Check **[Performance Baselines](templates/performance-baselines.md)**
 3. Learn from **[Lessons Learned](templates/lessons-learned.md)**
-4. Monitor **[ES6 Migration Status](#es6-migration-status)** and ongoing improvements
+4. Monitor **[Current System Architecture](#current-system-architecture)** and ongoing improvements
 
-## 🚀 **ES6 Migration Status**
+## 🔄 **Current System Architecture**
 
-### **Migration Completion: 95-98% Complete**
+### **Hybrid Legacy/ES6 System**
 
-The project has successfully completed a comprehensive migration to ES6 modules:
+The project currently operates as a hybrid system combining legacy JavaScript with modern ES6 modules:
 
-#### **Completed Phases**
-- ✅ **Phase 1**: Dependency Resolution & Function Registry
-- ✅ **Phase 2**: State Management & Configuration  
-- ✅ **Phase 3**: Active List System Migration
-- ✅ **Phase 4**: Map Integration & Layer Management
-- ✅ **Phase 5**: Legacy Function Migration
-- ✅ **Phase 6**: Core Map System Migration
-- ✅ **Phase 7**: UI Components Migration
+#### **ES6 Module Layer (New)**
+- **ES6Bootstrap**: Central coordination of modern modules
+- **StateManager**: Modern state management with reactive updates
+- **EventBus**: Event-driven communication system
+- **MapManager**: Modern map initialization and management
+- **LayerManager**: ES6-based layer management
+- **ActiveListManager**: Modern active list handling
+- **UIManager**: Modern UI coordination
+- **CollapsibleManager**: Modern sidebar management
 
-#### **Modern ES6 Architecture**
-- **ES6Bootstrap**: Central coordination of all modern modules
-- **Modular Design**: 15+ ES6 modules with clear separation of concerns
-- **Event-Driven**: globalEventBus for loose coupling between modules
-- **Legacy Compatibility**: Backward compatibility maintained for existing functionality
-- **Performance Optimized**: Modern JavaScript features and optimizations
+#### **Legacy System Layer (Active)**
+- **Core Data Management**: `window.featureLayers`, `window.namesByCategory`, `window.nameToKey`
+- **Active List Operations**: `window.updateActiveList`, `window.beginActiveListBulk`, `window.endActiveListBulk`
+- **UI Functions**: `window.createCheckbox`, `window.setupCollapsible`, `window.setEmphasis`
+- **Label Management**: `window.ensureLabel`, `window.removeLabel`
+- **Bulk Operations**: `window.BulkOperationManager`, `window.isBulkOperation`
+
+#### **Integration Layer**
+- **Legacy Compatibility**: ES6 modules provide window exports for legacy compatibility
+- **Event Bridge**: Modern event system communicates with legacy functions
+- **State Synchronization**: Modern state management syncs with legacy globals
+
+#### **Current Status**
+- **ES6 Infrastructure**: ✅ Complete and functional
+- **Legacy Code**: 🔄 Still active and heavily used (395 legacy usages across 31 files)
+- **Migration Progress**: Phase 1 (Foundation) complete, legacy cleanup in progress
+- **System Stability**: ✅ All tests passing, hybrid system working reliably
 
 #### **Next Steps**
-- **Performance Optimization**: Implement ES6 module optimizations
-- **Testing Enhancement**: Improve test coverage for ES6 modules
-- **Legacy Cleanup**: Remove obsolete legacy code and documentation
-- **Documentation Maintenance**: Ongoing updates and improvements
-
-#### **Documentation Status**
-- ✅ **Architecture Documentation**: Modernized for ES6 architecture
-- ✅ **Component Documentation**: Updated for modern module system
-- ✅ **Data Flow Documentation**: Modernized for ES6 state management
-- ✅ **Development Guides**: Updated for ES6 development workflow
-- ✅ **Testing Documentation**: Enhanced for ES6 module testing
-- ✅ **User Documentation**: Fixed formatting and content issues
+- **Legacy Code Migration**: Continue systematic migration of legacy functions to ES6 modules
+- **Documentation Updates**: Update documentation as legacy code is migrated
+- **Testing Enhancement**: Improve test coverage for hybrid system
+- **Performance Optimization**: Optimize hybrid system performance
+- **Gradual Modernization**: Continue phased approach to full ES6 migration
 
 ## 🔧 **Template Usage**
 

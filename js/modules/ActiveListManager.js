@@ -23,8 +23,6 @@ export class ActiveListManager {
     // Bind methods
     this.init = this.init.bind(this);
     this.updateActiveList = this.updateActiveList.bind(this);
-    this.addItem = this.addItem.bind(this);
-    this.removeItem = this.removeItem.bind(this);
     this.beginBulkOperation = this.beginBulkOperation.bind(this);
     this.endBulkOperation = this.endBulkOperation.bind(this);
     this.setupEventListeners = this.setupEventListeners.bind(this);
@@ -766,5 +764,6 @@ export const activeListManager = new ActiveListManager();
 
 // Export for global access
 if (typeof window !== 'undefined') {
+  window.ActiveListManager = ActiveListManager;
   window.activeListManager = activeListManager;
 }

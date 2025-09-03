@@ -33,6 +33,7 @@ export class MapManager {
     
     // Bind methods
     this.init = this.init.bind(this);
+    this.waitForLeaflet = this.waitForLeaflet.bind(this);
     this.createMap = this.createMap.bind(this);
     this.setupBaseTileLayer = this.setupBaseTileLayer.bind(this);
     this.setupZoomControl = this.setupZoomControl.bind(this);
@@ -86,6 +87,9 @@ export class MapManager {
       };
       stateManager.set('defaultView', this.defaultView);
       
+      // Set map ready flag in state manager
+      stateManager.set('mapReady', true);
+      
       // Emit map ready event
       globalEventBus.emit('map:ready', { map: this.map, manager: this });
       
@@ -101,6 +105,7 @@ export class MapManager {
   
   /**
    * Wait for Leaflet library to be available
+   * Enhanced version with better error handling and performance
    */
   async waitForLeaflet() {
     if (typeof L !== 'undefined') {
@@ -112,16 +117,17 @@ export class MapManager {
     
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        reject(new Error('Timeout waiting for Leaflet library'));
+        reject(new Error('Timeout waiting for Leaflet library - check network connection and CDN availability'));
       }, 10000); // 10 second timeout
       
       const checkLeaflet = () => {
         if (typeof L !== 'undefined') {
           clearTimeout(timeout);
-          console.log('✅ MapManager: Leaflet library loaded');
+          console.log('✅ MapManager: Leaflet library loaded successfully');
           resolve();
         } else {
-          setTimeout(checkLeaflet, 100);
+          // Use requestAnimationFrame for better performance than setTimeout
+          requestAnimationFrame(checkLeaflet);
         }
       };
       
@@ -318,5 +324,6 @@ export const mapManager = new MapManager();
 
 // Export for global access
 if (typeof window !== 'undefined') {
+  window.MapManager = MapManager;
   window.mapManager = mapManager;
 }

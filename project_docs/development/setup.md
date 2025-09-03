@@ -2,35 +2,37 @@
 
 ## Overview
 
-This guide provides comprehensive setup instructions for developers working on WeeWoo Map Friend. It covers local development, testing, code quality tools, and deployment workflows. The project has completed a comprehensive ES6 migration, providing modern JavaScript architecture and improved development experience.
+This guide provides comprehensive setup instructions for developers working on WeeWoo Map Friend. It covers local development, testing, code quality tools, and deployment workflows. The project currently operates as a hybrid system combining legacy JavaScript with modern ES6 modules.
 
-## ES6 Architecture Overview
+## Current System Architecture
 
-### **Migration Status: 95-98% Complete**
+### **Hybrid Legacy/ES6 System**
 
-The project has successfully completed a comprehensive migration to ES6 modules:
+The project currently operates as a hybrid system combining legacy JavaScript with modern ES6 modules:
 
-#### **Completed Phases**
-- ✅ **Phase 1**: Dependency Resolution & Function Registry
-- ✅ **Phase 2**: State Management & Configuration
-- ✅ **Phase 3**: Active List System Migration
-- ✅ **Phase 4**: Map Integration & Layer Management
-- ✅ **Phase 5**: Legacy Function Migration
-- ✅ **Phase 6**: Core Map System Migration
-- ✅ **Phase 7**: UI Components Migration
+#### **ES6 Module Layer (New)**
+- **ES6Bootstrap**: Central coordination of modern modules
+- **StateManager**: Modern state management with reactive updates
+- **EventBus**: Event-driven communication system
+- **MapManager**: Modern map initialization and management
+- **LayerManager**: ES6-based layer management
+- **ActiveListManager**: Modern active list handling
+- **UIManager**: Modern UI coordination
+- **CollapsibleManager**: Modern sidebar management
 
-#### **Modern ES6 Architecture**
-- **ES6Bootstrap**: Central coordination of all modern modules
-- **Modular Design**: 15+ ES6 modules with clear separation of concerns
-- **Event-Driven**: globalEventBus for loose coupling between modules
-- **Legacy Compatibility**: Backward compatibility maintained for existing functionality
+#### **Legacy System Layer (Active)**
+- **Core Data Management**: `window.featureLayers`, `window.namesByCategory`, `window.nameToKey`
+- **Active List Operations**: `window.updateActiveList`, `window.beginActiveListBulk`, `window.endActiveListBulk`
+- **UI Functions**: `window.createCheckbox`, `window.setupCollapsible`, `window.setEmphasis`
+- **Label Management**: `window.ensureLabel`, `window.removeLabel`
+- **Bulk Operations**: `window.BulkOperationManager`, `window.isBulkOperation`
 
 #### **Development Benefits**
-- **Modern JavaScript**: ES6+ features and optimizations
-- **Module System**: Clear imports/exports and dependency management
-- **Event-Driven**: Loose coupling and reactive updates
-- **Testing**: Improved testability with modular architecture
-- **Debugging**: Better development tools and error tracking
+- **Hybrid Stability**: Legacy system provides proven functionality while ES6 modules add modern features
+- **Gradual Migration**: Can work with both systems during transition period
+- **Modern Tooling**: ES6 modules enable better development tools and debugging
+- **Event-Driven**: Modern event system for loose coupling
+- **Testing**: Both legacy and modern components can be tested
 
 ## Prerequisites
 
@@ -82,11 +84,54 @@ php -S localhost:8000
 
 Navigate to `http://127.0.0.1:8000` in your browser.
 
+## Working with the Hybrid System
+
+### **Understanding the Current Architecture**
+
+When developing in this hybrid system, it's important to understand which layer handles what:
+
+#### **ES6 Modules (Use for new features)**
+- **State Management**: Use `StateManager` for new state needs
+- **Event Communication**: Use `globalEventBus` for module communication
+- **Map Operations**: Use `MapManager` for map-related functionality
+- **UI Components**: Use `UIManager` and `CollapsibleManager` for UI work
+
+#### **Legacy System (Still active for core functionality)**
+- **Data Loading**: Legacy loaders still handle GeoJSON data
+- **Active List**: Legacy functions still manage the "All Active" section
+- **UI Updates**: Legacy functions still handle checkbox creation and updates
+- **Label Management**: Legacy functions still manage map labels
+
+#### **Integration Points**
+- **Window Exports**: ES6 modules export to `window` for legacy compatibility
+- **Event Bridge**: Modern events can trigger legacy functions
+- **State Sync**: Modern state management syncs with legacy globals
+
+### **Development Guidelines**
+
+#### **For New Features**
+1. **Use ES6 modules** for new functionality
+2. **Integrate with legacy** through window exports and events
+3. **Test both systems** to ensure compatibility
+4. **Document integration points** clearly
+
+#### **For Bug Fixes**
+1. **Identify the layer** where the bug exists
+2. **Fix in the appropriate system** (ES6 or legacy)
+3. **Test integration** between systems
+4. **Consider migration** if fixing in legacy system
+
+#### **For Performance Work**
+1. **Profile both systems** to identify bottlenecks
+2. **Optimize in the active system** first
+3. **Consider migration** for long-term performance gains
+4. **Monitor hybrid overhead** and integration costs
+
 ## ES6 Module Development
 
 ### **Module Structure**
 
-The project uses a modern ES6 module architecture:
+The project uses a modern ES6 module architecture alongside legacy systems:
 
 ```
 js/modules/

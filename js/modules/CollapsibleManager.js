@@ -84,7 +84,7 @@ export class CollapsibleManager {
    * Initialize existing collapsible sections from the DOM
    */
   initializeExistingSections() {
-    const headers = document.querySelectorAll('.layer-menu h4, .sidebar-headers h4');
+    const headers = document.querySelectorAll('.layer-menu h4');
     headers.forEach(header => {
       const headerId = header.id;
       if (headerId && headerId.endsWith('Header')) {

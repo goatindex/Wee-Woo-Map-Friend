@@ -1,0 +1,10 @@
+<testsuites id="" name="" tests="3" failures="0" skipped="0" errors="0" time="6.6461369999999995">
+<testsuite name="integration\map-integration.test.js" timestamp="2025-09-01T13:05:30.670Z" hostname="chromium" tests="3" failures="0" skipped="0" time="13.228" errors="0">
+<testcase name="Map Integration with ES6 Modules › should initialize map with ES6 modules" classname="integration\map-integration.test.js" time="4.614">
+</testcase>
+<testcase name="Map Integration with ES6 Modules › should load map layers through ES6 modules" classname="integration\map-integration.test.js" time="4.281">
+</testcase>
+<testcase name="Map Integration with ES6 Modules › should handle map interactions through ES6 modules" classname="integration\map-integration.test.js" time="4.333">
+</testcase>
+</testsuite>
+</testsuites>

@@ -40,6 +40,7 @@ export class LayerManager {
     this.getLayersByCategory = this.getLayersByCategory.bind(this);
     this.clearCategory = this.clearCategory.bind(this);
     this.updateLayerStyle = this.updateLayerStyle.bind(this);
+    this.isReady = this.isReady.bind(this);
     this.getStatus = this.getStatus.bind(this);
     
     console.log('🔲 LayerManager: Layer management system initialized');
@@ -415,6 +416,14 @@ export class LayerManager {
   }
   
   /**
+   * Check if layer manager is ready
+   * @returns {boolean} True if initialized
+   */
+  isReady() {
+    return this.initialized;
+  }
+  
+  /**
    * Get layer manager status
    */
   getStatus() {
@@ -442,5 +451,6 @@ export const layerManager = new LayerManager();
 
 // Export for global access
 if (typeof window !== 'undefined') {
+  window.LayerManager = LayerManager;
   window.layerManager = layerManager;
 }
