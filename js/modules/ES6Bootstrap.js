@@ -771,6 +771,389 @@ export class ES6Bootstrap {
   }
   
   /**
+   * Legacy bootstrap functionality - maintains backward compatibility
+   */
+  async startLegacyBootstrap() {
+    console.log('🔄 ES6Bootstrap: Starting legacy bootstrap sequence...');
+    
+    try {
+      // Wait for Leaflet to be ready
+      await this.waitForLeaflet();
+      
+      // Initialize map
+      const mapSuccess = this.initMap();
+      
+      if (!mapSuccess) {
+        console.warn('ES6Bootstrap: Map initialization failed, continuing with limited functionality');
+      }
+      
+      // Set up UI components
+      this.setupUI();
+      
+      // Load components
+      await this.loadComponents();
+      
+      // Set up event handlers
+      this.setupEventHandlers();
+      
+      // Handle initial location
+      this.handleInitialLocation();
+      
+      console.log('✅ ES6Bootstrap: Legacy bootstrap sequence complete');
+      
+    } catch (error) {
+      console.error('🚨 ES6Bootstrap: Legacy bootstrap failed:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Wait for Leaflet to be ready (legacy compatibility)
+   */
+  async waitForLeaflet() {
+    return new Promise((resolve) => {
+      // Check if Leaflet is already available
+      if (typeof L !== 'undefined' && L.map) {
+        console.log('ES6Bootstrap: Leaflet already available');
+        resolve(true);
+        return;
+      }
+      
+      // Wait for Leaflet to load
+      const checkLeaflet = () => {
+        if (typeof L !== 'undefined' && L.map) {
+          console.log('ES6Bootstrap: Leaflet became available');
+          resolve(true);
+        } else {
+          // Check again in 100ms
+          setTimeout(checkLeaflet, 100);
+        }
+      };
+      
+      // Start checking
+      checkLeaflet();
+      
+      // Fallback timeout after 5 seconds
+      setTimeout(() => {
+        console.warn('ES6Bootstrap: Leaflet timeout, proceeding anyway');
+        resolve(false);
+      }, 5000);
+    });
+  }
+  
+  /**
+   * Initialize map (legacy compatibility)
+   */
+  initMap() {
+    console.log('ES6Bootstrap: Initializing map');
+    
+    // Check if Leaflet is available
+    if (typeof L === 'undefined') {
+      console.error('ES6Bootstrap: Leaflet (L) is not available');
+      return false;
+    }
+    
+    try {
+      // Create map instance with optimized settings
+      window.map = L.map('map', {
+        center: [-37.8136, 144.9631], // Melbourne
+        zoom: 8,
+        zoomSnap: 0.333,
+        zoomDelta: 0.333,
+        preferCanvas: true,
+        zoomControl: false,
+        attributionControl: false
+      });
+    
+      // Store default view for reset functionality
+      window.DEFAULT_VIEW = { 
+        center: window.map.getCenter(), 
+        zoom: window.map.getZoom() 
+      };
+      
+      // Add zoom control in better position for mobile
+      L.control.zoom({
+        position: 'topleft'
+      }).addTo(window.map);
+      
+      // Add base tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(window.map);
+      
+      // Create panes to control z-order (bottom -> top): LGA, CFA, SES, Ambulance, Police, FRV
+      const panes = [
+        ['lga', 400],
+        ['cfa', 410],
+        ['ses', 420],
+        ['ambulance', 430],
+        ['police', 440],
+        ['frv', 450]
+      ];
+      
+      panes.forEach(([name, z]) => {
+        window.map.createPane(name);
+        window.map.getPane(name).style.zIndex = String(z);
+      });
+      
+      // Set map reference for legacy compatibility
+      if (window.setMap) {
+        window.setMap(window.map);
+      }
+      
+      console.log('ES6Bootstrap: Map initialized successfully');
+      return true;
+      
+    } catch (error) {
+      console.error('ES6Bootstrap: Map initialization failed:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Set up UI components (legacy compatibility)
+   */
+  setupUI() {
+    console.log('ES6Bootstrap: Setting up UI components');
+    
+    // Set up collapsible sections
+    if (window.setupCollapsible) {
+      console.log('ES6Bootstrap: setupCollapsible is available, calling it...');
+      
+      // Start All Active collapsed; it will auto-expand when the first item is added
+      window.setupCollapsible('activeHeader', 'activeList', false);
+      window.setupCollapsible('showAllHeader', 'showAllList');
+      window.setupCollapsible('sesHeader', 'sesList');
+      window.setupCollapsible('lgaHeader', 'lgaList');
+      window.setupCollapsible('cfaHeader', 'cfaList');
+      window.setupCollapsible('policeHeader', 'policeList');
+      window.setupCollapsible('ambulanceHeader', 'ambulanceList');
+      window.setupCollapsible('frvHeader', 'frvList');
+      
+      console.log('ES6Bootstrap: All setupCollapsible calls completed');
+    } else {
+      console.error('ES6Bootstrap: setupCollapsible is NOT available!');
+    }
+    
+    // Initialize other UI managers
+    if (window.CollapsibleManager) {
+      window.CollapsibleManager.init();
+    }
+    
+    if (window.SearchManager) {
+      window.SearchManager.init();
+    }
+    
+    if (window.ActiveListManager) {
+      window.ActiveListManager.init();
+    }
+  }
+  
+  /**
+   * Load application components (legacy compatibility)
+   */
+  async loadComponents() {
+    console.log('ES6Bootstrap: Loading application components');
+    
+    try {
+      // Start preloading if available
+      if (window.startPreloading) {
+        window.startPreloading();
+      }
+      
+      // Load map data
+      if (window.PolygonLoader) {
+        await window.PolygonLoader.loadAllPolygons();
+      }
+      
+      // Load facility data
+      const facilityLoaders = [
+        'AmbulanceLoader',
+        'PoliceLoader', 
+        'SESFacilitiesLoader',
+        'CFAFacilitiesLoader'
+      ];
+      
+      for (const loaderName of facilityLoaders) {
+        if (window[loaderName]) {
+          try {
+            await window[loaderName].init();
+          } catch (error) {
+            console.warn(`ES6Bootstrap: Failed to load ${loaderName}:`, error);
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.error('ES6Bootstrap: Component loading failed:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Set up event handlers (legacy compatibility)
+   */
+  setupEventHandlers() {
+    console.log('ES6Bootstrap: Setting up event handlers');
+    
+    // Sidebar tool click handling
+    window.addEventListener('sidebar-tool-click', (ev) => {
+      const idx = ev?.detail?.index;
+      
+      if (idx === 3) { // Info
+        this.openInfo();
+      } else if (idx === 2) { // Docs
+        const hash = (location.hash || '').toString();
+        const m = hash.match(/^#docs\/(\w+)/);
+        const slug = m ? m[1] : 'intro';
+        this.openDocs(slug);
+      }
+    });
+    
+    // Overlay/close buttons and ESC handling
+    const iClose = document.getElementById('infoClose');
+    const dClose = document.getElementById('docsClose');
+    const iOv = document.getElementById('infoOverlay');
+    const dOv = document.getElementById('docsOverlay');
+    
+    if (iClose) iClose.addEventListener('click', () => this.closeInfo());
+    if (iOv) iOv.addEventListener('click', () => this.closeInfo());
+    if (dClose) dClose.addEventListener('click', () => this.closeDocs());
+    if (dOv) dOv.addEventListener('click', () => this.closeDocs());
+    
+    // ESC key handling
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.closeInfo();
+        this.closeDocs();
+      }
+    });
+  }
+  
+  /**
+   * Handle initial geolocation (legacy compatibility)
+   */
+  handleInitialLocation() {
+    // Only auto-locate if explicitly requested
+    if (localStorage.getItem('autoLocate') === 'true') {
+      this.requestUserLocation();
+    }
+  }
+  
+  /**
+   * Request user location (legacy compatibility)
+   */
+  async requestUserLocation() {
+    try {
+      console.log('ES6Bootstrap: Requesting user location');
+      
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000
+        });
+      });
+      
+      if (position && window.map) {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        // Add user location marker
+        L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: 'user-location-marker',
+            html: '📍',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          })
+        }).addTo(window.map).bindPopup('Your location');
+        
+        // Center map on user location
+        window.map.setView([lat, lng], 12);
+        
+        console.log('ES6Bootstrap: User location set:', { lat, lng });
+      }
+      
+    } catch (error) {
+      console.warn('ES6Bootstrap: Geolocation failed:', error);
+    }
+  }
+  
+  /**
+   * Modal and drawer management (legacy compatibility)
+   */
+  openDocs(slug = 'intro') {
+    fetch(`in_app_docs/${slug}.md`)
+      .then(response => response.text())
+      .then(content => {
+        const contentEl = document.getElementById('docsContent');
+        if (contentEl) {
+          // Basic markdown parsing (for simple content)
+          contentEl.innerHTML = this.parseMarkdown(content);
+        }
+        
+        const overlay = document.getElementById('docsOverlay');
+        const drawer = document.getElementById('docsDrawer');
+        if (overlay) overlay.hidden = false;
+        if (drawer) drawer.hidden = false;
+        
+        const closeBtn = document.getElementById('docsClose');
+        if (closeBtn) closeBtn.focus();
+      })
+      .catch(error => {
+        console.error('Failed to load documentation:', error);
+        const contentEl = document.getElementById('docsContent');
+        if (contentEl) {
+          contentEl.innerHTML = '<p>Failed to load documentation.</p>';
+        }
+      });
+  }
+  
+  closeDocs() {
+    const overlay = document.getElementById('docsOverlay');
+    const drawer = document.getElementById('docsDrawer');
+    if (overlay) overlay.hidden = true;
+    if (drawer) drawer.hidden = true;
+  }
+  
+  openInfo() {
+    const overlay = document.getElementById('infoOverlay');
+    const modal = document.getElementById('infoModal');
+    if (overlay) overlay.hidden = false;
+    if (modal) modal.hidden = false;
+    const closeBtn = document.getElementById('infoClose');
+    if (closeBtn) closeBtn.focus();
+  }
+  
+  closeInfo() {
+    const overlay = document.getElementById('infoOverlay');
+    const modal = document.getElementById('infoModal');
+    if (overlay) overlay.hidden = true;
+    if (modal) modal.hidden = true;
+  }
+  
+  /**
+   * Basic markdown parser for documentation (legacy compatibility)
+   */
+  parseMarkdown(content) {
+    return content
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+      .replace(/\*(.*)\*/gim, '<em>$1</em>')
+      .replace(/!\[([^\]]*)\]\(([^\)]*)\)/gim, '<img alt="$1" src="$2" />')
+      .replace(/\[([^\]]*)\]\(([^\)]*)\)/gim, '<a href="$2">$1</a>')
+      .replace(/`([^`]*)`/gim, '<code>$1</code>')
+      .replace(/^\* (.*$)/gim, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/gims, '<ul>$1</ul>')
+      .replace(/\n\n/gim, '</p><p>')
+      .replace(/^(?!<[h|u|l])/gim, '<p>')
+      .replace(/$/gim, '</p>');
+  }
+  
+  /**
    * Check if bootstrap is ready
    */
   isReady() {
@@ -797,4 +1180,27 @@ export const es6Bootstrap = new ES6Bootstrap();
 // Export for legacy compatibility
 if (typeof window !== 'undefined') {
   window.ES6Bootstrap = es6Bootstrap;
+  
+  // Legacy compatibility layer - proxy old bootstrap functions to new ES6 system
+  console.log('🔧 ES6Bootstrap: Setting up legacy compatibility layer');
+  
+  // Legacy bootstrap functions
+  window.AppBootstrap = {
+    init: () => {
+      console.log('🔄 Legacy AppBootstrap.init() called - delegating to ES6Bootstrap');
+      return es6Bootstrap.startLegacyBootstrap();
+    }
+  };
+  
+  // Legacy utility functions
+  window.debounce = debounce;
+  
+  // Legacy initialization
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => es6Bootstrap.init());
+  } else {
+    es6Bootstrap.init();
+  }
+  
+  console.log('✅ ES6Bootstrap: Legacy compatibility layer active');
 }
