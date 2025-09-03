@@ -10,6 +10,8 @@ describe('StateManager', () => {
 
   beforeEach(() => {
     stateManagerInstance = new StateManager();
+    // Reset state to ensure clean tests
+    stateManagerInstance.reset();
   });
 
   afterEach(() => {
@@ -203,12 +205,15 @@ describe('StateManager', () => {
       stateManagerInstance.persist('test-state');
 
       // Check if the persist event was emitted
-      expect(persistedListener).toHaveBeenCalledWith({
-        key: 'test-state',
-        data: expect.objectContaining({
-          testKey: 'testValue'
-        })
-      });
+      expect(persistedListener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          key: 'test-state',
+          data: expect.objectContaining({
+            testKey: 'testValue'
+          })
+        }),
+        'statePersisted'
+      );
     });
 
     test('should restore state from localStorage', () => {
@@ -322,6 +327,122 @@ describe('StateManager', () => {
       expect(namesByCategory).toHaveProperty('ambulance');
       expect(namesByCategory).toHaveProperty('police');
       expect(namesByCategory).toHaveProperty('frv');
+    });
+  });
+
+  describe('Bulk Operation Manager', () => {
+    test('should begin bulk operation', () => {
+      const result = stateManagerInstance.beginBulkOperation('test', 5);
+      expect(result).toBe(true);
+      expect(stateManagerInstance.get('isBulkOperation')).toBe(true);
+      expect(stateManagerInstance.get('bulkOperationType')).toBe('test');
+      expect(stateManagerInstance.get('bulkOperationItemCount')).toBe(5);
+    });
+
+    test('should not allow nested bulk operations', () => {
+      stateManagerInstance.beginBulkOperation('first');
+      const result = stateManagerInstance.beginBulkOperation('second');
+      expect(result).toBe(false);
+      expect(stateManagerInstance.get('bulkOperationType')).toBe('first');
+    });
+
+    test('should end bulk operation', () => {
+      stateManagerInstance.beginBulkOperation('test', 3);
+      stateManagerInstance.endBulkOperation();
+      
+      expect(stateManagerInstance.get('isBulkOperation')).toBe(false);
+      expect(stateManagerInstance.get('bulkOperationType')).toBeNull();
+      expect(stateManagerInstance.get('bulkOperationItemCount')).toBe(0);
+    });
+
+    test('should add pending labels during bulk operation', () => {
+      stateManagerInstance.beginBulkOperation('test');
+      
+      const labelData = { category: 'ses', key: 'test', labelName: 'Test' };
+      stateManagerInstance.addPendingLabel(labelData);
+      
+      const pendingLabels = stateManagerInstance.get('bulkOperationPendingLabels');
+      expect(pendingLabels).toHaveLength(1);
+      expect(pendingLabels[0]).toEqual(labelData);
+    });
+
+    test('should not add pending labels outside bulk operation', () => {
+      const labelData = { category: 'ses', key: 'test', labelName: 'Test' };
+      stateManagerInstance.addPendingLabel(labelData);
+      
+      const pendingLabels = stateManagerInstance.get('bulkOperationPendingLabels', []);
+      expect(pendingLabels).toHaveLength(0);
+    });
+
+    test('should mark active list update as pending', () => {
+      stateManagerInstance.beginBulkOperation('test');
+      stateManagerInstance.markActiveListUpdatePending();
+      
+      expect(stateManagerInstance.get('bulkOperationPendingActiveListUpdate')).toBe(true);
+    });
+
+    test('should get bulk operation status', () => {
+      stateManagerInstance.beginBulkOperation('test', 10);
+      
+      const status = stateManagerInstance.getBulkOperationStatus();
+      expect(status.isActive).toBe(true);
+      expect(status.operationType).toBe('test');
+      expect(status.itemCount).toBe(10);
+      expect(status.duration).toBeGreaterThanOrEqual(0);
+    });
+
+    test('should check if bulk operation is active', () => {
+      expect(stateManagerInstance.isBulkOperationActive()).toBe(false);
+      
+      stateManagerInstance.beginBulkOperation('test');
+      expect(stateManagerInstance.isBulkOperationActive()).toBe(true);
+      
+      stateManagerInstance.endBulkOperation();
+      expect(stateManagerInstance.isBulkOperationActive()).toBe(false);
+    });
+  });
+
+  describe('Legacy Compatibility Layer', () => {
+    test('should expose legacy window globals', () => {
+      // These should be available after StateManager loads
+      expect(window.featureLayers).toBeDefined();
+      expect(window.namesByCategory).toBeDefined();
+      expect(window.nameToKey).toBeDefined();
+      expect(window.emphasised).toBeDefined();
+      expect(window.nameLabelMarkers).toBeDefined();
+      expect(window.pendingLabels).toBeDefined();
+      expect(window.activeListFilter).toBeDefined();
+      expect(window.isBulkOperation).toBeDefined();
+    });
+
+    test('should expose legacy facility coordinate variables', () => {
+      expect(window.sesFacilityCoords).toBeDefined();
+      expect(window.sesFacilityMarkers).toBeDefined();
+      expect(window.cfaFacilityCoords).toBeDefined();
+    });
+
+    test('should expose legacy map functions', () => {
+      expect(typeof window.setMap).toBe('function');
+      expect(typeof window.getMap).toBe('function');
+    });
+
+    test('should expose legacy filter function', () => {
+      expect(typeof window.setActiveListFilter).toBe('function');
+    });
+
+    test('should expose legacy BulkOperationManager', () => {
+      expect(window.BulkOperationManager).toBeDefined();
+      expect(typeof window.BulkOperationManager.begin).toBe('function');
+      expect(typeof window.BulkOperationManager.end).toBe('function');
+      expect(typeof window.BulkOperationManager.isActive).toBe('function');
+      expect(typeof window.BulkOperationManager.addPendingLabel).toBe('function');
+      expect(typeof window.BulkOperationManager.markActiveListUpdatePending).toBe('function');
+      expect(typeof window.BulkOperationManager.getStatus).toBe('function');
+    });
+
+    test('should expose legacy bulk operation functions', () => {
+      expect(typeof window.beginBulkOperation).toBe('function');
+      expect(typeof window.endBulkOperation).toBe('function');
     });
   });
 });
