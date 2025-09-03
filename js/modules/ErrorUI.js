@@ -1,435 +1,319 @@
 /**
- * @module modules/ErrorUI
- * Modern ES6-based error UI and notification system
- * Replaces legacy error display functions with a reactive, event-driven system
+ * @fileoverview Error UI utilities for sidebar error messaging and online/offline notifications
+ * @module ErrorUI
  */
 
-import { globalEventBus } from './EventBus.js';
-import { stateManager } from './StateManager.js';
+import { logger } from './StructuredLogger.js';
 
 /**
- * @class ErrorUI
- * Manages error display, notifications, and offline status
+ * Error UI utility for displaying dismissible error messages and handling online/offline states
  */
 export class ErrorUI {
   constructor() {
-    this.initialized = false;
-    this.errorContainer = null;
-    this.activeErrors = new Map(); // id -> error element
-    this.offlineStatus = false;
-    this.notificationQueue = [];
+    this.logger = logger.createChild({ module: 'ErrorUI' });
+    this.errorMessages = new Set(); // Track active error messages
+    this.isOfflineListenerSetup = false;
     
-    // Bind methods
-    this.init = this.init.bind(this);
-    this.showError = this.showError.bind(this);
-    this.hideError = this.hideError.bind(this);
-    this.clearAllErrors = this.clearAllErrors.bind(this);
-    this.showNotification = this.showNotification.bind(this);
-    this.isOffline = this.isOffline.bind(this);
-    this.setupOfflineListener = this.setupOfflineListener.bind(this);
-    this.getStatus = this.getStatus.bind(this);
-    
-    console.log('⚠️ ErrorUI: Error UI system initialized');
+    this.logger.info('ErrorUI initialized');
   }
-  
+
   /**
-   * Initialize the error UI system
+   * Show a dismissible error message in the sidebar
+   * @param {string} message - Error message to display
+   * @param {Object} options - Display options
+   * @param {string} options.type - Error type ('error', 'warning', 'info')
+   * @param {number} options.autoHide - Auto-hide after milliseconds (0 = no auto-hide)
+   * @param {string} options.id - Unique ID for the message (prevents duplicates)
    */
-  async init() {
-    if (this.initialized) {
-      console.warn('ErrorUI: Already initialized');
+  showSidebarError(message, options = {}) {
+    const {
+      type = 'error',
+      autoHide = 0,
+      id = null
+    } = options;
+
+    const sidebar = document.getElementById('layerMenu');
+    if (!sidebar) {
+      this.logger.warn('Sidebar element not found, cannot display error message', {
+        message,
+        type
+      });
       return;
     }
+
+    // Prevent duplicate messages if ID is provided
+    if (id && this.errorMessages.has(id)) {
+      this.logger.debug('Duplicate error message prevented', { id, message });
+      return;
+    }
+
+    const timer = this.logger.time('error-message-display');
     
     try {
-      console.log('🔧 ErrorUI: Starting error UI initialization...');
+      const errMsg = document.createElement('div');
+      errMsg.className = `error-message error-message--${type}`;
       
-      // Wait for DOM to be ready
-      await this.waitForDOM();
+      // Set styles based on type
+      const styles = this.getErrorStyles(type);
+      Object.assign(errMsg.style, styles);
       
-      // Set up error container
-      this.setupErrorContainer();
+      errMsg.textContent = message;
       
-      // Set up offline detection
-      this.setupOfflineListener();
+      // Add close button
+      const closeBtn = this.createCloseButton(type);
+      closeBtn.onclick = () => this.removeErrorMessage(errMsg, id);
+      errMsg.appendChild(closeBtn);
       
-      // Set up event listeners
-      this.setupEventListeners();
+      // Insert at the top of sidebar
+      sidebar.insertBefore(errMsg, sidebar.firstChild);
       
-      this.initialized = true;
-      console.log('✅ ErrorUI: Error UI system ready');
+      // Track the message
+      if (id) {
+        this.errorMessages.add(id);
+        errMsg.dataset.errorId = id;
+      }
+      
+      // Auto-hide if specified
+      if (autoHide > 0) {
+        setTimeout(() => {
+          this.removeErrorMessage(errMsg, id);
+        }, autoHide);
+      }
+      
+      timer.end({ 
+        message,
+        type,
+        autoHide,
+        hasId: !!id,
+        success: true 
+      });
+      
+      this.logger.info('Error message displayed', {
+        message,
+        type,
+        autoHide,
+        id
+      });
       
     } catch (error) {
-      console.error('🚨 ErrorUI: Failed to initialize:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Wait for DOM to be ready
-   */
-  async waitForDOM() {
-    if (document.readyState === 'loading') {
-      return new Promise(resolve => {
-        document.addEventListener('DOMContentLoaded', resolve, { once: true });
+      timer.end({ 
+        message,
+        type,
+        error: error.message,
+        success: false 
+      });
+      
+      this.logger.error('Failed to display error message', {
+        error: error.message,
+        message,
+        type,
+        stack: error.stack
       });
     }
   }
-  
+
   /**
-   * Set up error container in sidebar
+   * Remove an error message from the sidebar
+   * @param {HTMLElement} errorElement - The error message element to remove
+   * @param {string} id - The error message ID
    */
-  setupErrorContainer() {
-    // Try to find existing sidebar
-    const sidebar = document.getElementById('layerMenu') || document.querySelector('.sidebar');
-    if (!sidebar) {
-      console.warn('⚠️ ErrorUI: Sidebar not found, will create error container when available');
-      return;
-    }
-    
-    // Create error container
-    this.errorContainer = document.createElement('div');
-    this.errorContainer.id = 'errorContainer';
-    this.errorContainer.className = 'error-container';
-    this.errorContainer.style.cssText = `
-      margin: 8px 0;
-      max-height: 200px;
-      overflow-y: auto;
-    `;
-    
-    // Insert at top of sidebar
-    sidebar.insertBefore(this.errorContainer, sidebar.firstChild);
-    
-    console.log('✅ ErrorUI: Error container created');
-  }
-  
-  /**
-   * Set up offline detection and listeners
-   */
-  setupOfflineListener() {
-    // Check initial online status
-    this.offlineStatus = !navigator.onLine;
-    stateManager.set('offlineStatus', this.offlineStatus);
-    
-    // Listen for online/offline events
-    window.addEventListener('offline', () => {
-      this.offlineStatus = true;
-      stateManager.set('offlineStatus', true);
-      this.showNotification('You are offline. Map data may not load.', 'warning');
-      globalEventBus.emit('app:offline');
-    });
-    
-    window.addEventListener('online', () => {
-      this.offlineStatus = false;
-      stateManager.set('offlineStatus', false);
-      this.showNotification('You are back online. Try reloading the map.', 'success');
-      globalEventBus.emit('app:online');
-    });
-    
-    console.log('✅ ErrorUI: Offline detection configured');
-  }
-  
-  /**
-   * Set up event listeners
-   */
-  setupEventListeners() {
-    // Listen for error display requests
-    globalEventBus.on('error:show', ({ message, type = 'error', duration = 5000 }) => {
-      this.showError(message, type, duration);
-    });
-    
-    // Listen for error hide requests
-    globalEventBus.on('error:hide', ({ id }) => {
-      this.hideError(id);
-    });
-    
-    // Listen for notification requests
-    globalEventBus.on('notification:show', ({ message, type = 'info', duration = 3000 }) => {
-      this.showNotification(message, type, duration);
-    });
-    
-    console.log('✅ ErrorUI: Event listeners configured');
-  }
-  
-  /**
-   * Show an error message in the sidebar
-   * @param {string} message - Error message to display
-   * @param {string} type - Error type: 'error', 'warning', 'info'
-   * @param {number} duration - Auto-hide duration in milliseconds (0 = no auto-hide)
-   * @returns {string} - Error ID for later removal
-   */
-  showError(message, type = 'error', duration = 5000) {
+  removeErrorMessage(errorElement, id = null) {
     try {
-      // Ensure error container exists
-      if (!this.errorContainer) {
-        this.setupErrorContainer();
-        if (!this.errorContainer) {
-          console.warn('⚠️ ErrorUI: Cannot show error - no container available');
-          return null;
-        }
-      }
-      
-      // Create unique error ID
-      const errorId = `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Create error element
-      const errorElement = document.createElement('div');
-      errorElement.id = errorId;
-      errorElement.className = `error-message error-${type}`;
-      
-      // Set styling based on type
-      const styles = this.getErrorStyles(type);
-      errorElement.style.cssText = styles;
-      
-      // Set content
-      errorElement.innerHTML = `
-        <span class="error-icon">${this.getErrorIcon(type)}</span>
-        <span class="error-text">${message}</span>
-        <button class="error-close" title="Dismiss">×</button>
-      `;
-      
-      // Add close button handler
-      const closeBtn = errorElement.querySelector('.error-close');
-      closeBtn.addEventListener('click', () => this.hideError(errorId));
-      
-      // Add to container
-      this.errorContainer.appendChild(errorElement);
-      
-      // Store reference
-      this.activeErrors.set(errorId, errorElement);
-      
-      // Auto-hide if duration specified
-      if (duration > 0) {
-        setTimeout(() => this.hideError(errorId), duration);
-      }
-      
-      // Emit error shown event
-      globalEventBus.emit('error:shown', { id: errorId, message, type });
-      
-      console.log(`✅ ErrorUI: Error displayed (${type}): ${message}`);
-      
-      return errorId;
-      
-    } catch (error) {
-      console.error('🚨 ErrorUI: Failed to show error:', error);
-      return null;
-    }
-  }
-  
-  /**
-   * Hide a specific error message
-   * @param {string} errorId - Error ID to hide
-   */
-  hideError(errorId) {
-    try {
-      const errorElement = this.activeErrors.get(errorId);
       if (errorElement && errorElement.parentNode) {
-        errorElement.parentNode.removeChild(errorElement);
-        this.activeErrors.delete(errorId);
+        errorElement.remove();
         
-        // Emit error hidden event
-        globalEventBus.emit('error:hidden', { id: errorId });
+        if (id) {
+          this.errorMessages.delete(id);
+        }
         
-        console.log(`✅ ErrorUI: Error hidden: ${errorId}`);
+        this.logger.debug('Error message removed', { id });
       }
     } catch (error) {
-      console.error('🚨 ErrorUI: Failed to hide error:', error);
+      this.logger.error('Failed to remove error message', {
+        error: error.message,
+        id,
+        stack: error.stack
+      });
     }
   }
-  
+
   /**
-   * Clear all active error messages
+   * Clear all error messages from the sidebar
    */
   clearAllErrors() {
-    try {
-      this.activeErrors.forEach((element, id) => {
-        this.hideError(id);
-      });
-      
-      console.log('✅ ErrorUI: All errors cleared');
-    } catch (error) {
-      console.error('🚨 ErrorUI: Failed to clear all errors:', error);
-    }
+    const sidebar = document.getElementById('layerMenu');
+    if (!sidebar) return;
+
+    const errorMessages = sidebar.querySelectorAll('.error-message');
+    errorMessages.forEach(msg => msg.remove());
+    
+    this.errorMessages.clear();
+    
+    this.logger.info('All error messages cleared', {
+      clearedCount: errorMessages.length
+    });
   }
-  
+
   /**
-   * Show a notification message
-   * @param {string} message - Notification message
-   * @param {string} type - Notification type: 'success', 'info', 'warning'
-   * @param {number} duration - Auto-hide duration in milliseconds
-   */
-  showNotification(message, type = 'info', duration = 3000) {
-    try {
-      // Create notification element
-      const notification = document.createElement('div');
-      notification.className = `notification notification-${type}`;
-      
-      // Set styling
-      const styles = this.getNotificationStyles(type);
-      notification.style.cssText = styles;
-      
-      // Set content
-      notification.innerHTML = `
-        <span class="notification-icon">${this.getNotificationIcon(type)}</span>
-        <span class="notification-text">${message}</span>
-      `;
-      
-      // Add to body
-      document.body.appendChild(notification);
-      
-      // Auto-hide
-      setTimeout(() => {
-        if (notification.parentNode) {
-          notification.parentNode.removeChild(notification);
-        }
-      }, duration);
-      
-      // Emit notification shown event
-      globalEventBus.emit('notification:shown', { message, type });
-      
-      console.log(`✅ ErrorUI: Notification displayed (${type}): ${message}`);
-      
-    } catch (error) {
-      console.error('🚨 ErrorUI: Failed to show notification:', error);
-    }
-  }
-  
-  /**
-   * Check if application is offline
-   * @returns {boolean} - True if offline
+   * Check if the application is currently offline
+   * @returns {boolean} True if offline, false if online
    */
   isOffline() {
-    return this.offlineStatus;
+    const offline = !navigator.onLine;
+    
+    this.logger.debug('Offline status checked', {
+      isOffline: offline,
+      navigatorOnline: navigator.onLine
+    });
+    
+    return offline;
   }
-  
+
   /**
-   * Get error styles based on type
+   * Setup online/offline event listeners
+   */
+  setupOfflineListener() {
+    if (this.isOfflineListenerSetup) {
+      this.logger.debug('Offline listener already setup');
+      return;
+    }
+
+    try {
+      window.addEventListener('offline', () => {
+        this.logger.info('Application went offline');
+        this.showSidebarError('You are offline. Map data may not load.', {
+          type: 'warning',
+          id: 'offline-notification',
+          autoHide: 0
+        });
+      });
+
+      window.addEventListener('online', () => {
+        this.logger.info('Application came back online');
+        this.showSidebarError('You are back online. Try reloading the map.', {
+          type: 'info',
+          id: 'online-notification',
+          autoHide: 5000
+        });
+      });
+
+      this.isOfflineListenerSetup = true;
+      
+      this.logger.info('Offline listener setup completed');
+      
+    } catch (error) {
+      this.logger.error('Failed to setup offline listener', {
+        error: error.message,
+        stack: error.stack
+      });
+    }
+  }
+
+  /**
+   * Get error message styles based on type
    * @param {string} type - Error type
-   * @returns {string} - CSS styles
+   * @returns {Object} Style object
    */
   getErrorStyles(type) {
-    const baseStyles = `
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 6px;
-      border: 1px solid;
-      position: relative;
-      font-size: 14px;
-      line-height: 1.4;
-    `;
-    
+    const baseStyles = {
+      borderRadius: '6px',
+      padding: '8px',
+      margin: '8px 0',
+      position: 'relative',
+      fontSize: '14px',
+      fontWeight: '500'
+    };
+
     const typeStyles = {
-      error: `
-        background: #fef2f2;
-        color: #dc2626;
-        border-color: #fecaca;
-      `,
-      warning: `
-        background: #fffbeb;
-        color: #d97706;
-        border-color: #fed7aa;
-      `,
-      info: `
-        background: #eff6ff;
-        color: #2563eb;
-        border-color: #bfdbfe;
-      `
+      error: {
+        color: '#d32f2f',
+        background: '#fff4f4',
+        border: '1px solid #d32f2f'
+      },
+      warning: {
+        color: '#ed6c02',
+        background: '#fff8e1',
+        border: '1px solid #ed6c02'
+      },
+      info: {
+        color: '#1976d2',
+        background: '#e3f2fd',
+        border: '1px solid #1976d2'
+      }
+    };
+
+    return { ...baseStyles, ...typeStyles[type] };
+  }
+
+  /**
+   * Create a close button for error messages
+   * @param {string} type - Error type for styling
+   * @returns {HTMLElement} Close button element
+   */
+  createCloseButton(type) {
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '×';
+    closeBtn.title = 'Dismiss';
+    closeBtn.className = 'error-message__close';
+    
+    const buttonStyles = {
+      position: 'absolute',
+      top: '4px',
+      right: '8px',
+      background: 'none',
+      border: 'none',
+      fontSize: '1.2em',
+      cursor: 'pointer',
+      padding: '0',
+      width: '20px',
+      height: '20px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    };
+
+    // Set color based on type
+    const colors = {
+      error: '#d32f2f',
+      warning: '#ed6c02',
+      info: '#1976d2'
     };
     
-    return baseStyles + (typeStyles[type] || typeStyles.error);
-  }
-  
-  /**
-   * Get notification styles based on type
-   * @param {string} type - Notification type
-   * @returns {string} - CSS styles
-   */
-  getNotificationStyles(type) {
-    const baseStyles = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 12px 16px;
-      border-radius: 8px;
-      border: 1px solid;
-      font-size: 14px;
-      font-weight: 500;
-      z-index: 10000;
-      max-width: 400px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      animation: slideIn 0.3s ease-out;
-    `;
+    buttonStyles.color = colors[type] || colors.error;
+    Object.assign(closeBtn.style, buttonStyles);
     
-    const typeStyles = {
-      success: `
-        background: #f0fdf4;
-        color: #166534;
-        border-color: #bbf7d0;
-      `,
-      info: `
-        background: #eff6ff;
-        color: #1d4ed8;
-        border-color: #bfdbfe;
-      `,
-      warning: `
-        background: #fffbeb;
-        color: #d97706;
-        border-color: #fed7aa;
-      `
-    };
-    
-    return baseStyles + (typeStyles[type] || typeStyles.info);
+    return closeBtn;
   }
-  
+
   /**
-   * Get error icon based on type
-   * @param {string} type - Error type
-   * @returns {string} - Icon HTML
+   * Show a success message in the sidebar
+   * @param {string} message - Success message to display
+   * @param {Object} options - Display options
    */
-  getErrorIcon(type) {
-    const icons = {
-      error: '🚨',
-      warning: '⚠️',
-      info: 'ℹ️'
-    };
-    return icons[type] || icons.error;
+  showSuccessMessage(message, options = {}) {
+    this.showSidebarError(message, {
+      ...options,
+      type: 'info'
+    });
   }
-  
+
   /**
-   * Get notification icon based on type
-   * @param {string} type - Notification type
-   * @returns {string} - Icon HTML
+   * Show a warning message in the sidebar
+   * @param {string} message - Warning message to display
+   * @param {Object} options - Display options
    */
-  getNotificationIcon(type) {
-    const icons = {
-      success: '✅',
-      info: 'ℹ️',
-      warning: '⚠️'
-    };
-    return icons[type] || icons.info;
-  }
-  
-  /**
-   * Get error UI status
-   */
-  getStatus() {
-    return {
-      initialized: this.initialized,
-      offlineStatus: this.offlineStatus,
-      activeErrors: this.activeErrors.size,
-      errorContainer: !!this.errorContainer,
-      notificationQueue: this.notificationQueue.length
-    };
+  showWarningMessage(message, options = {}) {
+    this.showSidebarError(message, {
+      ...options,
+      type: 'warning'
+    });
   }
 }
 
-// Export singleton instance
+// Create and export a singleton instance
 export const errorUI = new ErrorUI();
 
-// Export for global access and legacy compatibility
-if (typeof window !== 'undefined') {
-  window.errorUI = errorUI;
-  window.showSidebarError = (message, duration = 5000) => errorUI.showError(message, 'error', duration);
-  window.isOffline = () => errorUI.isOffline();
-  window.setupOfflineListener = () => errorUI.setupOfflineListener();
-}
+// Legacy compatibility functions for backward compatibility
+export const showSidebarError = (message, options) => errorUI.showSidebarError(message, options);
+export const isOffline = () => errorUI.isOffline();
+export const setupOfflineListener = () => errorUI.setupOfflineListener();

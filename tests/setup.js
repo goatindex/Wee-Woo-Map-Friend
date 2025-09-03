@@ -139,5 +139,7 @@ global.window = {
 afterEach(() => {
   jest.clearAllMocks();
   document.body.innerHTML = '';
-  window.location.hash = '';
+  if (typeof window !== 'undefined' && window.location) {
+    window.location.hash = '';
+  }
 });

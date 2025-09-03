@@ -5,6 +5,7 @@
  */
 
 import { EventBus } from './EventBus.js';
+import { logger } from './StructuredLogger.js';
 
 /**
  * @class StateManager
@@ -14,6 +15,9 @@ import { EventBus } from './EventBus.js';
 export class StateManager extends EventBus {
   constructor() {
     super();
+    
+    // Create module-specific logger
+    this.logger = logger.createChild({ module: 'StateManager' });
     
     // Internal state storage
     this._state = {};
@@ -64,7 +68,7 @@ export class StateManager extends EventBus {
               try {
                 watcher(value, oldValue);
               } catch (error) {
-                console.error(`StateManager: Error in watcher for '${property}':`, error);
+                this.logger.error(`Error in watcher for '${property}'`, { error: error.message, stack: error.stack });
               }
             });
           }
@@ -156,7 +160,7 @@ export class StateManager extends EventBus {
       this._state.errorState = null;
     }
     
-    console.log('✅ StateManager: Legacy state migration complete');
+    this.logger.info('Legacy state migration complete');
   }
   
   /**
@@ -166,7 +170,7 @@ export class StateManager extends EventBus {
   _setupLegacyCompatibility() {
     if (typeof window === 'undefined') return;
     
-    console.log('🔧 StateManager: Setting up legacy compatibility layer');
+    this.logger.debug('Setting up legacy compatibility layer');
     
     // Legacy state variables - proxy to StateManager
     const legacyStateVars = [
@@ -231,7 +235,7 @@ export class StateManager extends EventBus {
     window.beginBulkOperation = () => this.beginBulkOperation('legacy');
     window.endBulkOperation = () => this.endBulkOperation();
     
-    console.log('✅ StateManager: Legacy compatibility layer active');
+    this.logger.info('Legacy compatibility layer active');
   }
   
   /**
@@ -426,7 +430,7 @@ export class StateManager extends EventBus {
       localStorage.setItem(key, JSON.stringify(dataToStore));
       this.emit('statePersisted', { key, data: dataToStore });
     } catch (error) {
-      console.error('StateManager: Failed to persist state:', error);
+      this.logger.error('Failed to persist state', { error: error.message, stack: error.stack });
     }
   }
   
@@ -455,7 +459,7 @@ export class StateManager extends EventBus {
         this.emit('stateRestored', { key, data });
       }
     } catch (error) {
-      console.error('StateManager: Failed to restore state:', error);
+      this.logger.error('Failed to restore state', { error: error.message, stack: error.stack });
     }
   }
   
@@ -485,7 +489,7 @@ export class StateManager extends EventBus {
    */
   beginBulkOperation(operationType, itemCount = 0) {
     if (this.get('isBulkOperation')) {
-      console.warn('⚠️ Bulk operation already active, nested calls not supported');
+      this.logger.warn('Bulk operation already active, nested calls not supported');
       return false;
     }
     
@@ -496,7 +500,7 @@ export class StateManager extends EventBus {
     this.set('bulkOperationPendingLabels', []);
     this.set('bulkOperationPendingActiveListUpdate', false);
     
-    console.log(`🚀 Bulk operation started: ${operationType} (${itemCount} items)`);
+    this.logger.info(`Bulk operation started: ${operationType}`, { itemCount });
     this.emit('bulkOperation:started', { operationType, itemCount });
     return true;
   }
@@ -506,7 +510,7 @@ export class StateManager extends EventBus {
    */
   endBulkOperation() {
     if (!this.get('isBulkOperation')) {
-      console.warn('⚠️ No bulk operation active to end');
+      this.logger.warn('No bulk operation active to end');
       return;
     }
     
@@ -514,18 +518,18 @@ export class StateManager extends EventBus {
     const startTime = this.get('bulkOperationStartTime');
     const duration = Date.now() - startTime;
     
-    console.log(`✅ Bulk operation completed: ${operationType} in ${duration}ms`);
+    this.logger.info(`Bulk operation completed: ${operationType}`, { duration });
     
     // Process deferred labels first
     const pendingLabels = this.get('bulkOperationPendingLabels', []);
     if (pendingLabels.length > 0) {
-      console.log(`📝 Processing ${pendingLabels.length} deferred labels`);
+      this.logger.debug(`Processing ${pendingLabels.length} deferred labels`);
       this._processDeferredLabels(pendingLabels);
     }
     
     // Process active list update if pending
     if (this.get('bulkOperationPendingActiveListUpdate')) {
-      console.log(`🔄 Processing pending active list update`);
+      this.logger.debug('Processing pending active list update');
       this._processActiveListUpdate();
     }
     
@@ -554,7 +558,7 @@ export class StateManager extends EventBus {
    */
   addPendingLabel(labelData) {
     if (!this.get('isBulkOperation')) {
-      console.warn('⚠️ Cannot add pending label outside of bulk operation');
+      this.logger.warn('Cannot add pending label outside of bulk operation');
       return;
     }
     
@@ -568,7 +572,7 @@ export class StateManager extends EventBus {
    */
   markActiveListUpdatePending() {
     if (!this.get('isBulkOperation')) {
-      console.warn('⚠️ Cannot mark active list update pending outside of bulk operation');
+      this.logger.warn('Cannot mark active list update pending outside of bulk operation');
       return;
     }
     this.set('bulkOperationPendingActiveListUpdate', true);
@@ -612,7 +616,7 @@ export class StateManager extends EventBus {
       totalBatches += Math.ceil(categoryLabels.length / batchSize);
     });
     
-    console.log(`📦 Processing ${labels.length} labels in ${totalBatches} batches`);
+    this.logger.debug(`Processing ${labels.length} labels in ${totalBatches} batches`);
     
     for (let catIndex = 0; catIndex < categoryKeys.length; catIndex++) {
       const category = categoryKeys[catIndex];
@@ -646,7 +650,7 @@ export class StateManager extends EventBus {
       }
     }
     
-    console.log(`✅ All deferred labels processed`);
+    this.logger.info('All deferred labels processed');
   }
   
   /**
@@ -655,10 +659,10 @@ export class StateManager extends EventBus {
    */
   _processActiveListUpdate() {
     if (window.updateActiveList) {
-      console.log(`🔄 Calling updateActiveList after bulk operation`);
+      this.logger.debug('Calling updateActiveList after bulk operation');
       window.updateActiveList();
     } else {
-      console.warn(`⚠️ updateActiveList function not found`);
+      this.logger.warn('updateActiveList function not found');
     }
   }
   

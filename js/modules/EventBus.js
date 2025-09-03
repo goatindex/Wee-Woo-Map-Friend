@@ -4,6 +4,8 @@
  * Provides publish/subscribe pattern for loose coupling between components
  */
 
+import { logger } from './StructuredLogger.js';
+
 /**
  * @class EventBus
  * Simple event emitter implementation for component communication
@@ -13,6 +15,9 @@ export class EventBus {
   constructor() {
     this.events = new Map();
     this.maxListeners = 50; // Prevent memory leaks
+    
+    // Create module-specific logger
+    this.logger = logger.createChild({ module: 'EventBus' });
   }
   
   /**
@@ -37,7 +42,7 @@ export class EventBus {
     
     // Check max listeners limit
     if (listeners.length >= this.maxListeners) {
-      console.warn(`EventBus: Maximum listeners (${this.maxListeners}) reached for event '${event}'`);
+      this.logger.warn(`Maximum listeners (${this.maxListeners}) reached for event '${event}'`);
     }
     
     const listenerConfig = {
@@ -126,7 +131,7 @@ export class EventBus {
             toRemove.push(listenerConfig.id);
           }
         } catch (error) {
-          console.error(`EventBus: Error in listener for '${event}':`, error);
+          this.logger.error(`Error in listener for '${event}'`, { error: error.message, stack: error.stack });
         }
       }
       
@@ -149,7 +154,7 @@ export class EventBus {
           
           return result;
         } catch (error) {
-          console.error(`EventBus: Error in async listener for '${event}':`, error);
+          this.logger.error(`Error in async listener for '${event}'`, { error: error.message, stack: error.stack });
           return null;
         }
       })

@@ -7,6 +7,7 @@
 // Core modules only - no circular dependencies
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
+import { logger } from './StructuredLogger.js';
 
 /**
  * @class ES6Bootstrap
@@ -19,6 +20,9 @@ export class ES6Bootstrap {
     this.migrationPhase = 'starting';
     this.initStartTime = performance.now();
     
+    // Create module-specific logger
+    this.logger = logger.createChild({ module: 'ES6Bootstrap' });
+    
     // Bind methods
     this.init = this.init.bind(this);
     this.migrateLegacyBootstrap = this.migrateLegacyBootstrap.bind(this);
@@ -28,7 +32,7 @@ export class ES6Bootstrap {
     // Module cache for dynamic imports
     this.modules = new Map();
     
-    console.log('🚀 ES6Bootstrap: Modern bootstrap system initialized');
+    this.logger.info('Modern bootstrap system initialized');
   }
   
   /**
@@ -42,7 +46,7 @@ export class ES6Bootstrap {
     }
     
     try {
-      console.log(`📦 ES6Bootstrap: Loading module ${moduleName}...`);
+      this.logger.debug(`Loading module ${moduleName}...`);
       
       let module;
       switch (moduleName) {
@@ -122,11 +126,11 @@ export class ES6Bootstrap {
           throw new Error(`Unknown module: ${moduleName}`);
       }
       
-      console.log(`✅ ES6Bootstrap: Module ${moduleName} loaded successfully`);
+      this.logger.debug(`Module ${moduleName} loaded successfully`);
       return this.modules.get(moduleName);
       
     } catch (error) {
-      console.error(`🚨 ES6Bootstrap: Failed to load module ${moduleName}:`, error);
+      this.logger.error(`Failed to load module ${moduleName}`, { error: error.message, stack: error.stack });
       throw error;
     }
   }
@@ -136,12 +140,12 @@ export class ES6Bootstrap {
    */
   async init() {
     if (this.initialized) {
-      console.warn('ES6Bootstrap: Already initialized');
+      this.logger.warn('Already initialized');
       return;
     }
     
     try {
-      console.log('🔧 ES6Bootstrap: Starting modern bootstrap initialization...');
+      this.logger.info('Starting modern bootstrap initialization...');
       
       // Phase 1: Wait for DOM and basic dependencies
       await this.waitForDOM();
@@ -182,13 +186,13 @@ export class ES6Bootstrap {
       this.migrationPhase = 'complete';
       
       const initTime = performance.now() - this.initStartTime;
-      console.log(`✅ ES6Bootstrap: Modern bootstrap complete (${initTime.toFixed(2)}ms)`);
+      this.logger.info(`Modern bootstrap complete`, { duration: initTime });
       
       // Emit completion event
       globalEventBus.emit('es6bootstrap:complete', { bootstrap: this });
       
     } catch (error) {
-      console.error('🚨 ES6Bootstrap: Modern bootstrap failed:', error);
+      this.logger.error('Modern bootstrap failed', { error: error.message, stack: error.stack });
       this.handleError(error);
       throw error;
     }
