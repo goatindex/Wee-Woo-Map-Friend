@@ -415,6 +415,110 @@ export class DataLoadingOrchestrator {
   }
   
   /**
+   * Legacy preloader functionality - maintains backward compatibility
+   */
+  async startPreloading() {
+    console.log('🔄 DataLoadingOrchestrator: Starting legacy preloading sequence...');
+    
+    // Show loading spinner
+    this.showLoadingSpinner();
+    
+    // Define preload order (matching legacy preloader.js)
+    const preloadOrder = [
+      { name: 'SES Areas', category: 'ses', url: 'geojson/ses.geojson' },
+      { name: 'SES Facilities', category: 'sesFacilities', loader: () => window.loadSesFacilities() },
+      { name: 'SES Units', category: 'sesUnits', loader: () => window.loadSesUnits() },
+      { name: 'LGA Areas', category: 'lga', url: 'geojson/LGAs.geojson' },
+      { name: 'CFA Areas', category: 'cfa', url: 'geojson/cfa.geojson' },
+      { name: 'CFA Facilities', category: 'cfaFacilities', loader: () => window.loadCfaFacilities() },
+      { name: 'Ambulance Stations', category: 'ambulance', url: 'geojson/ambulance.geojson' },
+      { name: 'FRV Boundaries', category: 'frv', url: 'geojson/frv.geojson' }
+    ];
+    
+    // Load each item in sequence with progress updates
+    for (let i = 0; i < preloadOrder.length; i++) {
+      const { name, category, url, loader } = preloadOrder[i];
+      
+      try {
+        // Update spinner text
+        this.updateLoadingSpinner(`Loading ${name}...`);
+        
+        if (loader) {
+          // Use legacy loader function
+          await loader();
+        } else if (url) {
+          // Use orchestrator to load category
+          await this.loadCategory(category);
+        }
+        
+        console.log(`✅ DataLoadingOrchestrator: ${name} loaded successfully`);
+        
+        // Small delay between items (matching legacy behavior)
+        if (i < preloadOrder.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        
+      } catch (error) {
+        console.error(`❌ DataLoadingOrchestrator: Failed to load ${name}:`, error);
+        // Continue with next item even if one fails
+      }
+    }
+    
+    // Hide loading spinner
+    this.hideLoadingSpinner();
+    
+    console.log('✅ DataLoadingOrchestrator: Legacy preloading sequence complete');
+  }
+  
+  /**
+   * Show loading spinner (legacy compatibility)
+   */
+  showLoadingSpinner() {
+    // Remove existing spinner if any
+    this.hideLoadingSpinner();
+    
+    // Create spinner element
+    const spinner = document.createElement('div');
+    spinner.id = 'preload-spinner';
+    spinner.innerText = 'Loading map data...';
+    spinner.style.cssText = `
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #fff;
+      padding: 8px;
+      border-radius: 4px;
+      z-index: 9999;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      border: 1px solid #ddd;
+    `;
+    
+    document.body.appendChild(spinner);
+  }
+  
+  /**
+   * Update loading spinner text
+   */
+  updateLoadingSpinner(text) {
+    const spinner = document.getElementById('preload-spinner');
+    if (spinner) {
+      spinner.innerText = text;
+    }
+  }
+  
+  /**
+   * Hide loading spinner (legacy compatibility)
+   */
+  hideLoadingSpinner() {
+    const spinner = document.getElementById('preload-spinner');
+    if (spinner) {
+      spinner.remove();
+    }
+  }
+  
+  /**
    * Check if orchestrator is ready
    */
   isReady() {
@@ -424,4 +528,30 @@ export class DataLoadingOrchestrator {
 
 // Export singleton instance
 export const dataLoadingOrchestrator = new DataLoadingOrchestrator();
+
+// Export for global access
+if (typeof window !== 'undefined') {
+  window.DataLoadingOrchestrator = DataLoadingOrchestrator;
+  window.dataLoadingOrchestrator = dataLoadingOrchestrator;
+  
+  // Legacy compatibility layer - proxy old preloader functions to new ES6 system
+  console.log('🔧 DataLoadingOrchestrator: Setting up legacy compatibility layer');
+  
+  // Legacy preloader functions
+  window.startPreloading = () => {
+    console.log('🔄 Legacy startPreloading() called - delegating to DataLoadingOrchestrator');
+    return dataLoadingOrchestrator.startPreloading();
+  };
+  
+  // Legacy loading functions (if they exist)
+  if (typeof window.loadPolygonCategory === 'function') {
+    const originalLoadPolygonCategory = window.loadPolygonCategory;
+    window.loadPolygonCategory = (category, url) => {
+      console.log(`🔄 Legacy loadPolygonCategory(${category}, ${url}) called - delegating to DataLoadingOrchestrator`);
+      return dataLoadingOrchestrator.loadCategory(category);
+    };
+  }
+  
+  console.log('✅ DataLoadingOrchestrator: Legacy compatibility layer active');
+}
 
