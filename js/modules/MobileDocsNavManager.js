@@ -1,78 +1,122 @@
 /**
- * @module ui/mobileDocsNav
- * Mobile-friendly documentation navigation
+ * @module modules/MobileDocsNavManager
+ * Modern ES6-based mobile documentation navigation for WeeWoo Map Friend
+ * Replaces js/ui/mobileDocsNav.js with a modern, event-driven system
  */
 
-// Immediate execution test
-console.log('🔥 MobileDocsNav script loaded successfully!');
+import { globalEventBus } from './EventBus.js';
 
-window.MobileDocsNav = {
+/**
+ * @class MobileDocsNavManager
+ * Manages mobile-friendly documentation navigation with hamburger menu
+ */
+export class MobileDocsNavManager {
+  constructor() {
+    this.initialized = false;
+    this.mobileBreakpoint = 720;
+    this.periodicCheckInterval = null;
+    
+    // Bind methods
+    this.init = this.init.bind(this);
+    this.setupDocsNavigation = this.setupDocsNavigation.bind(this);
+    this.createTestElement = this.createTestElement.bind(this);
+    this.addMobileNavigation = this.addMobileNavigation.bind(this);
+    this.setupHamburgerHandlers = this.setupHamburgerHandlers.bind(this);
+    this.toggleDropdownMenu = this.toggleDropdownMenu.bind(this);
+    this.openDropdownMenu = this.openDropdownMenu.bind(this);
+    this.closeDropdownMenu = this.closeDropdownMenu.bind(this);
+    this.removeMobileElements = this.removeMobileElements.bind(this);
+    this.addMobileHint = this.addMobileHint.bind(this);
+    this.setupLinkHandlers = this.setupLinkHandlers.bind(this);
+    this.highlightCurrentPage = this.highlightCurrentPage.bind(this);
+    this.onDocsOpen = this.onDocsOpen.bind(this);
+    this.debounce = this.debounce.bind(this);
+    
+    console.log('📱 MobileDocsNavManager: Mobile documentation navigation system initialized');
+  }
   
   /**
-   * Initialize mobile documentation navigation
+   * Initialize the mobile docs navigation manager
    */
-  init() {
-    console.log('🚀 MobileDocsNav: Initializing mobile documentation navigation');
-    console.log('🔍 MobileDocsNav: Window width:', window.innerWidth);
-    console.log('🔍 MobileDocsNav: Is mobile:', window.innerWidth <= 720);
+  async init() {
+    if (this.initialized) {
+      console.warn('MobileDocsNavManager: Already initialized');
+      return;
+    }
     
-    // Immediate test - try to find docs elements
-    const toc = document.querySelector('.docs-toc');
-    const drawer = document.querySelector('.docs-drawer');
-    console.log('🔍 MobileDocsNav: TOC found:', !!toc);
-    console.log('🔍 MobileDocsNav: Drawer found:', !!drawer);
-    
-    // Set up navigation when docs are opened
-    this.setupDocsNavigation();
-    
-    // Listen for window resize to adapt navigation
-    window.addEventListener('resize', debounce(() => {
-      console.log('🔄 MobileDocsNav: Window resized to:', window.innerWidth);
+    try {
+      console.log('🚀 MobileDocsNavManager: Initializing mobile documentation navigation');
+      console.log('🔍 MobileDocsNavManager: Window width:', window.innerWidth);
+      console.log('🔍 MobileDocsNavManager: Is mobile:', window.innerWidth <= this.mobileBreakpoint);
+      
+      // Immediate test - try to find docs elements
+      const toc = document.querySelector('.docs-toc');
+      const drawer = document.querySelector('.docs-drawer');
+      console.log('🔍 MobileDocsNavManager: TOC found:', !!toc);
+      console.log('🔍 MobileDocsNavManager: Drawer found:', !!drawer);
+      
+      // Set up navigation when docs are opened
       this.setupDocsNavigation();
-    }, 250));
-    
-    // Also try setting up navigation periodically (in case docs open later)
-    setInterval(() => {
-      const docsVisible = !document.querySelector('.docs-drawer[hidden]');
-      if (docsVisible && window.innerWidth <= 720) {
-        console.log('🔄 MobileDocsNav: Periodic check - docs are visible');
+      
+      // Listen for window resize to adapt navigation
+      window.addEventListener('resize', this.debounce(() => {
+        console.log('🔄 MobileDocsNavManager: Window resized to:', window.innerWidth);
         this.setupDocsNavigation();
-      }
-    }, 2000);
-  },
+      }, 250));
+      
+      // Also try setting up navigation periodically (in case docs open later)
+      this.periodicCheckInterval = setInterval(() => {
+        const docsVisible = !document.querySelector('.docs-drawer[hidden]');
+        if (docsVisible && window.innerWidth <= this.mobileBreakpoint) {
+          console.log('🔄 MobileDocsNavManager: Periodic check - docs are visible');
+          this.setupDocsNavigation();
+        }
+      }, 2000);
+      
+      // Listen for docs opening events
+      globalEventBus.on('docs:opened', this.onDocsOpen);
+      
+      this.initialized = true;
+      console.log('✅ MobileDocsNavManager: Mobile documentation navigation system ready');
+      
+    } catch (error) {
+      console.error('🚨 MobileDocsNavManager: Failed to initialize:', error);
+      throw error;
+    }
+  }
   
   /**
    * Set up mobile-friendly documentation navigation
    */
   setupDocsNavigation() {
-    console.log('📱 MobileDocsNav: Setting up navigation');
-    console.log('🔍 MobileDocsNav: Window width:', window.innerWidth);
+    console.log('📱 MobileDocsNavManager: Setting up navigation');
+    console.log('🔍 MobileDocsNavManager: Window width:', window.innerWidth);
     
     // Create immediate test element
     this.createTestElement();
     
     const toc = document.querySelector('.docs-toc');
-    console.log('🔍 MobileDocsNav: Found TOC:', !!toc);
+    console.log('🔍 MobileDocsNavManager: Found TOC:', !!toc);
     
     if (!toc) {
-      console.log('❌ MobileDocsNav: No TOC found, cannot proceed');
+      console.log('❌ MobileDocsNavManager: No TOC found, cannot proceed');
       return;
     }
     
-    const isMobile = window.innerWidth <= 720;
-    console.log('🔍 MobileDocsNav: Is mobile:', isMobile, 'Width:', window.innerWidth);
+    const isMobile = window.innerWidth <= this.mobileBreakpoint;
+    console.log('🔍 MobileDocsNavManager: Is mobile:', isMobile, 'Width:', window.innerWidth);
     
     if (!isMobile) {
-      console.log('❌ MobileDocsNav: Not mobile, removing mobile elements');
+      console.log('❌ MobileDocsNavManager: Not mobile, removing mobile elements');
       // Remove mobile elements on desktop
       this.removeMobileElements();
       return;
     }
     
-    console.log('✅ MobileDocsNav: Mobile detected, adding navigation');
+    console.log('✅ MobileDocsNavManager: Mobile detected, adding navigation');
     // Add mobile navigation elements
     this.addMobileNavigation(toc);
-  },
+  }
 
   /**
    * Create a test element to verify the script is working
@@ -102,22 +146,22 @@ window.MobileDocsNav = {
     testEl.innerHTML = '🔴 MOBILE NAV TEST<br>Width: ' + window.innerWidth;
     
     document.body.appendChild(testEl);
-    console.log('🔴 MobileDocsNav: Test element created');
+    console.log('🔴 MobileDocsNavManager: Test element created');
     
     // Remove test element after 5 seconds
     setTimeout(() => {
       if (testEl.parentNode) {
         testEl.remove();
-        console.log('🔴 MobileDocsNav: Test element removed');
+        console.log('🔴 MobileDocsNavManager: Test element removed');
       }
     }, 5000);
-  },
+  }
   
   /**
    * Add mobile navigation elements - hamburger menu style
    */
   addMobileNavigation(toc) {
-    console.log('📱 MobileDocsNav: Adding hamburger menu navigation');
+    console.log('📱 MobileDocsNavManager: Adding hamburger menu navigation');
     
     // Remove any existing mobile navigation
     this.removeMobileElements();
@@ -127,7 +171,7 @@ window.MobileDocsNav = {
     const pageTitle = docsContent ? docsContent.querySelector('h1') : null;
     
     if (!pageTitle) {
-      console.log('❌ MobileDocsNav: No page title found, cannot add hamburger menu');
+      console.log('❌ MobileDocsNavManager: No page title found, cannot add hamburger menu');
       return;
     }
     
@@ -160,7 +204,7 @@ window.MobileDocsNav = {
     const menuLinks = document.createElement('div');
     menuLinks.className = 'docs-menu-links';
     
-    console.log('🔗 MobileDocsNav: Found', tocLinks.length, 'navigation links');
+    console.log('🔗 MobileDocsNavManager: Found', tocLinks.length, 'navigation links');
     
     tocLinks.forEach(link => {
       const menuLink = document.createElement('a');
@@ -196,14 +240,14 @@ window.MobileDocsNav = {
     // Add event handlers
     this.setupHamburgerHandlers(hamburgerBtn, dropdownMenu);
     
-    console.log('✅ MobileDocsNav: Hamburger menu created successfully');
-  },
+    console.log('✅ MobileDocsNavManager: Hamburger menu created successfully');
+  }
   
   /**
    * Set up hamburger button event handlers
    */
   setupHamburgerHandlers(hamburgerBtn, dropdownMenu) {
-    console.log('🔧 MobileDocsNav: Setting up hamburger handlers');
+    console.log('🔧 MobileDocsNavManager: Setting up hamburger handlers');
     
     // Toggle menu on button click
     hamburgerBtn.addEventListener('click', (e) => {
@@ -224,7 +268,7 @@ window.MobileDocsNav = {
         this.closeDropdownMenu(hamburgerBtn, dropdownMenu);
       }
     });
-  },
+  }
 
   /**
    * Toggle dropdown menu visibility
@@ -237,13 +281,13 @@ window.MobileDocsNav = {
     } else {
       this.openDropdownMenu(hamburgerBtn, dropdownMenu);
     }
-  },
+  }
 
   /**
    * Open dropdown menu
    */
   openDropdownMenu(hamburgerBtn, dropdownMenu) {
-    console.log('📂 MobileDocsNav: Opening dropdown menu');
+    console.log('📂 MobileDocsNavManager: Opening dropdown menu');
     
     dropdownMenu.classList.remove('hidden');
     hamburgerBtn.classList.add('active');
@@ -254,19 +298,19 @@ window.MobileDocsNav = {
     if (window.NativeFeatures) {
       window.NativeFeatures.hapticFeedback('light');
     }
-  },
+  }
 
   /**
    * Close dropdown menu
    */
   closeDropdownMenu(hamburgerBtn, dropdownMenu) {
-    console.log('📁 MobileDocsNav: Closing dropdown menu');
+    console.log('📁 MobileDocsNavManager: Closing dropdown menu');
     
     dropdownMenu.classList.add('hidden');
     hamburgerBtn.classList.remove('active');
     hamburgerBtn.setAttribute('aria-expanded', 'false');
     hamburgerBtn.setAttribute('aria-label', 'Open documentation navigation menu');
-  },
+  }
 
   /**
    * Remove all mobile navigation elements
@@ -293,7 +337,7 @@ window.MobileDocsNav = {
     // Remove mobile hints
     const hints = document.querySelectorAll('.mobile-nav-hint');
     hints.forEach(hint => hint.remove());
-  },
+  }
   
   /**
    * Add mobile navigation hint to content
@@ -308,7 +352,7 @@ window.MobileDocsNav = {
     
     // Insert at the beginning of content
     content.insertBefore(hint, content.firstChild);
-  },
+  }
   
   /**
    * Set up link handlers for auto-collapse
@@ -321,7 +365,7 @@ window.MobileDocsNav = {
       
       // Add new handler
       link.addEventListener('click', (e) => {
-        if (window.innerWidth <= 720) {
+        if (window.innerWidth <= this.mobileBreakpoint) {
           setTimeout(() => {
             toc.classList.add('collapsed');
             toggleBtn.setAttribute('aria-expanded', 'false');
@@ -335,7 +379,7 @@ window.MobileDocsNav = {
         }
       });
     });
-  },
+  }
   
   /**
    * Highlight the currently active documentation page
@@ -359,43 +403,109 @@ window.MobileDocsNav = {
     if (currentLink) {
       currentLink.classList.add('active');
     }
-  },
+  }
   
   /**
    * Update navigation when docs content changes
    */
   onDocsOpen() {
-    console.log('MobileDocsNav: Docs opened, setting up navigation');
+    console.log('MobileDocsNavManager: Docs opened, setting up navigation');
     // Small delay to ensure DOM is ready
     setTimeout(() => {
       this.setupDocsNavigation();
     }, 100);
   }
-};
-
-// Utility function for debouncing
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
+  
+  /**
+   * Utility function for debouncing
+   */
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
       clearTimeout(timeout);
-      func(...args);
+      timeout = setTimeout(later, wait);
     };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
+  }
+  
+  /**
+   * Get the status of the mobile docs nav manager
+   */
+  getStatus() {
+    return {
+      initialized: this.initialized,
+      mobileBreakpoint: this.mobileBreakpoint,
+      isMobile: window.innerWidth <= this.mobileBreakpoint,
+      hasPeriodicCheck: !!this.periodicCheckInterval,
+      tocFound: !!document.querySelector('.docs-toc'),
+      drawerFound: !!document.querySelector('.docs-drawer')
+    };
+  }
+  
+  /**
+   * Check if mobile docs nav manager is ready
+   */
+  isReady() {
+    return this.initialized;
+  }
+  
+  /**
+   * Clean up resources
+   */
+  destroy() {
+    if (this.periodicCheckInterval) {
+      clearInterval(this.periodicCheckInterval);
+      this.periodicCheckInterval = null;
+    }
+    
+    this.removeMobileElements();
+    
+    globalEventBus.off('docs:opened', this.onDocsOpen);
+    
+    this.initialized = false;
+    console.log('🧹 MobileDocsNavManager: Cleaned up resources');
+  }
+}
+
+// Export singleton instance
+export const mobileDocsNavManager = new MobileDocsNavManager();
+
+// Export for global access
+if (typeof window !== 'undefined') {
+  window.MobileDocsNavManager = MobileDocsNavManager;
+  window.mobileDocsNavManager = mobileDocsNavManager;
+  
+  // Legacy compatibility layer
+  window.MobileDocsNav = {
+    init: () => mobileDocsNavManager.init(),
+    setupDocsNavigation: () => mobileDocsNavManager.setupDocsNavigation(),
+    createTestElement: () => mobileDocsNavManager.createTestElement(),
+    addMobileNavigation: (toc) => mobileDocsNavManager.addMobileNavigation(toc),
+    setupHamburgerHandlers: (btn, menu) => mobileDocsNavManager.setupHamburgerHandlers(btn, menu),
+    toggleDropdownMenu: (btn, menu) => mobileDocsNavManager.toggleDropdownMenu(btn, menu),
+    openDropdownMenu: (btn, menu) => mobileDocsNavManager.openDropdownMenu(btn, menu),
+    closeDropdownMenu: (btn, menu) => mobileDocsNavManager.closeDropdownMenu(btn, menu),
+    removeMobileElements: () => mobileDocsNavManager.removeMobileElements(),
+    addMobileHint: () => mobileDocsNavManager.addMobileHint(),
+    setupLinkHandlers: (toc, btn) => mobileDocsNavManager.setupLinkHandlers(toc, btn),
+    highlightCurrentPage: () => mobileDocsNavManager.highlightCurrentPage(),
+    onDocsOpen: () => mobileDocsNavManager.onDocsOpen()
   };
-}
-
-// Auto-initialize when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    window.MobileDocsNav.init();
+  
+  // Auto-initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      mobileDocsNavManager.init();
+    });
+  } else {
+    mobileDocsNavManager.init();
+  }
+  
+  // Listen for docs opening events
+  window.addEventListener('docs-opened', () => {
+    mobileDocsNavManager.onDocsOpen();
   });
-} else {
-  window.MobileDocsNav.init();
 }
-
-// Listen for docs opening events
-window.addEventListener('docs-opened', () => {
-  window.MobileDocsNav.onDocsOpen();
-});
