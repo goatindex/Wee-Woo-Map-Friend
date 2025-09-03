@@ -100,6 +100,9 @@ export class StateManager extends EventBus {
     
     // Set up legacy compatibility layer
     this._setupLegacyCompatibility();
+    
+    // Bind methods
+    this.isReady = this.isReady.bind(this);
   }
   
   /**
@@ -418,6 +421,14 @@ export class StateManager extends EventBus {
     
     return { ...this._state };
   }
+  
+  /**
+   * Check if state manager is ready
+   * @returns {boolean} True if initialized
+   */
+  isReady() {
+    return true; // StateManager is always ready after construction
+  }
 }
 
 // Create global state manager instance
@@ -425,3 +436,9 @@ export const stateManager = new StateManager();
 
 // Export convenient access to state
 export const state = stateManager.state;
+
+// Export for global access
+if (typeof window !== 'undefined') {
+  window.StateManager = StateManager;
+  window.stateManager = stateManager;
+}

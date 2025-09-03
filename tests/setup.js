@@ -1,6 +1,6 @@
 /**
  * Jest test setup for WeeWoo Map Friend
- * Configures testing environment and global mocks
+ * Configures testing environment and global mocks for ES6 modules
  */
 
 // Mock global objects that aren't available in jsdom
@@ -110,6 +110,30 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   unobserve: jest.fn(),
   disconnect: jest.fn()
 }));
+
+// Mock ES6 module globals
+global.performance = {
+  now: jest.fn(() => Date.now())
+};
+
+// Mock window globals for ES6 modules
+global.window = {
+  ...global.window,
+  DeviceContext: {
+    getContext: jest.fn(() => ({
+      device: 'desktop',
+      platform: 'web',
+      orientation: 'landscape',
+      hasTouch: false,
+      isStandalone: false
+    }))
+  },
+  NativeFeatures: {
+    hapticFeedback: jest.fn()
+  }
+};
+
+// Note: ES6 module mocks are handled per-test file as needed
 
 // Clean up after each test
 afterEach(() => {

@@ -4,23 +4,9 @@
  * Coordinates migration from legacy to ES6 modules
  */
 
+// Core modules only - no circular dependencies
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
-import { es6IntegrationManager } from './ES6IntegrationManager.js';
-import { configurationManager } from './ConfigurationManager.js';
-import { legacyCompatibility } from './LegacyCompatibility.js';
-import { activeListManager } from './ActiveListManager.js';
-import { mapManager } from './MapManager.js';
-import { layerManager } from './LayerManager.js';
-import { polygonLoader } from './PolygonLoader.js';
-import { labelManager } from './LabelManager.js';
-import { coordinateConverter } from './CoordinateConverter.js';
-import { errorUI } from './ErrorUI.js';
-import { textFormatter } from './TextFormatter.js';
-import { featureEnhancer } from './FeatureEnhancer.js';
-import { appBootstrap } from './AppBootstrap.js';
-import { deviceManager } from './DeviceManager.js';
-import { uiManager } from './UIManager.js';
 
 /**
  * @class ES6Bootstrap
@@ -39,22 +25,110 @@ export class ES6Bootstrap {
     this.setupLegacyIntegration = this.setupLegacyIntegration.bind(this);
     this.handleError = this.handleError.bind(this);
     
-          // Debug: Check what managers are available in constructor
-      console.log('🔍 ES6Bootstrap: Constructor - Available managers:', {
-        mapManager: !!mapManager,
-        layerManager: !!layerManager,
-        polygonLoader: !!polygonLoader,
-        labelManager: !!labelManager,
-        coordinateConverter: !!coordinateConverter,
-        errorUI: !!errorUI,
-        textFormatter: !!textFormatter,
-        featureEnhancer: !!featureEnhancer,
-        appBootstrap: !!appBootstrap,
-        deviceManager: !!deviceManager,
-        uiManager: !!uiManager
-      });
+    // Module cache for dynamic imports
+    this.modules = new Map();
     
     console.log('🚀 ES6Bootstrap: Modern bootstrap system initialized');
+  }
+  
+  /**
+   * Dynamically load a module to avoid circular dependencies
+   * @param {string} moduleName - Name of the module to load
+   * @returns {Promise<Object>} The loaded module
+   */
+  async loadModule(moduleName) {
+    if (this.modules.has(moduleName)) {
+      return this.modules.get(moduleName);
+    }
+    
+    try {
+      console.log(`📦 ES6Bootstrap: Loading module ${moduleName}...`);
+      
+      let module;
+      switch (moduleName) {
+        case 'es6IntegrationManager':
+          module = await import('./ES6IntegrationManager.js');
+          this.modules.set(moduleName, module.es6IntegrationManager);
+          break;
+        case 'configurationManager':
+          module = await import('./ConfigurationManager.js');
+          this.modules.set(moduleName, module.configurationManager);
+          break;
+        case 'legacyCompatibility':
+          module = await import('./LegacyCompatibility.js');
+          this.modules.set(moduleName, module.legacyCompatibility);
+          break;
+        case 'activeListManager':
+          module = await import('./ActiveListManager.js');
+          this.modules.set(moduleName, module.activeListManager);
+          break;
+        case 'mapManager':
+          module = await import('./MapManager.js');
+          this.modules.set(moduleName, module.mapManager);
+          break;
+        case 'layerManager':
+          module = await import('./LayerManager.js');
+          this.modules.set(moduleName, module.layerManager);
+          break;
+        case 'polygonLoader':
+          module = await import('./PolygonLoader.js');
+          this.modules.set(moduleName, module.polygonLoader);
+          break;
+        case 'dataLoadingOrchestrator':
+          module = await import('./DataLoadingOrchestrator.js');
+          this.modules.set(moduleName, module.dataLoadingOrchestrator);
+          break;
+        case 'stateSynchronizer':
+          module = await import('./StateSynchronizer.js');
+          this.modules.set(moduleName, module.stateSynchronizer);
+          break;
+        case 'legacyIntegrationBridge':
+          module = await import('./LegacyIntegrationBridge.js');
+          this.modules.set(moduleName, module.legacyIntegrationBridge);
+          break;
+        case 'labelManager':
+          module = await import('./LabelManager.js');
+          this.modules.set(moduleName, module.labelManager);
+          break;
+        case 'coordinateConverter':
+          module = await import('./CoordinateConverter.js');
+          this.modules.set(moduleName, module.coordinateConverter);
+          break;
+        case 'errorUI':
+          module = await import('./ErrorUI.js');
+          this.modules.set(moduleName, module.errorUI);
+          break;
+        case 'textFormatter':
+          module = await import('./TextFormatter.js');
+          this.modules.set(moduleName, module.textFormatter);
+          break;
+        case 'featureEnhancer':
+          module = await import('./FeatureEnhancer.js');
+          this.modules.set(moduleName, module.featureEnhancer);
+          break;
+        case 'appBootstrap':
+          module = await import('./AppBootstrap.js');
+          this.modules.set(moduleName, module.appBootstrap);
+          break;
+        case 'deviceManager':
+          module = await import('./DeviceManager.js');
+          this.modules.set(moduleName, module.deviceManager);
+          break;
+        case 'uiManager':
+          module = await import('./UIManager.js');
+          this.modules.set(moduleName, module.uiManager);
+          break;
+        default:
+          throw new Error(`Unknown module: ${moduleName}`);
+      }
+      
+      console.log(`✅ ES6Bootstrap: Module ${moduleName} loaded successfully`);
+      return this.modules.get(moduleName);
+      
+    } catch (error) {
+      console.error(`🚨 ES6Bootstrap: Failed to load module ${moduleName}:`, error);
+      throw error;
+    }
   }
   
   /**
@@ -188,6 +262,7 @@ export class ES6Bootstrap {
     try {
       console.log('🔧 ES6Bootstrap: Initializing ES6 integration manager...');
       
+      const es6IntegrationManager = await this.loadModule('es6IntegrationManager');
       await es6IntegrationManager.init();
       
       if (!es6IntegrationManager.isReady()) {
@@ -242,6 +317,7 @@ export class ES6Bootstrap {
       console.log('🔧 ES6Bootstrap: Initializing modern AppBootstrap...');
       
       // Initialize device manager first
+      const deviceManager = await this.loadModule('deviceManager');
       await deviceManager.init();
       
       if (!deviceManager.isReady()) {
@@ -249,6 +325,7 @@ export class ES6Bootstrap {
       }
       
       // Initialize app bootstrap
+      const appBootstrap = await this.loadModule('appBootstrap');
       await appBootstrap.init();
       
       if (!appBootstrap.isReady()) {
@@ -271,6 +348,7 @@ export class ES6Bootstrap {
       console.log('🎨 ES6Bootstrap: Initializing UI components...');
       
       // Initialize UI manager
+      const uiManager = await this.loadModule('uiManager');
       if (uiManager && typeof uiManager.init === 'function') {
         await uiManager.init();
         
@@ -395,12 +473,13 @@ export class ES6Bootstrap {
     try {
       console.log('🔧 ES6Bootstrap: Initializing core ES6 systems...');
       
-      // Initialize state manager
+      // Initialize state manager (already imported)
       if (stateManager && typeof stateManager.init === 'function') {
         await stateManager.init();
       }
       
       // Initialize configuration manager
+      const configurationManager = await this.loadModule('configurationManager');
       if (configurationManager && typeof configurationManager.init === 'function') {
         await configurationManager.init();
       }
@@ -424,6 +503,7 @@ export class ES6Bootstrap {
       console.log('🔗 ES6Bootstrap: Initializing legacy compatibility...');
       
       // Initialize legacy compatibility layer
+      const legacyCompatibility = await this.loadModule('legacyCompatibility');
       if (legacyCompatibility && typeof legacyCompatibility.init === 'function') {
         await legacyCompatibility.init();
       }
@@ -444,6 +524,7 @@ export class ES6Bootstrap {
       console.log('📋 ES6Bootstrap: Initializing active list manager...');
       
       // Initialize active list manager
+      const activeListManager = await this.loadModule('activeListManager');
       if (activeListManager && typeof activeListManager.init === 'function') {
         await activeListManager.init();
       }
@@ -463,15 +544,8 @@ export class ES6Bootstrap {
     try {
       console.log('🗺️ ES6Bootstrap: Initializing map integration modules...');
       
-      // Debug: Check what managers are available
-      console.log('🔍 ES6Bootstrap: Available managers:', {
-        mapManager: !!mapManager,
-        layerManager: !!layerManager,
-        polygonLoader: !!polygonLoader,
-        labelManager: !!labelManager
-      });
-      
       // Initialize map manager first
+      const mapManager = await this.loadModule('mapManager');
       if (mapManager && typeof mapManager.init === 'function') {
         console.log('🗺️ ES6Bootstrap: Initializing map manager...');
         await mapManager.init();
@@ -481,6 +555,7 @@ export class ES6Bootstrap {
       }
       
       // Initialize layer manager
+      const layerManager = await this.loadModule('layerManager');
       if (layerManager && typeof layerManager.init === 'function') {
         console.log('🔲 ES6Bootstrap: Initializing layer manager...');
         await layerManager.init();
@@ -490,15 +565,50 @@ export class ES6Bootstrap {
       }
       
       // Initialize polygon loader
+      const polygonLoader = await this.loadModule('polygonLoader');
       if (polygonLoader && typeof polygonLoader.init === 'function') {
         console.log('📐 ES6Bootstrap: Initializing polygon loader...');
         await polygonLoader.init();
         console.log('✅ ES6Bootstrap: Polygon loader initialized');
+        
+        // Store polygon loader in state manager for orchestration system
+        stateManager.set('polygonLoader', polygonLoader);
       } else {
         console.warn('⚠️ ES6Bootstrap: Polygon loader not available or missing init method');
       }
       
+      // Initialize data loading orchestrator
+      const dataOrchestrator = await this.loadModule('dataLoadingOrchestrator');
+      if (dataOrchestrator && typeof dataOrchestrator.init === 'function') {
+        console.log('🎼 ES6Bootstrap: Initializing data loading orchestrator...');
+        await dataOrchestrator.init();
+        console.log('✅ ES6Bootstrap: Data loading orchestrator initialized');
+      } else {
+        console.warn('⚠️ ES6Bootstrap: Data loading orchestrator not available or missing init method');
+      }
+      
+      // Initialize state synchronizer
+      const stateSynchronizer = await this.loadModule('stateSynchronizer');
+      if (stateSynchronizer && typeof stateSynchronizer.init === 'function') {
+        console.log('🔄 ES6Bootstrap: Initializing state synchronizer...');
+        await stateSynchronizer.init();
+        console.log('✅ ES6Bootstrap: State synchronizer initialized');
+      } else {
+        console.warn('⚠️ ES6Bootstrap: State synchronizer not available or missing init method');
+      }
+      
+      // Initialize legacy integration bridge
+      const legacyBridge = await this.loadModule('legacyIntegrationBridge');
+      if (legacyBridge && typeof legacyBridge.init === 'function') {
+        console.log('🌉 ES6Bootstrap: Initializing legacy integration bridge...');
+        await legacyBridge.init();
+        console.log('✅ ES6Bootstrap: Legacy integration bridge initialized');
+      } else {
+        console.warn('⚠️ ES6Bootstrap: Legacy integration bridge not available or missing init method');
+      }
+      
       // Initialize label manager
+      const labelManager = await this.loadModule('labelManager');
       if (labelManager && typeof labelManager.init === 'function') {
         console.log('🏷️ ES6Bootstrap: Initializing label manager...');
         await labelManager.init();
@@ -522,15 +632,8 @@ export class ES6Bootstrap {
     try {
       console.log('🔧 ES6Bootstrap: Initializing legacy function migration modules...');
       
-      // Debug: Check what legacy migration modules are available
-      console.log('🔍 ES6Bootstrap: Available legacy migration modules:', {
-        coordinateConverter: !!coordinateConverter,
-        errorUI: !!errorUI,
-        textFormatter: !!textFormatter,
-        featureEnhancer: !!featureEnhancer
-      });
-      
       // Initialize coordinate converter
+      const coordinateConverter = await this.loadModule('coordinateConverter');
       if (coordinateConverter && typeof coordinateConverter.init === 'function') {
         console.log('🗺️ ES6Bootstrap: Initializing coordinate converter...');
         await coordinateConverter.init();
@@ -540,6 +643,7 @@ export class ES6Bootstrap {
       }
       
       // Initialize error UI
+      const errorUI = await this.loadModule('errorUI');
       if (errorUI && typeof errorUI.init === 'function') {
         console.log('⚠️ ES6Bootstrap: Initializing error UI...');
         await errorUI.init();
@@ -549,6 +653,7 @@ export class ES6Bootstrap {
       }
       
       // Initialize text formatter
+      const textFormatter = await this.loadModule('textFormatter');
       if (textFormatter && typeof textFormatter.init === 'function') {
         console.log('📝 ES6Bootstrap: Initializing text formatter...');
         await textFormatter.init();
@@ -558,6 +663,7 @@ export class ES6Bootstrap {
       }
       
       // Initialize feature enhancer
+      const featureEnhancer = await this.loadModule('featureEnhancer');
       if (featureEnhancer && typeof featureEnhancer.init === 'function') {
         console.log('✨ ES6Bootstrap: Initializing feature enhancer...');
         await featureEnhancer.init();

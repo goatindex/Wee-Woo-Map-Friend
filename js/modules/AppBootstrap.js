@@ -4,12 +4,9 @@
  * Replaces legacy bootstrap.js with modern ES6 architecture
  */
 
+// Core modules only - no circular dependencies
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
-import { configurationManager } from './ConfigurationManager.js';
-import { mapManager } from './MapManager.js';
-import { layerManager } from './LayerManager.js';
-import { deviceManager } from './DeviceManager.js';
 
 /**
  * @class AppBootstrap
@@ -35,7 +32,54 @@ export class AppBootstrap {
     this.handleInitialLocation = this.handleInitialLocation.bind(this);
     this.handleError = this.handleError.bind(this);
     
+    // Module cache for dynamic imports
+    this.modules = new Map();
+    
     console.log('🚀 AppBootstrap: Modern bootstrap system initialized');
+  }
+  
+  /**
+   * Dynamically load a module to avoid circular dependencies
+   * @param {string} moduleName - Name of the module to load
+   * @returns {Promise<Object>} The loaded module
+   */
+  async loadModule(moduleName) {
+    if (this.modules.has(moduleName)) {
+      return this.modules.get(moduleName);
+    }
+    
+    try {
+      console.log(`📦 AppBootstrap: Loading module ${moduleName}...`);
+      
+      let module;
+      switch (moduleName) {
+        case 'configurationManager':
+          module = await import('./ConfigurationManager.js');
+          this.modules.set(moduleName, module.configurationManager);
+          break;
+        case 'mapManager':
+          module = await import('./MapManager.js');
+          this.modules.set(moduleName, module.mapManager);
+          break;
+        case 'layerManager':
+          module = await import('./LayerManager.js');
+          this.modules.set(moduleName, module.layerManager);
+          break;
+        case 'deviceManager':
+          module = await import('./DeviceManager.js');
+          this.modules.set(moduleName, module.deviceManager);
+          break;
+        default:
+          throw new Error(`Unknown module: ${moduleName}`);
+      }
+      
+      console.log(`✅ AppBootstrap: Module ${moduleName} loaded successfully`);
+      return this.modules.get(moduleName);
+      
+    } catch (error) {
+      console.error(`🚨 AppBootstrap: Failed to load module ${moduleName}:`, error);
+      throw error;
+    }
   }
   
   /**
@@ -289,9 +333,11 @@ export class AppBootstrap {
   async initES6MapSystem() {
     try {
       // Initialize map manager
+      const mapManager = await this.loadModule('mapManager');
       await mapManager.init();
       
       // Initialize layer manager
+      const layerManager = await this.loadModule('layerManager');
       await layerManager.init();
       
       // Store map reference in state manager for legacy compatibility
@@ -325,9 +371,7 @@ export class AppBootstrap {
   setupUI() {
     try {
       // Set up collapsible sections
-      if (window.setupCollapsible) {
-        window.setupCollapsible();
-      }
+      // Note: CollapsibleManager handles its own initialization
       
       // Set up FAB buttons
       if (window.FABManager) {

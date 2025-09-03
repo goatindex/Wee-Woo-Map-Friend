@@ -20,9 +20,9 @@ export class ES6IntegrationManager {
     
     // Bind methods
     this.init = this.init.bind(this);
-    this.registerModule = this.registerModule.bind(this);
-    this.migrateFunction = this.migrateFunction.bind(this);
-    this.createCompatibilityLayer = this.createCompatibilityLayer.bind(this);
+    this.registerExistingModules = this.registerExistingModules.bind(this);
+    this.migrateCoreFunctions = this.migrateCoreFunctions.bind(this);
+    this.createCompatibilityLayers = this.createCompatibilityLayers.bind(this);
     this.validateIntegration = this.validateIntegration.bind(this);
   }
   
