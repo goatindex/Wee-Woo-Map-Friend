@@ -143,16 +143,16 @@ export class StateManager extends EventBus {
       this._state.sidebarVisible = true;
       this._state.isBulkOperation = false;
       
-      // Legacy facility coordinate variables
-      this._state.sesFacilityCoords = window.sesFacilityCoords || {};
-      this._state.sesFacilityMarkers = window.sesFacilityMarkers || {};
-      this._state.cfaFacilityCoords = window.cfaFacilityCoords || {};
+      // Legacy facility coordinate variables (initialized as empty objects)
+      this._state.sesFacilityCoords = {};
+      this._state.sesFacilityMarkers = {};
+      this._state.cfaFacilityCoords = {};
       
       // Device and responsive state
-      this._state.deviceContext = window.DeviceContext ? window.DeviceContext.getContext() : null;
+      this._state.deviceContext = null; // Will be set by DeviceManager
       this._state.windowSize = {
-        width: window.innerWidth,
-        height: window.innerHeight
+        width: typeof window !== 'undefined' ? window.innerWidth : 1024,
+        height: typeof window !== 'undefined' ? window.innerHeight : 768
       };
       
       // Application state
@@ -207,21 +207,8 @@ export class StateManager extends EventBus {
       configurable: true
     });
     
-    // Legacy map functions
-    window.setMap = (map) => {
-      this.set('map', map);
-    };
-    
-    window.getMap = () => {
-      const map = this.get('map');
-      if (!map) throw new Error('Map not initialised yet');
-      return map;
-    };
-    
-    // Legacy filter function
-    window.setActiveListFilter = (v) => {
-      this.set('activeListFilter', v);
-    };
+    // Legacy map functions (now handled by MapManager)
+    // Legacy filter function (now handled by ActiveListManager)
     
     // Legacy BulkOperationManager - proxy to StateManager methods
     window.BulkOperationManager = {

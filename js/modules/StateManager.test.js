@@ -421,13 +421,13 @@ describe('StateManager', () => {
       expect(window.cfaFacilityCoords).toBeDefined();
     });
 
-    test('should expose legacy map functions', () => {
-      expect(typeof window.setMap).toBe('function');
-      expect(typeof window.getMap).toBe('function');
+    test('should not expose legacy map functions (now handled by MapManager)', () => {
+      expect(typeof window.setMap).toBe('undefined');
+      expect(typeof window.getMap).toBe('undefined');
     });
 
-    test('should expose legacy filter function', () => {
-      expect(typeof window.setActiveListFilter).toBe('function');
+    test('should not expose legacy filter function (now handled by ActiveListManager)', () => {
+      expect(typeof window.setActiveListFilter).toBe('undefined');
     });
 
     test('should expose legacy BulkOperationManager', () => {
