@@ -111,8 +111,10 @@ export class SearchManager {
       }
       this.searchTimeout = setTimeout(() => {
         console.log('Search input:', val);
-        console.log('namesByCategory:', JSON.stringify(window.namesByCategory));
-        console.log('nameToKey:', JSON.stringify(window.nameToKey));
+        const namesByCategory = stateManager.get('namesByCategory', {});
+        const nameToKey = stateManager.get('nameToKey', {});
+        console.log('namesByCategory:', JSON.stringify(namesByCategory));
+        console.log('nameToKey:', JSON.stringify(nameToKey));
         this.performSearch(val);
       }, 120);
     });
@@ -167,8 +169,8 @@ export class SearchManager {
     }
     
     // Get search data from global variables (legacy compatibility)
-    const namesByCategory = window.namesByCategory || {};
-    const nameToKey = window.nameToKey || {};
+    const namesByCategory = stateManager.get('namesByCategory', {});
+    const nameToKey = stateManager.get('nameToKey', {});
     const outlineColors = window.outlineColors || {};
     const labelColorAdjust = window.labelColorAdjust || {};
     const adjustHexColor = window.adjustHexColor || ((color, factor) => color);
@@ -383,8 +385,8 @@ export class SearchManager {
    * Build search index from available data
    */
   buildSearchIndex() {
-    const namesByCategory = window.namesByCategory || {};
-    const nameToKey = window.nameToKey || {};
+    const namesByCategory = stateManager.get('namesByCategory', {});
+    const nameToKey = stateManager.get('nameToKey', {});
     
     this.searchIndex.clear();
     

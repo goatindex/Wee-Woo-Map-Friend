@@ -347,10 +347,7 @@ export class CollapsibleManager {
 // Export singleton instance
 export const collapsibleManager = new CollapsibleManager();
 
-// Export for legacy compatibility
+// Export for global access (ES6 module system)
 if (typeof window !== 'undefined') {
-  window.setupCollapsible = (headerId, listId, expanded) => {
-    collapsibleManager.setupCollapsible(headerId, listId, expanded);
-  };
   window.CollapsibleManager = collapsibleManager;
 }
