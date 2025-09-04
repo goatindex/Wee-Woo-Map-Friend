@@ -9,6 +9,7 @@ import { stateManager } from './StateManager.js';
 import { configurationManager } from './ConfigurationManager.js';
 import { layerManager } from './LayerManager.js';
 import { logger } from './StructuredLogger.js';
+import { labelManager } from './LabelManager.js';
 
 /**
  * @class PolygonLoader
@@ -887,14 +888,14 @@ export class PolygonLoader {
   }
   
   ensureLabel(category, key, name, isPoint, layer) {
-    if (window.ensureLabel) {
-      window.ensureLabel(category, key, name, isPoint, layer);
+    if (labelManager) {
+      labelManager.ensureLabel(category, key, name, isPoint, layer);
     }
   }
   
   removeLabel(category, key) {
-    if (window.removeLabel) {
-      window.removeLabel(category, key);
+    if (labelManager) {
+      labelManager.removeLabel(category, key);
     }
   }
   

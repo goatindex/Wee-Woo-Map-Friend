@@ -882,23 +882,24 @@ export class ES6Bootstrap {
   setupUI() {
     console.log('ES6Bootstrap: Setting up UI components');
     
-    // Set up collapsible sections
-    if (window.setupCollapsible) {
-      console.log('ES6Bootstrap: setupCollapsible is available, calling it...');
+    // Set up collapsible sections using CollapsibleManager
+    const collapsibleManager = this.modules.get('collapsibleManager');
+    if (collapsibleManager) {
+      console.log('ES6Bootstrap: Setting up collapsible sections...');
       
       // Start All Active collapsed; it will auto-expand when the first item is added
-      window.setupCollapsible('activeHeader', 'activeList', false);
-      window.setupCollapsible('showAllHeader', 'showAllList');
-      window.setupCollapsible('sesHeader', 'sesList');
-      window.setupCollapsible('lgaHeader', 'lgaList');
-      window.setupCollapsible('cfaHeader', 'cfaList');
-      window.setupCollapsible('policeHeader', 'policeList');
-      window.setupCollapsible('ambulanceHeader', 'ambulanceList');
-      window.setupCollapsible('frvHeader', 'frvList');
+      collapsibleManager.setupCollapsible('activeHeader', 'activeList', false);
+      collapsibleManager.setupCollapsible('showAllHeader', 'showAllList');
+      collapsibleManager.setupCollapsible('sesHeader', 'sesList');
+      collapsibleManager.setupCollapsible('lgaHeader', 'lgaList');
+      collapsibleManager.setupCollapsible('cfaHeader', 'cfaList');
+      collapsibleManager.setupCollapsible('policeHeader', 'policeList');
+      collapsibleManager.setupCollapsible('ambulanceHeader', 'ambulanceList');
+      collapsibleManager.setupCollapsible('frvHeader', 'frvList');
       
-      console.log('ES6Bootstrap: All setupCollapsible calls completed');
+      console.log('ES6Bootstrap: All collapsible sections set up');
     } else {
-      console.error('ES6Bootstrap: setupCollapsible is NOT available!');
+      console.warn('ES6Bootstrap: CollapsibleManager not available');
     }
     
     // Initialize other UI managers

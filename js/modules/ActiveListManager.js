@@ -8,6 +8,8 @@ import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
 import { configurationManager } from './ConfigurationManager.js';
 import { logger } from './StructuredLogger.js';
+import { emphasisManager } from './EmphasisManager.js';
+import { labelManager } from './LabelManager.js';
 
 /**
  * @class ActiveListManager
@@ -317,10 +319,13 @@ export class ActiveListManager {
    */
   addItems(category, container) {
     const meta = window.categoryMeta?.[category];
-    if (!window.namesByCategory?.[category] || !window.featureLayers?.[category]) return;
+    const namesByCategory = stateManager.get('namesByCategory', {});
+    const featureLayers = stateManager.get('featureLayers', {});
+    if (!namesByCategory[category] || !featureLayers[category]) return;
     
-    window.namesByCategory[category].forEach(name => {
-      const key = window.nameToKey?.[category]?.[name];
+    namesByCategory[category].forEach(name => {
+      const nameToKey = stateManager.get('nameToKey', {});
+      const key = nameToKey[category]?.[name];
       if (!key) return;
       
       const cb = this.getCategoryCheckbox(category, key);
@@ -333,8 +338,8 @@ export class ActiveListManager {
       row.style.marginBottom = '2px';
       
       // Set lat/lon for polygons
-      if (meta?.type === 'polygon' && window.featureLayers[category][key] && window.featureLayers[category][key][0]) {
-        const layer = window.featureLayers[category][key][0];
+      if (meta?.type === 'polygon' && featureLayers[category][key] && featureLayers[category][key][0]) {
+        const layer = featureLayers[category][key][0];
         if (layer && layer.getBounds) {
           const center = layer.getBounds().getCenter();
           row.dataset.lat = center.lat;
@@ -388,14 +393,15 @@ export class ActiveListManager {
       emphCell.style.width = '32px';
       const emphCb = document.createElement('input');
       emphCb.type = 'checkbox';
-      emphCb.checked = !!window.emphasised?.[category]?.[key];
+      const emphasised = stateManager.get('emphasised', {});
+      emphCb.checked = !!emphasised[category]?.[key];
       emphCb.title = 'Emphasise';
       emphCb.style.width = '18px';
       emphCb.style.height = '18px';
       emphCb.style.margin = '0';
       emphCb.addEventListener('change', e => {
-        if (window.setEmphasis) {
-          window.setEmphasis(category, key, e.target.checked, meta?.type === 'point');
+        if (emphasisManager) {
+          emphasisManager.setEmphasis(category, key, e.target.checked, meta?.type === 'point');
         }
         this.updateActiveList();
       });
@@ -421,16 +427,16 @@ export class ActiveListManager {
           let layerOrMarker = null;
           let isPoint = (meta?.type === 'point');
           if (isPoint) {
-            layerOrMarker = window.featureLayers[category][key];
+            layerOrMarker = featureLayers[category][key];
           } else {
-            layerOrMarker = window.featureLayers[category][key] && window.featureLayers[category][key][0];
+            layerOrMarker = featureLayers[category][key] && featureLayers[category][key][0];
           }
-          if (window.ensureLabel) {
-            window.ensureLabel(category, key, name, isPoint, layerOrMarker);
+          if (labelManager) {
+            labelManager.ensureLabel(category, key, name, isPoint, layerOrMarker);
           }
         } else {
-          if (window.removeLabel) {
-            window.removeLabel(category, key);
+          if (labelManager) {
+            labelManager.removeLabel(category, key);
           }
         }
       });
@@ -442,12 +448,12 @@ export class ActiveListManager {
         let layerOrMarker = null;
         let isPoint = (meta?.type === 'point');
         if (isPoint) {
-          layerOrMarker = window.featureLayers[category][key];
+          layerOrMarker = featureLayers[category][key];
         } else {
-          layerOrMarker = window.featureLayers[category][key] && window.featureLayers[category][key][0];
+          layerOrMarker = featureLayers[category][key] && featureLayers[category][key][0];
         }
-        if (layerOrMarker && window.ensureLabel) {
-          window.ensureLabel(category, key, name, isPoint, layerOrMarker);
+        if (layerOrMarker && labelManager) {
+          labelManager.ensureLabel(category, key, name, isPoint, layerOrMarker);
         }
       }
       
@@ -766,12 +772,12 @@ export class ActiveListManager {
           layerOrMarker = layer && layer[0];
         }
         
-        if (window.ensureLabel) {
-          window.ensureLabel(category, key, name, isPoint, layerOrMarker);
+        if (labelManager) {
+          labelManager.ensureLabel(category, key, name, isPoint, layerOrMarker);
         }
       } else {
-        if (window.removeLabel) {
-          window.removeLabel(category, key);
+        if (labelManager) {
+          labelManager.removeLabel(category, key);
         }
       }
     });
@@ -790,8 +796,8 @@ export class ActiveListManager {
         layerOrMarker = layer[0];
       }
       
-      if (layerOrMarker && window.ensureLabel) {
-        window.ensureLabel(category, key, name, isPoint, layerOrMarker);
+      if (layerOrMarker && labelManager) {
+        labelManager.ensureLabel(category, key, name, isPoint, layerOrMarker);
       }
     }
   }
@@ -973,8 +979,8 @@ export class ActiveListManager {
     stateManager.set('emphasised', currentEmphasised);
     
     // Call legacy function if available
-    if (window.setEmphasis) {
-      window.setEmphasis(category, key, emphasised);
+    if (emphasisManager) {
+      emphasisManager.setEmphasis(category, key, emphasised);
     }
   }
   
@@ -1041,17 +1047,8 @@ export class ActiveListManager {
 // Export singleton instance
 export const activeListManager = new ActiveListManager();
 
-// Export for global access
+// Export for global access (ES6 module system)
 if (typeof window !== 'undefined') {
   window.ActiveListManager = ActiveListManager;
   window.activeListManager = activeListManager;
-  
-  // Legacy compatibility layer
-  window.updateActiveList = () => activeListManager.updateActiveList();
-  window.beginActiveListBulk = () => activeListManager.beginBulkOperation();
-  window.endActiveListBulk = () => activeListManager.endBulkOperation();
-  window.setupActiveListSync = (category) => {
-    // Legacy function - now handled by event system
-    console.log('setupActiveListSync called for category:', category);
-  };
 }

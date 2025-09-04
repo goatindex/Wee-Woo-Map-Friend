@@ -6,6 +6,8 @@
 
 import { EventBus } from './EventBus.js';
 import { logger } from './StructuredLogger.js';
+import { labelManager } from './LabelManager.js';
+import { activeListManager } from './ActiveListManager.js';
 
 /**
  * @class StateManager
@@ -137,9 +139,9 @@ export class StateManager extends EventBus {
       this._state.pendingLabels = this._state.pendingLabels || [];
       
       // UI and application state
-      this._state.activeListFilter = window.activeListFilter || '';
-      this._state.sidebarVisible = window.sidebarVisible !== undefined ? window.sidebarVisible : true;
-      this._state.isBulkOperation = window.isBulkOperation || false;
+      this._state.activeListFilter = '';
+      this._state.sidebarVisible = true;
+      this._state.isBulkOperation = false;
       
       // Legacy facility coordinate variables
       this._state.sesFacilityCoords = window.sesFacilityCoords || {};
@@ -633,8 +635,8 @@ export class StateManager extends EventBus {
           if (featureLayers[category] && featureLayers[category][key] && 
               featureLayers[category][key].some(l => l._map)) {
             // Only create label if the layer is still on the map
-            if (window.ensureLabel) {
-              window.ensureLabel(category, key, labelName, isPoint, layer);
+            if (labelManager) {
+              labelManager.ensureLabel(category, key, labelName, isPoint, layer);
             }
           }
         });
@@ -658,11 +660,11 @@ export class StateManager extends EventBus {
    * @private
    */
   _processActiveListUpdate() {
-    if (window.updateActiveList) {
+    if (activeListManager) {
       this.logger.debug('Calling updateActiveList after bulk operation');
-      window.updateActiveList();
+      activeListManager.updateActiveList();
     } else {
-      this.logger.warn('updateActiveList function not found');
+      this.logger.warn('ActiveListManager not found');
     }
   }
   
