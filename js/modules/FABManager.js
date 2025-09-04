@@ -1,170 +1,38 @@
 /**
- * @module modules/FABManager
- * Modern ES6-based FAB (Floating Action Button) management for WeeWoo Map Friend
- * Handles registration, creation, destruction, and lookup of FAB instances
+ * @fileoverview Modern FABManager Component
+ * Unified FAB management system for registration, creation, destruction, and lookup of FAB instances
  */
 
-import { globalEventBus } from './EventBus.js';
-import { stateManager } from './StateManager.js';
+import { logger } from './StructuredLogger.js';
 
 /**
  * @class FABManager
- * Manages floating action button system with enhanced functionality
+ * Unified FAB management system
+ * Handles registration, creation, destruction, and lookup of FAB instances
  */
 export class FABManager {
+  /**
+   * Create FABManager instance
+   */
   constructor() {
-    this.initialized = false;
     this.instances = new Map();
     this.types = new Map();
-    this.fabContainer = null;
-    this.fabLogger = this.createLogger();
     
-    // Bind methods
-    this.init = this.init.bind(this);
-    this.register = this.register.bind(this);
-    this.create = this.create.bind(this);
-    this.getInstance = this.getInstance.bind(this);
-    this.destroy = this.destroy.bind(this);
-    this.destroyAll = this.destroyAll.bind(this);
-    this.getStatus = this.getStatus.bind(this);
-    
-    console.log('🔘 FABManager: FAB management system initialized');
-  }
-  
-  /**
-   * Initialize the FAB manager
-   */
-  async init() {
-    if (this.initialized) {
-      console.warn('FABManager: Already initialized');
-      return;
-    }
-    
-    try {
-      console.log('🔧 FABManager: Starting initialization...');
-      
-      // Set up global event listeners
-      this.setupEventListeners();
-      
-      // Initialize FAB container
-      this.initializeFABContainer();
-      
-      // Register default FAB types
-      this.registerDefaultTypes();
-      
-      this.initialized = true;
-      console.log('✅ FABManager: FAB management system ready');
-      
-    } catch (error) {
-      console.error('🚨 FABManager: Failed to initialize:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Create enhanced logger for FAB operations
-   */
-  createLogger() {
-    return {
-      log(component, message, data = null) {
-        const timestamp = new Date().toISOString();
-        const prefix = `🔍 [${timestamp}] [FABManager] [${component}]`;
-        if (data) {
-          console.log(`${prefix}: ${message}`, data);
-        } else {
-          console.log(`${prefix}: ${message}`);
-        }
-      }
-    };
-  }
-  
-  /**
-   * Set up global event listeners
-   */
-  setupEventListeners() {
-    // Listen for FAB creation requests
-    globalEventBus.on('fab:create', ({ type, config }) => {
-      this.create(type, config);
+    // Create logger instance
+    this.logger = logger.createChild({ 
+      module: 'FABManager'
     });
     
-    // Listen for FAB destruction requests
-    globalEventBus.on('fab:destroy', ({ id }) => {
-      this.destroy(id);
-    });
-    
-    // Listen for FAB state changes
-    globalEventBus.on('fab:stateChange', ({ id, state }) => {
-      const instance = this.getInstance(id);
-      if (instance && instance.updateState) {
-        instance.updateState(state);
-      }
-    });
+    this.logger.info('FABManager instance created');
   }
-  
+
   /**
-   * Initialize FAB container
-   */
-  initializeFABContainer() {
-    // Look for existing FAB container or create one
-    this.fabContainer = document.getElementById('fab-container') || 
-                       document.querySelector('.fab-container') ||
-                       this.createFABContainer();
-    
-    if (this.fabContainer) {
-      console.log('FABManager: FAB container initialized');
-    } else {
-      console.warn('FABManager: No FAB container found or created');
-    }
-  }
-  
-  /**
-   * Create FAB container if it doesn't exist
-   */
-  createFABContainer() {
-    const container = document.createElement('div');
-    container.id = 'fab-container';
-    container.className = 'fab-container';
-    container.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    `;
-    
-    document.body.appendChild(container);
-    console.log('FABManager: Created new FAB container');
-    return container;
-  }
-  
-  /**
-   * Register default FAB types
-   */
-  registerDefaultTypes() {
-    // Register base FAB class
-    if (window.BaseFAB) {
-      this.register('base', window.BaseFAB);
-    }
-    
-    // Register specific FAB types
-    if (window.DocsFAB) {
-      this.register('docs', window.DocsFAB);
-    }
-    
-    if (window.SidebarToggleFAB) {
-      this.register('sidebarToggle', window.SidebarToggleFAB);
-    }
-    
-    console.log('FABManager: Default FAB types registered');
-  }
-  
-  /**
-   * Register a new FAB type
+   * Register a FAB type
+   * @param {string} type - FAB type identifier
+   * @param {Class} FABClass - FAB class constructor
    */
   register(type, FABClass) {
-    this.fabLogger.log('Register', 'Registering FAB type', {
+    this.logger.info('Registering FAB type', {
       type: type,
       FABClass: FABClass.name || 'Anonymous',
       FABClassType: typeof FABClass
@@ -172,31 +40,31 @@ export class FABManager {
     
     this.types.set(type, FABClass);
     
-    this.fabLogger.log('Register', 'FAB type registered successfully', {
+    this.logger.info('FAB type registered successfully', {
       type: type,
       totalTypes: this.types.size
     });
-    
-    // Emit registration event
-    globalEventBus.emit('fab:typeRegistered', { type, FABClass });
   }
-  
+
   /**
-   * Create a new FAB instance
+   * Create a FAB instance
+   * @param {string} type - FAB type identifier
+   * @param {Object} config - Configuration options
+   * @returns {Promise<BaseFAB>} FAB instance
    */
-  create(type, config = {}) {
-    this.fabLogger.log('Create', 'Creating FAB instance', {
+  async create(type, config = {}) {
+    this.logger.info('Creating FAB instance', {
       type: type,
       config: config,
       existingInstances: this.instances.size,
       registeredTypes: Array.from(this.types.keys())
     });
     
-    const id = config.id || `${type}_${Date.now()}`;
+    const id = config.id || type;
     
-    // Check if instance already exists
+    // Return existing instance if found
     if (this.instances.has(id)) {
-      this.fabLogger.log('Create', 'Returning existing FAB instance', { id: id });
+      this.logger.info('Returning existing FAB instance', { id: id });
       return this.instances.get(id);
     }
     
@@ -204,198 +72,218 @@ export class FABManager {
     const FABClass = this.types.get(type);
     if (!FABClass) {
       const error = `FAB type '${type}' not registered`;
-      this.fabLogger.log('Create', 'FAB type not found', {
+      this.logger.error('FAB type not found', {
         type: type,
         availableTypes: Array.from(this.types.keys())
       });
       throw new Error(error);
     }
     
-    this.fabLogger.log('Create', 'Instantiating FAB class', {
+    this.logger.info('Instantiating FAB class', {
       type: type,
       FABClass: FABClass.name || 'Anonymous',
       id: id
     });
     
     try {
-      // Create instance with enhanced config
-      const enhancedConfig = {
-        ...config,
-        id: id,
-        container: this.fabContainer,
-        manager: this
-      };
-      
-      const instance = new FABClass(enhancedConfig);
-      
-      // Initialize if init method exists
-      if (typeof instance.init === 'function') {
-        instance.init();
-      }
-      
-      // Store instance
+      // Create and initialize instance with computed ID
+      const instanceConfig = { ...config, id: id };
+      const instance = new FABClass(instanceConfig);
+      await instance.init();
       this.instances.set(id, instance);
       
-      this.fabLogger.log('Create', 'FAB instance created successfully', {
+      this.logger.info('FAB instance created successfully', {
         type: type,
         id: id,
         totalInstances: this.instances.size
       });
       
-      // Emit creation event
-      globalEventBus.emit('fab:instanceCreated', { id, type, instance });
-      
       return instance;
       
     } catch (error) {
-      this.fabLogger.log('Create', 'FAB instance creation failed', {
+      this.logger.error('Failed to create FAB instance', {
         type: type,
         id: id,
-        error: error.message
+        error: error.message,
+        stack: error.stack
       });
       throw error;
     }
   }
-  
+
   /**
-   * Get FAB instance by ID
+   * Get a FAB instance by ID
+   * @param {string} id - FAB instance ID
+   * @returns {BaseFAB|null} FAB instance or null
    */
   getInstance(id) {
-    return this.instances.get(id) || null;
+    const instance = this.instances.get(id);
+    
+    this.logger.debug('Getting FAB instance', {
+      id: id,
+      found: !!instance
+    });
+    
+    return instance || null;
   }
-  
+
   /**
    * Get all FAB instances
+   * @returns {Map} Map of all FAB instances
    */
   getAllInstances() {
-    return Array.from(this.instances.values());
+    this.logger.debug('Getting all FAB instances', {
+      count: this.instances.size
+    });
+    
+    return new Map(this.instances);
   }
-  
+
   /**
-   * Get FAB instances by type
+   * Get all registered FAB types
+   * @returns {Array<string>} Array of registered type names
    */
-  getInstancesByType(type) {
-    return Array.from(this.instances.values()).filter(instance => 
-      instance.type === type || instance.constructor.name.toLowerCase().includes(type.toLowerCase())
-    );
+  getRegisteredTypes() {
+    const types = Array.from(this.types.keys());
+    
+    this.logger.debug('Getting registered FAB types', {
+      types: types,
+      count: types.length
+    });
+    
+    return types;
   }
-  
+
+  /**
+   * Check if a FAB type is registered
+   * @param {string} type - FAB type identifier
+   * @returns {boolean} Whether type is registered
+   */
+  isTypeRegistered(type) {
+    const isRegistered = this.types.has(type);
+    
+    this.logger.debug('Checking if FAB type is registered', {
+      type: type,
+      isRegistered: isRegistered
+    });
+    
+    return isRegistered;
+  }
+
+  /**
+   * Check if a FAB instance exists
+   * @param {string} id - FAB instance ID
+   * @returns {boolean} Whether instance exists
+   */
+  hasInstance(id) {
+    const hasInstance = this.instances.has(id);
+    
+    this.logger.debug('Checking if FAB instance exists', {
+      id: id,
+      hasInstance: hasInstance
+    });
+    
+    return hasInstance;
+  }
+
   /**
    * Destroy a specific FAB instance
+   * @param {string} id - FAB instance ID
+   * @returns {boolean} Whether instance was destroyed
    */
   destroy(id) {
     const instance = this.instances.get(id);
+    
     if (instance) {
-      this.fabLogger.log('Destroy', 'Destroying FAB instance', { id: id });
+      this.logger.info('Destroying FAB instance', {
+        id: id,
+        type: instance.constructor.name
+      });
       
-      try {
-        // Call destroy method if it exists
-        if (typeof instance.destroy === 'function') {
-          instance.destroy();
-        }
-        
-        // Remove from instances map
-        this.instances.delete(id);
-        
-        this.fabLogger.log('Destroy', 'FAB instance destroyed successfully', { id: id });
-        
-        // Emit destruction event
-        globalEventBus.emit('fab:instanceDestroyed', { id });
-        
-      } catch (error) {
-        console.error('FABManager: Error destroying FAB instance:', error);
-      }
+      instance.destroy();
+      this.instances.delete(id);
+      
+      this.logger.info('FAB instance destroyed successfully', {
+        id: id,
+        remainingInstances: this.instances.size
+      });
+      
+      return true;
+    } else {
+      this.logger.warn('FAB instance not found for destruction', {
+        id: id
+      });
+      return false;
     }
   }
-  
+
   /**
    * Destroy all FAB instances
+   * @returns {number} Number of instances destroyed
    */
   destroyAll() {
-    this.fabLogger.log('DestroyAll', 'Destroying all FAB instances', {
-      totalInstances: this.instances.size
+    const instanceCount = this.instances.size;
+    
+    this.logger.info('Destroying all FAB instances', {
+      count: instanceCount
     });
     
     for (const [id, instance] of this.instances.entries()) {
-      try {
-        if (typeof instance.destroy === 'function') {
-          instance.destroy();
-        }
-      } catch (error) {
-        console.error('FABManager: Error destroying FAB instance:', error);
-      }
+      this.logger.debug('Destroying FAB instance', {
+        id: id,
+        type: instance.constructor.name
+      });
+      
+      instance.destroy();
+      this.instances.delete(id);
     }
     
-    this.instances.clear();
-    
-    this.fabLogger.log('DestroyAll', 'All FAB instances destroyed');
-    
-    // Emit destruction event
-    globalEventBus.emit('fab:allInstancesDestroyed');
-  }
-  
-  /**
-   * Show all FAB instances
-   */
-  showAll() {
-    this.instances.forEach(instance => {
-      if (typeof instance.show === 'function') {
-        instance.show();
-      }
+    this.logger.info('All FAB instances destroyed', {
+      destroyedCount: instanceCount
     });
-  }
-  
-  /**
-   * Hide all FAB instances
-   */
-  hideAll() {
-    this.instances.forEach(instance => {
-      if (typeof instance.hide === 'function') {
-        instance.hide();
-      }
-    });
-  }
-  
-  /**
-   * Update FAB positions based on device context
-   */
-  updatePositions() {
-    const deviceContext = stateManager.get('deviceContext');
-    if (!deviceContext) return;
     
-    this.instances.forEach(instance => {
-      if (typeof instance.updatePosition === 'function') {
-        instance.updatePosition(deviceContext);
-      }
-    });
+    return instanceCount;
   }
-  
+
   /**
-   * Get FAB manager status
+   * Get manager statistics
+   * @returns {Object} Manager statistics
    */
-  getStatus() {
-    return {
-      initialized: this.initialized,
-      totalTypes: this.types.size,
-      totalInstances: this.instances.size,
-      fabContainer: !!this.fabContainer,
-      registeredTypes: Array.from(this.types.keys()),
-      instanceIds: Array.from(this.instances.keys())
+  getStats() {
+    const stats = {
+      registeredTypes: this.types.size,
+      activeInstances: this.instances.size,
+      types: Array.from(this.types.keys()),
+      instances: Array.from(this.instances.keys())
     };
+    
+    this.logger.debug('FABManager statistics', stats);
+    
+    return stats;
   }
-  
+
   /**
-   * Check if FAB manager is ready
+   * Clear all registrations and instances
    */
-  isReady() {
-    return this.initialized;
+  clear() {
+    this.logger.info('Clearing FABManager', {
+      types: this.types.size,
+      instances: this.instances.size
+    });
+    
+    this.destroyAll();
+    this.types.clear();
+    
+    this.logger.info('FABManager cleared');
   }
 }
 
-// Export singleton instance
+// Create singleton instance
 export const fabManager = new FABManager();
 
 // Export for legacy compatibility
 if (typeof window !== 'undefined') {
   window.FABManager = fabManager;
 }
+
+console.log('🎯 FABManager: Modern ES6 module loaded');

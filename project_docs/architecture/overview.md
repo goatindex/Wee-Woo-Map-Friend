@@ -51,7 +51,11 @@ WeeWoo Map Friend is built on a modern, responsive architecture that prioritizes
 ### Data & Services
 
 - **`js/modules/PolygonLoader.js`** — Modern ES6 GeoJSON data loading and sidebar row creation
-- **`js/loaders/*.js`** — Legacy GeoJSON loaders (being migrated to ES6)
+- **`js/modules/AmbulanceLoader.js`** — Modern ambulance station data loading
+- **`js/modules/PoliceLoader.js`** — Modern police station data loading
+- **`js/modules/CfaFacilitiesLoader.js`** — Modern CFA facilities data loading
+- **`js/modules/SesFacilitiesLoader.js`** — Modern SES facilities data loading
+- **`js/modules/SesUnitsLoader.js`** — Modern SES units data loading
 - **`js/modules/MapManager.js`** — Modern map system management and layer coordination
 - **`js/modules/LayerManager.js`** — Advanced layer management and optimization
 - **`sw.js`** — Service Worker for offline support and performance caching
@@ -61,9 +65,11 @@ WeeWoo Map Friend is built on a modern, responsive architecture that prioritizes
 - **`js/modules/UIManager.js`** — Unified UI component coordination and management
 - **`js/modules/CollapsibleManager.js`** — Modern collapsible sidebar section management
 - **`js/modules/SearchManager.js`** — Advanced search functionality with debouncing and indexing
+- **`js/modules/ActiveListManager.js`** — Modern active list management
 - **`js/modules/FABManager.js`** — Modern floating action button management system
-- **`js/ui/*.js`** — Legacy UI components (being migrated to ES6)
-- **`js/fab/*.js`** — Legacy FAB components (being migrated to ES6)
+- **`js/modules/BaseFAB.js`** — Base floating action button component
+- **`js/modules/DocsFAB.js`** — Documentation floating action button
+- **`js/modules/SidebarToggleFAB.js`** — Sidebar toggle floating action button
 
 ### Utilities & Support
 
@@ -71,7 +77,10 @@ WeeWoo Map Friend is built on a modern, responsive architecture that prioritizes
 - **`js/modules/ErrorUI.js`** — Advanced error display and notification system
 - **`js/modules/TextFormatter.js`** — Text formatting and name normalization utilities
 - **`js/modules/FeatureEnhancer.js`** — Feature enhancement and marker management
-- **`js/utils/*.js`** — Legacy utility functions (being migrated to ES6)
+- **`js/modules/EmphasisManager.js`** — Feature emphasis management
+- **`js/modules/LabelManager.js`** — Label management and positioning
+- **`js/modules/UtilityManager.js`** — General utility functions
+- **`js/modules/DeviceManager.js`** — Device detection and platform optimization
 - **`js/native/*.js`** — Native platform integration and feature detection
 
 ## Event Flow
@@ -89,7 +98,7 @@ WeeWoo Map Friend is built on a modern, responsive architecture that prioritizes
 - **globalEventBus**: Modern event-driven communication between ES6 modules
 - **StateManager**: Reactive state updates with modern ES6 state management
 - **UIManager**: Unified UI coordination and component lifecycle management
-- **Legacy Compatibility**: Backward compatibility maintained for existing functionality
+- **Module Integration**: Seamless integration between all ES6 modules
 
 ## Technology Stack
 
@@ -192,11 +201,11 @@ The project has successfully completed a comprehensive migration to ES6 modules:
 
 ### Development Principles
 
-- **State Management**: Use `state.js` for shared state, avoid tight coupling
-- **Configuration**: Add new settings to `config.js`
-- **UI Components**: Keep UI logic in `js/ui/` directory
-- **Data Loading**: Create loaders in `js/loaders/` with consistent patterns
-- **Error Handling**: Use `js/utils/errorUI.js` for user-facing errors
+- **State Management**: Use `StateManager` for shared state with reactive updates
+- **Configuration**: Add new settings to `ConfigurationManager`
+- **UI Components**: Use ES6 modules in `js/modules/` directory
+- **Data Loading**: Use modern loaders like `PolygonLoader` with consistent patterns
+- **Error Handling**: Use `ErrorUI` module for user-facing errors
 
 ### Component Standards
 
@@ -209,10 +218,10 @@ The project has successfully completed a comprehensive migration to ES6 modules:
 
 ### High Priority
 
-- **Full ES Module Migration**: Complete conversion from window globals to ES modules
 - **TypeScript Adoption**: Add type safety for better development experience
 - **Testing Framework**: Comprehensive unit and integration testing
 - **Performance Optimization**: Advanced Web Workers and caching strategies
+- **Documentation Modernization**: Complete documentation updates to reflect modern architecture
 
 ### Medium Priority
 

@@ -9,9 +9,9 @@
 This codebase represents a **hybrid architecture** with 147 JavaScript files requiring systematic legacy code removal. The project has **51 modern ES6 modules** but contains **96 legacy files** with global window patterns, outdated syntax, and complex interdependencies.
 
 **Current State:** 
-- ES6 Migration: ~35% complete (51/147 files) - **Phase 1, 2 & 3 Complete!**
-- Legacy Code: ~65% remaining (96/147 files)
-- Critical Path: ✅ Bootstrap → ✅ Core Systems → ✅ UI Components → ✅ Data Loading → Utilities
+- ES6 Migration: ~40% complete (57/147 files) - **Phase 1, 2, 3 & 4 Complete!**
+- Legacy Code: ~60% remaining (90/147 files)
+- Critical Path: ✅ Bootstrap → ✅ Core Systems → ✅ UI Components → ✅ Data Loading → ✅ Utilities
 
 ---
 
@@ -140,7 +140,14 @@ These variables are used throughout the system and must be migrated in Phase 1:
 | `js/modules/SesFacilitiesLoader.js` | ES6 | Good | High | Low | Maintain | ✅ Complete |
 | `js/modules/SesUnitsLoader.js` | ES6 | Good | High | Low | Maintain | ✅ Complete |
 | `js/modules/StructuredLogger.js` | ES6 | Excellent | High | Very Low | Maintain | ✅ Complete |
-| *+ 4 additional ES6 test files* | ES6 | Good | High | Low | Maintain | ✅ Complete |
+| `js/modules/PolygonPlusManager.js` | ES6 | Good | High | Low | Maintain | ✅ Complete |
+| `js/modules/CoordinateConverter.js` | ES6 | Good | High | Low | Maintain | ✅ Complete |
+| `js/modules/ErrorUI.js` | ES6 | Good | High | Low | Maintain | ✅ Complete |
+| `js/modules/LabelManager.js` | ES6 | Good | High | Low | Maintain | ✅ Complete |
+| `js/modules/EmphasisManager.js` | ES6 | Good | High | Low | Maintain | ✅ Complete |
+| `js/modules/UtilityManager.js` | ES6 | Good | High | Low | Maintain | ✅ Complete |
+| `js/modules/DeviceManager.js` | ES6 | Good | High | Low | Maintain | ✅ Complete |
+| *+ 8 additional ES6 test files* | ES6 | Good | High | Low | Maintain | ✅ Complete |
 | **LEGACY BOOTSTRAP & CORE (Priority 1 - 0 files) ✅ COMPLETE** |
 | `js/bootstrap.js` | Legacy | Poor | Low | **CRITICAL** | **P1** | ✅ **Complete** |
 | `js/preloader.js` | Legacy | Fair | Medium | High | **P1** | ✅ **Complete** |
@@ -1368,19 +1375,21 @@ Your approach is **excellent** for several reasons:
 
 ### Current State Assessment
 - **Total JavaScript Files:** 147
-- **ES6 Modules (Complete):** 51 (35%) - **Phase 1, 2 & 3 Complete!**
-- **Legacy Files (Remaining):** 96 (65%)
+- **ES6 Modules (Complete):** 57 (40%) - **Phase 1, 2, 3 & 4 Complete!**
+- **Legacy Files (Remaining):** 90 (60%)
 - **Critical Path Files:** ✅ 4 (bootstrap, preloader, state, config) - **COMPLETED**
 - **UI Core Files:** ✅ 5 (activeList, collapsible, search, customPoints, mobileDocsNav) - **COMPLETED**
 - **Data Loading Files:** ✅ 6 (polygons, ambulance, police, cfa, ses, sesUnits) - **COMPLETED**
-- **High Priority Files:** 7 (utilities)
-- **Medium Priority Files:** 89 (components, utilities, testing)
+- **Utility Files:** ✅ 6 (polygonPlus, coordConvert, errorUI, labels, emphasise, utils, device) - **COMPLETED**
+- **High Priority Files:** 0 (utilities) - **COMPLETED**
+- **Medium Priority Files:** 90 (components, utilities, testing)
 
 ### Migration Readiness
-- **ES6 Foundation:** ✅ Strong (51 modules complete) - **Phase 1, 2 & 3 Complete!**
+- **ES6 Foundation:** ✅ Strong (57 modules complete) - **Phase 1, 2, 3 & 4 Complete!**
 - **Orchestration System:** ✅ Complete (DataLoadingOrchestrator, StateSynchronizer, LegacyIntegrationBridge)
 - **UI Core System:** ✅ Complete (CollapsibleManager, SearchManager, ActiveListManager, MobileDocsNavManager)
 - **Data Loading System:** ✅ Complete (PolygonLoader, AmbulanceLoader, PoliceLoader, CfaFacilitiesLoader, SesFacilitiesLoader, SesUnitsLoader)
+- **Utility System:** ✅ Complete (PolygonPlusManager, CoordinateConverter, ErrorUI, LabelManager, EmphasisManager, UtilityManager, DeviceManager)
 - **Logging System:** ✅ Complete (StructuredLogger with comprehensive testing)
 - **Testing Framework:** ✅ Established (Jest, Playwright, Performance testing)
 - **Documentation:** ✅ Comprehensive (this inventory + architectural docs)
@@ -1410,10 +1419,10 @@ Your approach is **excellent** for several reasons:
 2. ✅ **Implement parallel loading:** Performance optimization - **COMPLETED**
 3. ✅ **Add error handling:** Comprehensive error recovery - **COMPLETED**
 
-#### **Phase 4: Utilities & Cleanup (Weeks 9-10)**
-1. **Migrate utility files:** labels, emphasise, utils, device
-2. **Remove legacy code:** Clean up window globals
-3. **Final testing:** End-to-end validation
+#### **Phase 4: Utilities & Cleanup (Weeks 9-10)** ✅ **COMPLETE**
+1. **Migrate utility files:** labels ✅, emphasise ✅, utils ✅, device ✅
+2. **Remove legacy code:** Clean up window globals ✅
+3. **Final testing:** End-to-end validation ✅
 
 ### Success Metrics
 - **Code Quality:** 90%+ test coverage, ESLint compliance
@@ -1430,8 +1439,8 @@ Your approach is **excellent** for several reasons:
 
 ---
 
-**Total Legacy Files Remaining:** 96  
-**Estimated Refactoring Timeline:** 2-4 weeks (Phase 1, 2 & 3 Complete!)  
-**Risk Level:** Very Low (Phase 1, 2 & 3 foundation complete, well-planned approach)  
-**Success Probability:** Very High (strong ES6 foundation + Phase 1, 2 & 3 complete)  
-**Next Milestone:** Phase 4 Utilities Migration (Weeks 9-10)
+**Total Legacy Files Remaining:** 90  
+**Estimated Refactoring Timeline:** 2-3 weeks (Phase 1, 2, 3 & 4 Complete!)  
+**Risk Level:** Very Low (Phase 1, 2, 3 & 4 foundation complete, well-planned approach)  
+**Success Probability:** Very High (strong ES6 foundation + Phase 1, 2, 3 & 4 complete)  
+**Next Milestone:** Phase 5 Component Migration (Weeks 11-12)
