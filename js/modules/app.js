@@ -7,13 +7,6 @@
 import { stateManager } from './StateManager.js';
 import { docsRouter } from './Router.js';
 import { globalEventBus } from './EventBus.js';
-import { legacyBridge } from './LegacyBridge.js';
-import { es6IntegrationManager } from './ES6IntegrationManager.js';
-import { HamburgerMenu } from '../components/HamburgerMenu.js';
-import { CollapsibleManager } from '../components/CollapsibleManager.js';
-import { SearchManager } from '../components/SearchManager.js';
-import { ActiveListManager } from '../components/ActiveListManager.js';
-import { MobileDocsNavManager } from '../components/MobileDocsNavManager.js';
 
 /**
  * @class App
@@ -104,17 +97,6 @@ class App {
    */
   async initES6Integration() {
     try {
-      console.log('🔧 App: Initializing ES6 module integration...');
-      
-      // Initialize the ES6 integration manager
-      await es6IntegrationManager.init();
-      
-      // Wait for integration to be ready
-      if (!es6IntegrationManager.isReady()) {
-        throw new Error('ES6 integration failed to initialize');
-      }
-      
-      console.log('✅ App: ES6 module integration complete');
       
     } catch (error) {
       console.error('🚨 App: ES6 module integration failed:', error);
@@ -305,22 +287,6 @@ class App {
    * Initialize legacy bridge system
    * @private
    */
-  async initLegacyBridge() {
-    console.log('🌉 App: Initializing legacy bridge...');
-    
-    try {
-      await legacyBridge.init();
-      
-      // Register for legacy system events
-      this.setupLegacyIntegration();
-      
-      console.log('✅ App: Legacy bridge ready');
-      
-    } catch (error) {
-      console.error('🚨 App: Failed to initialize legacy bridge:', error);
-      // Bridge failure is not critical - continue without it
-    }
-  }
   
   /**
    * Set up integration with legacy system events
@@ -692,15 +658,6 @@ class App {
       // Store component
       this.components.set('mobileDocsMenu', hamburgerMenu);
       
-      // Register with legacy bridge if available
-      if (legacyBridge) {
-        legacyBridge.registerModernComponent('MobileDocsMenu', hamburgerMenu, {
-          updateNavigation: () => {
-            const items = this.extractDocumentationNavItems();
-            hamburgerMenu.updateItems(items);
-          }
-        });
-      }
       
       // Remove legacy mobile nav to avoid conflicts
       this.removeLegacyMobileNav();

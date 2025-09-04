@@ -50,17 +50,9 @@ export class ES6Bootstrap {
       
       let module;
       switch (moduleName) {
-        case 'es6IntegrationManager':
-          module = await import('./ES6IntegrationManager.js');
-          this.modules.set(moduleName, module.es6IntegrationManager);
-          break;
         case 'configurationManager':
           module = await import('./ConfigurationManager.js');
           this.modules.set(moduleName, module.configurationManager);
-          break;
-        case 'legacyCompatibility':
-          module = await import('./LegacyCompatibility.js');
-          this.modules.set(moduleName, module.legacyCompatibility);
           break;
         case 'activeListManager':
           module = await import('./ActiveListManager.js');
@@ -85,10 +77,6 @@ export class ES6Bootstrap {
         case 'stateSynchronizer':
           module = await import('./StateSynchronizer.js');
           this.modules.set(moduleName, module.stateSynchronizer);
-          break;
-        case 'legacyIntegrationBridge':
-          module = await import('./LegacyIntegrationBridge.js');
-          this.modules.set(moduleName, module.legacyIntegrationBridge);
           break;
         case 'labelManager':
           module = await import('./LabelManager.js');
@@ -264,16 +252,6 @@ export class ES6Bootstrap {
    */
   async initES6Integration() {
     try {
-      console.log('🔧 ES6Bootstrap: Initializing ES6 integration manager...');
-      
-      const es6IntegrationManager = await this.loadModule('es6IntegrationManager');
-      await es6IntegrationManager.init();
-      
-      if (!es6IntegrationManager.isReady()) {
-        throw new Error('ES6 integration manager failed to initialize');
-      }
-      
-      console.log('✅ ES6Bootstrap: ES6 integration manager ready');
       
     } catch (error) {
       console.error('🚨 ES6Bootstrap: ES6 integration manager failed:', error);
@@ -506,13 +484,6 @@ export class ES6Bootstrap {
     try {
       console.log('🔗 ES6Bootstrap: Initializing legacy compatibility...');
       
-      // Initialize legacy compatibility layer
-      const legacyCompatibility = await this.loadModule('legacyCompatibility');
-      if (legacyCompatibility && typeof legacyCompatibility.init === 'function') {
-        await legacyCompatibility.init();
-      }
-      
-      console.log('✅ ES6Bootstrap: Legacy compatibility ready');
       
     } catch (error) {
       console.error('🚨 ES6Bootstrap: Legacy compatibility initialization failed:', error);
@@ -601,15 +572,6 @@ export class ES6Bootstrap {
         console.warn('⚠️ ES6Bootstrap: State synchronizer not available or missing init method');
       }
       
-      // Initialize legacy integration bridge
-      const legacyBridge = await this.loadModule('legacyIntegrationBridge');
-      if (legacyBridge && typeof legacyBridge.init === 'function') {
-        console.log('🌉 ES6Bootstrap: Initializing legacy integration bridge...');
-        await legacyBridge.init();
-        console.log('✅ ES6Bootstrap: Legacy integration bridge initialized');
-      } else {
-        console.warn('⚠️ ES6Bootstrap: Legacy integration bridge not available or missing init method');
-      }
       
       // Initialize label manager
       const labelManager = await this.loadModule('labelManager');
