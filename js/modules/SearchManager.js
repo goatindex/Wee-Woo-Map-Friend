@@ -6,6 +6,7 @@
 
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
+import { configurationManager } from './ConfigurationManager.js';
 
 /**
  * @class SearchManager
@@ -171,9 +172,9 @@ export class SearchManager {
     // Get search data from global variables (legacy compatibility)
     const namesByCategory = stateManager.get('namesByCategory', {});
     const nameToKey = stateManager.get('nameToKey', {});
-    const outlineColors = window.outlineColors || {};
-    const labelColorAdjust = window.labelColorAdjust || {};
-    const adjustHexColor = window.adjustHexColor || ((color, factor) => color);
+    const outlineColors = configurationManager.get('outlineColors', {});
+    const labelColorAdjust = configurationManager.get('labelColorAdjust', {});
+    const adjustHexColor = configurationManager.get('adjustHexColor', ((color, factor) => color));
     
     console.log('SearchManager: Search data available:', {
       categories: Object.keys(namesByCategory).length,
@@ -279,9 +280,9 @@ export class SearchManager {
     }
     
     // Get color utilities from global scope
-    const outlineColors = window.outlineColors || {};
-    const labelColorAdjust = window.labelColorAdjust || {};
-    const adjustHexColor = window.adjustHexColor || ((color, factor) => color);
+    const outlineColors = configurationManager.get('outlineColors', {});
+    const labelColorAdjust = configurationManager.get('labelColorAdjust', {});
+    const adjustHexColor = configurationManager.get('adjustHexColor', ((color, factor) => color));
     
     // Build results HTML
     const resultsHTML = results.map(result => {
@@ -462,7 +463,7 @@ export class SearchManager {
 export const searchManager = new SearchManager();
 
 // Export for legacy compatibility
+// Export for global access (ES6 module system)
 if (typeof window !== 'undefined') {
-  window.initSearch = () => searchManager.initSearch();
   window.SearchManager = searchManager;
 }

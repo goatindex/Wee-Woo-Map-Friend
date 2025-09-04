@@ -378,10 +378,13 @@ export class ActiveListManager {
       }
       nameSpan.style.flex = '1';
       // Set color to match polygon border (with optional adjustment)
-      const baseColor = window.outlineColors?.[category];
-      const factor = window.labelColorAdjust?.[category] ?? 1.0;
-      if (baseColor && window.adjustHexColor) {
-        nameSpan.style.color = window.adjustHexColor(baseColor, factor);
+      const outlineColors = configurationManager.get('outlineColors', {});
+      const labelColorAdjust = configurationManager.get('labelColorAdjust', {});
+      const adjustHexColor = configurationManager.get('adjustHexColor', ((color, factor) => color));
+      const baseColor = outlineColors[category];
+      const factor = labelColorAdjust[category] ?? 1.0;
+      if (baseColor && adjustHexColor) {
+        nameSpan.style.color = adjustHexColor(baseColor, factor);
       }
       row.appendChild(nameSpan);
       
