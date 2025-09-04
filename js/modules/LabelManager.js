@@ -1,586 +1,363 @@
 /**
- * @module modules/LabelManager
- * Modern ES6-based label management for WeeWoo Map Friend
- * Manages map labels for features and provides label visibility controls
+ * @module LabelManager
+ * Creation and management of map name labels for polygons and points.
+ * Migrated from js/labels.js
  */
 
-import { globalEventBus } from './EventBus.js';
-import { stateManager } from './StateManager.js';
-import { configurationManager } from './ConfigurationManager.js';
-import { layerManager } from './LayerManager.js';
+import { logger } from './StructuredLogger.js';
 
 /**
- * @class LabelManager
- * Manages map labels for features
+ * LabelManager - Handles creation and management of map name labels
  */
 export class LabelManager {
   constructor() {
-    this.initialized = false;
-    this.labels = new Map(); // category -> Map<key, L.Marker>
-    this.labelSettings = new Map(); // category -> Map<key, { visible: boolean, text: string }>
-    
-    // Bind methods
-    this.init = this.init.bind(this);
-    this.ensureLabel = this.ensureLabel.bind(this);
-    this.removeLabel = this.removeLabel.bind(this);
-    this.showLabel = this.showLabel.bind(this);
-    this.hideLabel = this.hideLabel.bind(this);
-    this.updateLabel = this.updateLabel.bind(this);
-    this.getLabel = this.getLabel.bind(this);
-    this.isLabelVisible = this.isLabelVisible.bind(this);
-    this.clearCategoryLabels = this.clearCategoryLabels.bind(this);
-    this.getStatus = this.getStatus.bind(this);
-    
-    console.log('🏷️ LabelManager: Label management system initialized');
+    this.logger = logger.createChild({ module: 'LabelManager' });
+    this.logger.info('LabelManager initialized');
   }
-  
+
   /**
-   * Initialize the label manager
+   * Resolve a label color for a feature based on its rendered style.
    */
-  async init() {
-    if (this.initialized) {
-      console.warn('LabelManager: Already initialized');
-      return;
-    }
+  resolveLabelColor(category, isPoint, layerOrMarker, config) {
+    const timer = this.logger.time('resolve-label-color');
     
     try {
-      console.log('🔧 LabelManager: Starting label manager initialization...');
+      let color = '';
       
-      // Wait for dependencies
-      await this.waitForDependencies();
-      
-      // Set up event listeners
-      this.setupEventListeners();
-      
-      this.initialized = true;
-      console.log('✅ LabelManager: Label management system ready');
-      
-    } catch (error) {
-      console.error('🚨 LabelManager: Failed to initialize:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Wait for required dependencies
-   */
-  async waitForDependencies() {
-    const dependencies = [
-      { name: 'LayerManager', check: () => layerManager.isReady() },
-      { name: 'ConfigurationManager', check: () => configurationManager.isReady() },
-      { name: 'StateManager', check: () => stateManager.isReady() }
-    ];
-    
-    for (const dep of dependencies) {
-      if (!dep.check()) {
-        console.log(`⏳ LabelManager: Waiting for ${dep.name}...`);
-        await this.waitForDependency(dep.check, dep.name);
-      }
-    }
-    
-    console.log('✅ LabelManager: All dependencies ready');
-  }
-  
-  /**
-   * Wait for a specific dependency
-   */
-  async waitForDependency(checkFn, name) {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error(`Timeout waiting for ${name}`));
-      }, 10000); // 10 second timeout
-      
-      const check = () => {
-        if (checkFn()) {
-          clearTimeout(timeout);
-          console.log(`✅ LabelManager: ${name} ready`);
-          resolve();
-        } else {
-          setTimeout(check, 100);
+      if (!isPoint && layerOrMarker && layerOrMarker.options) {
+        color = layerOrMarker.options.color || layerOrMarker.options.fillColor || '';
+      } else if (isPoint && layerOrMarker && typeof layerOrMarker.getElement === 'function') {
+        const el = layerOrMarker.getElement();
+        if (el) {
+          const target = el.querySelector('[style*="background:"] , [style*="background-color:"]');
+          if (target) {
+            color = target.style.backgroundColor || (typeof getComputedStyle === 'function' ? getComputedStyle(target).backgroundColor : '');
+          } else if (typeof getComputedStyle === 'function') {
+            color = getComputedStyle(el).backgroundColor || '';
+          }
         }
-      };
-      
-      check();
-    });
-  }
-  
-  /**
-   * Set up event listeners
-   */
-  setupEventListeners() {
-    // Listen for layer events
-    globalEventBus.on('layer:added', ({ category, key, layer }) => {
-      console.log(`🔄 LabelManager: Layer added for ${category}/${key}`);
-    });
-    
-    globalEventBus.on('layer:removed', ({ category, key, layer }) => {
-      // Remove label when layer is removed
-      this.removeLabel(category, key);
-    });
-    
-    // Listen for bulk operations
-    globalEventBus.on('bulk:begin', () => {
-      console.log('🔄 LabelManager: Bulk operation started, deferring label updates');
-    });
-    
-    globalEventBus.on('bulk:end', () => {
-      console.log('🔄 LabelManager: Bulk operation ended, processing deferred labels');
-      this.processDeferredLabels();
-    });
-    
-    // Listen for state changes
-    globalEventBus.on('stateChange', ({ property, value }) => {
-      if (property.startsWith('nameLabelMarkers')) {
-        console.log('🔄 LabelManager: Label markers state changed');
-      }
-    });
-    
-    console.log('✅ LabelManager: Event listeners configured');
-  }
-  
-  /**
-   * Ensure a label exists for a feature
-   */
-  ensureLabel(category, key, name, isPoint, layerOrMarker) {
-    try {
-      if (!this.initialized) {
-        console.warn('LabelManager: Not initialized, deferring label creation');
-        this.deferLabelCreation(category, key, name, isPoint, layerOrMarker);
-        return;
       }
       
-      // Check if label already exists
-      if (this.labels.has(category) && this.labels.get(category).has(key)) {
-        console.log(`LabelManager: Label already exists for ${category}/${key}`);
-        return;
+      if (!color && config.outlineColors) {
+        color = config.outlineColors[category];
       }
       
-      // Create label
-      const label = this.createLabel(category, key, name, isPoint, layerOrMarker);
-      if (!label) {
-        console.warn(`LabelManager: Failed to create label for ${category}/${key}`);
-        return;
-      }
-      
-      // Store label
-      if (!this.labels.has(category)) {
-        this.labels.set(category, new Map());
-      }
-      this.labels.get(category).set(key, label);
-      
-      // Store label settings
-      if (!this.labelSettings.has(category)) {
-        this.labelSettings.set(category, new Map());
-      }
-      this.labelSettings.get(category).set(key, {
-        visible: true,
-        text: name
-      });
-      
-      // Add to map
-      const map = stateManager.get('map');
-      if (map) {
-        label.addTo(map);
-      }
-      
-      // Update state manager
-      this.updateLabelState(category, key, label);
-      
-      // Emit label created event
-      globalEventBus.emit('label:created', { category, key, label, name });
-      
-      console.log(`✅ LabelManager: Label created for ${category}/${key}`);
+      timer.end({ category, isPoint, hasColor: !!color, success: true });
+      return color || '#000000';
       
     } catch (error) {
-      console.error(`🚨 LabelManager: Failed to ensure label for ${category}/${key}:`, error);
+      timer.end({ error: error.message, success: false });
+      this.logger.error('Failed to resolve label color', { error: error.message, category, isPoint });
+      return '#000000';
     }
   }
-  
+
   /**
-   * Create a label marker
+   * Format ambulance station names for UI labels.
    */
-  createLabel(category, key, name, isPoint, layerOrMarker) {
+  formatAmbulanceName(name) {
+    if (!name) return '';
+    let text = name.replace(/\bstation\b/gi, '').replace(/\s{2,}/g, ' ').trim();
+    text = text.replace(/\bambulance\b/gi, 'Ambo');
+    return this.toTitleCase(text);
+  }
+
+  /**
+   * Format police station names for UI labels.
+   */
+  formatPoliceName(name) {
+    if (!name) return '';
+    let text = name.replace(/\spolice station\s*$/i, '').replace(/\s{2,}/g, ' ').trim();
+    return this.toTitleCase(text);
+  }
+
+  /**
+   * Format LGA names by removing 'Unincorporated'.
+   */
+  formatLgaName(name) {
+    if (!name) return '';
+    let text = name;
+    text = text.replace(/\(\s*unincorporated\s*\)/gi, '');
+    text = text.replace(/\(\s*uninc\.?\s*\)/gi, '');
+    text = text.replace(/\bunincorporated\b/gi, '');
+    text = text.replace(/\buninc\.?/gi, '');
+    return text.replace(/\s{2,}/g, ' ').trim();
+  }
+
+  /**
+   * Convert a string to Title Case.
+   */
+  toTitleCase(str) {
+    if (!str) return '';
+    return str.replace(/_/g, ' ').replace(/\w\S*/g, t => t[0].toUpperCase() + t.slice(1).toLowerCase());
+  }
+
+  /**
+   * Get polygon label anchor point.
+   */
+  getPolygonLabelAnchor(layer) {
+    const timer = this.logger.time('get-polygon-label-anchor');
+    
     try {
-      let position;
+      const bounds = layer.getBounds();
+      if (bounds && bounds.isValid()) {
+        timer.end({ method: 'bounds-center', success: true });
+        return bounds.getCenter();
+      }
+      
+      let latlngs = layer.getLatLngs ? layer.getLatLngs() : [];
+      latlngs = this.flattenCoordinates(latlngs);
+      
+      if (!latlngs.length) {
+        timer.end({ method: 'fallback-empty', success: true });
+        return L.latLng(0, 0);
+      }
+      
+      if (latlngs.length > 1000) {
+        const sampled = latlngs.filter((_, index) => index % 10 === 0);
+        latlngs = sampled;
+      }
+      
+      const result = this.calculateCentroid(latlngs);
+      timer.end({ method: 'coordinate-analysis', pointCount: latlngs.length, success: true });
+      return result;
+      
+    } catch (error) {
+      timer.end({ error: error.message, success: false });
+      this.logger.error('Failed to get polygon label anchor', { error: error.message });
+      return L.latLng(0, 0);
+    }
+  }
+
+  /**
+   * Flatten nested coordinate arrays.
+   */
+  flattenCoordinates(arr) {
+    return arr.reduce((acc, v) => Array.isArray(v) ? acc.concat(this.flattenCoordinates(v)) : acc.concat(v), []);
+  }
+
+  /**
+   * Calculate centroid from coordinate array.
+   */
+  calculateCentroid(latlngs) {
+    let maxH = 0, hLat = 0, hLng = 0;
+    for (let i = 0; i < latlngs.length; i++) {
+      for (let j = i + 1; j < latlngs.length; j++) {
+        const span = Math.abs(latlngs[i].lng - latlngs[j].lng);
+        if (span > maxH) { 
+          maxH = span; 
+          hLat = (latlngs[i].lat + latlngs[j].lat) / 2; 
+          hLng = (latlngs[i].lng + latlngs[j].lng) / 2; 
+        }
+      }
+    }
+    
+    let maxV = 0, vLat = 0, vLng = 0;
+    for (let i = 0; i < latlngs.length; i++) {
+      for (let j = i + 1; j < latlngs.length; j++) {
+        const span = Math.abs(latlngs[i].lat - latlngs[j].lat);
+        if (span > maxV) { 
+          maxV = span; 
+          vLat = (latlngs[i].lat + latlngs[j].lat) / 2; 
+          vLng = (latlngs[i].lng + latlngs[j].lng) / 2; 
+        }
+      }
+    }
+    
+    return L.latLng(hLat, vLng);
+  }
+
+  /**
+   * Process name for display with line breaks.
+   */
+  processName(name) {
+    if (!name) return '';
+    const words = name.split(' ');
+    let l1 = '', l2 = '';
+    for (const w of words) {
+      if ((l1 + ' ' + w).trim().length <= 16 || !l1) l1 = (l1 + ' ' + w).trim();
+      else l2 = (l2 + ' ' + w).trim();
+    }
+    return l2 ? `${l1}<br>${l2}` : l1;
+  }
+
+  /**
+   * Adjust hex color brightness.
+   */
+  adjustHexColor(hex, factor) {
+    if (!hex || typeof factor !== 'number') return hex;
+    
+    hex = hex.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    const newR = Math.min(255, Math.max(0, Math.round(r * factor)));
+    const newG = Math.min(255, Math.max(0, Math.round(g * factor)));
+    const newB = Math.min(255, Math.max(0, Math.round(b * factor)));
+    
+    return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+  }
+
+  /**
+   * Ensure a single visible label exists for a category/key.
+   */
+  ensureLabel(category, key, displayName, isPoint, layerOrMarker, dependencies) {
+    const timer = this.logger.time('ensure-label');
+    
+    try {
+      const { map, state, config } = dependencies;
+      
+      if (!map) {
+        throw new Error('Map instance not provided');
+      }
+      
+      this.removeLabel(category, key, dependencies);
+      
+      let latlng = null;
       
       if (isPoint) {
-        // For point features, use the marker position
-        if (layerOrMarker && layerOrMarker.getLatLng) {
-          position = layerOrMarker.getLatLng();
-        } else {
-          console.warn(`LabelManager: Cannot get position for point feature ${category}/${key}`);
-          return null;
-        }
+        latlng = layerOrMarker.getLatLng();
+      } else if (category === 'ses' && state.sesFacilityCoords && state.sesFacilityCoords[key]) {
+        const coord = state.sesFacilityCoords[key];
+        latlng = L.latLng(coord.lat, coord.lng);
+      } else if (category === 'cfa' && state.cfaFacilityCoords && state.cfaFacilityCoords[key]) {
+        const coord = state.cfaFacilityCoords[key];
+        latlng = L.latLng(coord.lat, coord.lng);
       } else {
-        // For polygon features, calculate centroid
-        if (layerOrMarker && layerOrMarker.getBounds) {
-          position = layerOrMarker.getBounds().getCenter();
-        } else if (Array.isArray(layerOrMarker) && layerOrMarker[0] && layerOrMarker[0].getBounds) {
-          position = layerOrMarker[0].getBounds().getCenter();
-        } else {
-          console.warn(`LabelManager: Cannot get position for polygon feature ${category}/${key}`);
-          return null;
-        }
+        latlng = this.getPolygonLabelAnchor(layerOrMarker);
       }
       
-      // Create label marker
-      const label = L.marker(position, {
-        icon: this.createLabelIcon(name, category),
-        pane: 'labels',
+      if (!latlng) {
+        timer.end({ category, key, reason: 'no-latlng', success: false });
+        return;
+      }
+      
+      let text = displayName;
+      
+      if (isPoint) {
+        if (category === 'ambulance') text = this.formatAmbulanceName(text);
+        if (category === 'police') text = this.formatPoliceName(text);
+      }
+      
+      if (category === 'lga' && !isPoint) {
+        text = this.formatLgaName(text);
+      }
+      
+      text = this.processName(text);
+      let outline = this.resolveLabelColor(category, isPoint, layerOrMarker, config);
+      
+      const factor = config.labelColorAdjust && config.labelColorAdjust[category] || 1.0;
+      if (/^#?[0-9a-fA-F]{6}$/.test((outline || '').trim())) {
+        outline = this.adjustHexColor(outline, factor);
+      }
+      
+      const iconAnchor = isPoint ? [38, -18] : [90, 20];
+      const html = isPoint
+        ? `<div class="map-label" style="--label-color: ${outline}"><span style="display:block;width:100%">${text}</span></div>`
+        : `<div class="map-label" style="--label-color: ${outline}">${text}</div>`;
+      
+      const marker = L.marker(latlng, {
+        icon: L.divIcon({
+          className: `map-label-wrapper ${isPoint ? 'map-label--point ambulance-name-label' : 'map-label--polygon'}`,
+          html: html,
+          iconAnchor: iconAnchor
+        }),
         interactive: false
-      });
+      }).addTo(map);
       
-      return label;
+      if (!state.nameLabelMarkers) state.nameLabelMarkers = {};
+      if (!state.nameLabelMarkers[category]) state.nameLabelMarkers[category] = {};
+      state.nameLabelMarkers[category][key] = marker;
       
-    } catch (error) {
-      console.error(`🚨 LabelManager: Failed to create label for ${category}/${key}:`, error);
-      return null;
-    }
-  }
-  
-  /**
-   * Create label icon
-   */
-  createLabelIcon(text, category) {
-    try {
-      // Get category styling
-      const outlineColors = configurationManager.get('outlineColors', {});
-      const labelColorAdjust = configurationManager.get('labelColorAdjust', {});
+      timer.end({ category, key, isPoint, textLength: text.length, success: true });
       
-      const baseColor = outlineColors[category] || '#000000';
-      const factor = labelColorAdjust[category] ?? 1.0;
-      
-      // Adjust color if utility function available
-      let color = baseColor;
-      if (window.adjustHexColor) {
-        color = window.adjustHexColor(baseColor, factor);
-      }
-      
-      // Create label HTML
-      const html = `
-        <div style="
-          background: rgba(255, 255, 255, 0.9);
-          border: 2px solid ${color};
-          border-radius: 4px;
-          padding: 2px 6px;
-          font-size: 12px;
-          font-weight: bold;
-          color: ${color};
-          white-space: nowrap;
-          text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        ">
-          ${text}
-        </div>
-      `;
-      
-      return L.divIcon({
-        html: html,
-        className: 'feature-label',
-        iconSize: [text.length * 8 + 20, 24],
-        iconAnchor: [(text.length * 8 + 20) / 2, 12]
-      });
+      this.logger.info('Label created', { category, key, isPoint, text: text.substring(0, 50) });
       
     } catch (error) {
-      console.error('🚨 LabelManager: Failed to create label icon:', error);
-      
-      // Fallback to simple text icon
-      return L.divIcon({
-        html: `<div style="background: white; padding: 2px 6px; border: 1px solid black;">${text}</div>`,
-        className: 'feature-label-fallback',
-        iconSize: [text.length * 8 + 20, 24],
-        iconAnchor: [(text.length * 8 + 20) / 2, 12]
-      });
+      timer.end({ error: error.message, success: false });
+      this.logger.error('Failed to ensure label', { error: error.message, category, key, isPoint });
     }
   }
-  
+
   /**
-   * Remove a label
+   * Remove an existing label for category/key from the map.
    */
-  removeLabel(category, key) {
-    try {
-      const categoryLabels = this.labels.get(category);
-      if (!categoryLabels) return;
-      
-      const label = categoryLabels.get(key);
-      if (!label) return;
-      
-      // Remove from map
-      const map = stateManager.get('map');
-      if (map && map.hasLayer(label)) {
-        map.removeLayer(label);
-      }
-      
-      // Remove from storage
-      categoryLabels.delete(key);
-      
-      // Remove settings
-      const categorySettings = this.labelSettings.get(category);
-      if (categorySettings) {
-        categorySettings.delete(key);
-      }
-      
-      // Update state manager
-      this.removeLabelState(category, key);
-      
-      // Emit label removed event
-      globalEventBus.emit('label:removed', { category, key });
-      
-      console.log(`✅ LabelManager: Label removed for ${category}/${key}`);
-      
-    } catch (error) {
-      console.error(`🚨 LabelManager: Failed to remove label for ${category}/${key}:`, error);
-    }
-  }
-  
-  /**
-   * Show a label
-   */
-  showLabel(category, key) {
-    try {
-      const label = this.getLabel(category, key);
-      if (!label) return;
-      
-      const map = stateManager.get('map');
-      if (map && !map.hasLayer(label)) {
-        label.addTo(map);
-      }
-      
-      // Update settings
-      const categorySettings = this.labelSettings.get(category);
-      if (categorySettings && categorySettings.has(key)) {
-        categorySettings.get(key).visible = true;
-      }
-      
-      // Emit label shown event
-      globalEventBus.emit('label:shown', { category, key });
-      
-      console.log(`✅ LabelManager: Label shown for ${category}/${key}`);
-      
-    } catch (error) {
-      console.error(`🚨 LabelManager: Failed to show label for ${category}/${key}:`, error);
-    }
-  }
-  
-  /**
-   * Hide a label
-   */
-  hideLabel(category, key) {
-    try {
-      const label = this.getLabel(category, key);
-      if (!label) return;
-      
-      const map = stateManager.get('map');
-      if (map && map.hasLayer(label)) {
-        map.removeLayer(label);
-      }
-      
-      // Update settings
-      const categorySettings = this.labelSettings.get(category);
-      if (categorySettings && categorySettings.has(key)) {
-        categorySettings.get(key).visible = false;
-      }
-      
-      // Emit label hidden event
-      globalEventBus.emit('label:hidden', { category, key });
-      
-      console.log(`✅ LabelManager: Label hidden for ${category}/${key}`);
-      
-    } catch (error) {
-      console.error(`🚨 LabelManager: Failed to hide label for ${category}/${key}:`, error);
-    }
-  }
-  
-  /**
-   * Update label text or styling
-   */
-  updateLabel(category, key, newText) {
-    try {
-      const label = this.getLabel(category, key);
-      if (!label) return;
-      
-      // Update icon with new text
-      const newIcon = this.createLabelIcon(newText, category);
-      label.setIcon(newIcon);
-      
-      // Update settings
-      const categorySettings = this.labelSettings.get(category);
-      if (categorySettings && categorySettings.has(key)) {
-        categorySettings.get(key).text = newText;
-      }
-      
-      // Emit label updated event
-      globalEventBus.emit('label:updated', { category, key, newText });
-      
-      console.log(`✅ LabelManager: Label updated for ${category}/${key}`);
-      
-    } catch (error) {
-      console.error(`🚨 LabelManager: Failed to update label for ${category}/${key}:`, error);
-    }
-  }
-  
-  /**
-   * Get a label
-   */
-  getLabel(category, key) {
-    const categoryLabels = this.labels.get(category);
-    if (!categoryLabels) return null;
+  removeLabel(category, key, dependencies) {
+    const timer = this.logger.time('remove-label');
     
-    return categoryLabels.get(key) || null;
-  }
-  
-  /**
-   * Check if a label is visible
-   */
-  isLabelVisible(category, key) {
-    const categorySettings = this.labelSettings.get(category);
-    if (!categorySettings) return false;
-    
-    const settings = categorySettings.get(key);
-    return settings ? settings.visible : false;
-  }
-  
-  /**
-   * Clear all labels for a category
-   */
-  clearCategoryLabels(category) {
     try {
-      const categoryLabels = this.labels.get(category);
-      if (!categoryLabels) return;
+      const { map, state } = dependencies;
       
-      const map = stateManager.get('map');
+      if (!state.nameLabelMarkers || !state.nameLabelMarkers[category]) {
+        timer.end({ category, key, reason: 'no-markers', success: true });
+        return;
+      }
       
-      categoryLabels.forEach((label, key) => {
-        if (map && map.hasLayer(label)) {
-          map.removeLayer(label);
+      const marker = state.nameLabelMarkers[category][key];
+      if (marker && map) {
+        map.removeLayer(marker);
+        state.nameLabelMarkers[category][key] = null;
+        timer.end({ category, key, success: true });
+        this.logger.debug('Label removed', { category, key });
+      } else {
+        timer.end({ category, key, reason: 'no-marker', success: true });
+      }
+      
+    } catch (error) {
+      timer.end({ error: error.message, success: false });
+      this.logger.error('Failed to remove label', { error: error.message, category, key });
+    }
+  }
+
+  /**
+   * Clean up all labels.
+   */
+  destroy(dependencies) {
+    const timer = this.logger.time('destroy-labels');
+    
+    try {
+      const { map, state } = dependencies;
+      
+      if (!state.nameLabelMarkers || !map) {
+        timer.end({ reason: 'no-markers-or-map', success: true });
+        return;
+      }
+      
+      let removedCount = 0;
+      
+      for (const category in state.nameLabelMarkers) {
+        for (const key in state.nameLabelMarkers[category]) {
+          const marker = state.nameLabelMarkers[category][key];
+          if (marker) {
+            map.removeLayer(marker);
+            removedCount++;
+          }
         }
-      });
-      
-      // Clear storage
-      categoryLabels.clear();
-      
-      // Clear settings
-      const categorySettings = this.labelSettings.get(category);
-      if (categorySettings) {
-        categorySettings.clear();
+        state.nameLabelMarkers[category] = {};
       }
       
-      // Emit category cleared event
-      globalEventBus.emit('label:categoryCleared', { category });
-      
-      console.log(`✅ LabelManager: Category ${category} labels cleared`);
+      timer.end({ removedCount, success: true });
+      this.logger.info('All labels destroyed', { removedCount });
       
     } catch (error) {
-      console.error(`🚨 LabelManager: Failed to clear category ${category} labels:`, error);
+      timer.end({ error: error.message, success: false });
+      this.logger.error('Failed to destroy labels', { error: error.message });
     }
-  }
-  
-  /**
-   * Defer label creation until manager is ready
-   */
-  deferLabelCreation(category, key, name, isPoint, layerOrMarker) {
-    // Store deferred label creation request
-    if (!this.deferredLabels) {
-      this.deferredLabels = [];
-    }
-    
-    this.deferredLabels.push({
-      category,
-      key,
-      name,
-      isPoint,
-      layerOrMarker
-    });
-    
-    console.log(`⏳ LabelManager: Label creation deferred for ${category}/${key}`);
-  }
-  
-  /**
-   * Process deferred label creation requests
-   */
-  processDeferredLabels() {
-    if (!this.deferredLabels || this.deferredLabels.length === 0) return;
-    
-    console.log(`🔄 LabelManager: Processing ${this.deferredLabels.length} deferred labels`);
-    
-    const labelsToProcess = [...this.deferredLabels];
-    this.deferredLabels = [];
-    
-    labelsToProcess.forEach(({ category, key, name, isPoint, layerOrMarker }) => {
-      this.ensureLabel(category, key, name, isPoint, layerOrMarker);
-    });
-  }
-  
-  /**
-   * Update label state in state manager
-   */
-  updateLabelState(category, key, label) {
-    try {
-      const currentNameLabelMarkers = stateManager.get('nameLabelMarkers', {});
-      if (!currentNameLabelMarkers[category]) {
-        currentNameLabelMarkers[category] = {};
-      }
-      
-      currentNameLabelMarkers[category][key] = label;
-      stateManager.set('nameLabelMarkers', currentNameLabelMarkers);
-      
-    } catch (error) {
-      console.error(`🚨 LabelManager: Failed to update label state for ${category}/${key}:`, error);
-    }
-  }
-  
-  /**
-   * Remove label state from state manager
-   */
-  removeLabelState(category, key) {
-    try {
-      const currentNameLabelMarkers = stateManager.get('nameLabelMarkers', {});
-      if (currentNameLabelMarkers[category] && currentNameLabelMarkers[category][key]) {
-        delete currentNameLabelMarkers[category][key];
-        stateManager.set('nameLabelMarkers', currentNameLabelMarkers);
-      }
-      
-    } catch (error) {
-      console.error(`🚨 LabelManager: Failed to remove label state for ${category}/${key}:`, error);
-    }
-  }
-  
-  /**
-   * Get label manager status
-   */
-  getStatus() {
-    const status = {
-      initialized: this.initialized,
-      totalLabels: 0,
-      visibleLabels: 0,
-      categories: this.labels.size,
-      deferredLabels: this.deferredLabels ? this.deferredLabels.length : 0
-    };
-    
-    // Count total and visible labels
-    this.labels.forEach((categoryLabels, category) => {
-      status.totalLabels += categoryLabels.size;
-      
-      categoryLabels.forEach((label, key) => {
-        if (this.isLabelVisible(category, key)) {
-          status.visibleLabels++;
-        }
-      });
-    });
-    
-    return status;
   }
 }
 
-// Export singleton instance
+// Create singleton instance
 export const labelManager = new LabelManager();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.labelManager = labelManager;
-  // Legacy compatibility
-  window.ensureLabel = (category, key, name, isPoint, layerOrMarker) => 
-    labelManager.ensureLabel(category, key, name, isPoint, layerOrMarker);
-  window.removeLabel = (category, key) => 
-    labelManager.removeLabel(category, key);
-}
+// Legacy compatibility exports
+export const ensureLabel = (category, key, displayName, isPoint, layerOrMarker, dependencies) => 
+  labelManager.ensureLabel(category, key, displayName, isPoint, layerOrMarker, dependencies);
+
+export const removeLabel = (category, key, dependencies) => 
+  labelManager.removeLabel(category, key, dependencies);
+
+export const formatAmbulanceName = (name) => labelManager.formatAmbulanceName(name);
+export const formatPoliceName = (name) => labelManager.formatPoliceName(name);
+export const formatLgaName = (name) => labelManager.formatLgaName(name);
+export const getPolygonLabelAnchor = (layer) => labelManager.getPolygonLabelAnchor(layer);

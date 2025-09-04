@@ -2,16 +2,16 @@
 
 ## Overview
 
-This guide provides comprehensive setup instructions for developers working on WeeWoo Map Friend. It covers local development, testing, code quality tools, and deployment workflows. The project currently operates as a hybrid system combining legacy JavaScript with modern ES6 modules.
+This guide provides comprehensive setup instructions for developers working on WeeWoo Map Friend. It covers local development, testing, code quality tools, and deployment workflows. The project operates on a modern ES6 module architecture with comprehensive state management and event-driven communication.
 
 ## Current System Architecture
 
-### **Hybrid Legacy/ES6 System**
+### **Modern ES6 Architecture**
 
-The project currently operates as a hybrid system combining legacy JavaScript with modern ES6 modules:
+The project operates on a fully modern ES6 module architecture with comprehensive state management and event-driven communication:
 
-#### **ES6 Module Layer (New)**
-- **ES6Bootstrap**: Central coordination of modern modules
+#### **Core ES6 Module System**
+- **ES6Bootstrap**: Central coordination of all modern modules
 - **StateManager**: Modern state management with reactive updates
 - **EventBus**: Event-driven communication system
 - **MapManager**: Modern map initialization and management
@@ -20,19 +20,29 @@ The project currently operates as a hybrid system combining legacy JavaScript wi
 - **UIManager**: Modern UI coordination
 - **CollapsibleManager**: Modern sidebar management
 
-#### **Legacy System Layer (Active)**
-- **Core Data Management**: `window.featureLayers`, `window.namesByCategory`, `window.nameToKey`
-- **Active List Operations**: `window.updateActiveList`, `window.beginActiveListBulk`, `window.endActiveListBulk`
-- **UI Functions**: `window.createCheckbox`, `window.setupCollapsible`, `window.setEmphasis`
-- **Label Management**: `window.ensureLabel`, `window.removeLabel`
-- **Bulk Operations**: `window.BulkOperationManager`, `window.isBulkOperation`
+#### **Data Management Layer**
+- **PolygonLoader**: Modern GeoJSON data loading and processing
+- **AmbulanceLoader**: Ambulance station data management
+- **PoliceLoader**: Police station data management
+- **CfaFacilitiesLoader**: CFA facilities data management
+- **SesFacilitiesLoader**: SES facilities data management
+- **SesUnitsLoader**: SES units data management
+
+#### **Utility & Support Layer**
+- **ConfigurationManager**: Centralized configuration management
+- **CoordinateConverter**: Modern coordinate conversion utilities
+- **ErrorUI**: Advanced error handling and user feedback
+- **TextFormatter**: Text formatting and normalization
+- **FeatureEnhancer**: Feature enhancement and marker management
+- **DeviceManager**: Device detection and platform optimization
 
 #### **Development Benefits**
-- **Hybrid Stability**: Legacy system provides proven functionality while ES6 modules add modern features
-- **Gradual Migration**: Can work with both systems during transition period
-- **Modern Tooling**: ES6 modules enable better development tools and debugging
-- **Event-Driven**: Modern event system for loose coupling
-- **Testing**: Both legacy and modern components can be tested
+- **Modern Architecture**: Fully modern ES6 module system with clear separation of concerns
+- **State Management**: Reactive state management with automatic UI updates
+- **Event-Driven**: Modern event system for loose coupling between modules
+- **Performance**: Optimized with modern JavaScript features and patterns
+- **Maintainability**: Clear module boundaries and well-defined APIs
+- **Testing**: Comprehensive testing framework for all ES6 modules
 
 ## Prerequisites
 
@@ -84,48 +94,45 @@ php -S localhost:8000
 
 Navigate to `http://127.0.0.1:8000` in your browser.
 
-## Working with the Hybrid System
+## Working with the Modern ES6 Architecture
 
 ### **Understanding the Current Architecture**
 
-When developing in this hybrid system, it's important to understand which layer handles what:
+The project now operates on a fully modern ES6 module architecture. Here's how to work with it:
 
-#### **ES6 Modules (Use for new features)**
-- **State Management**: Use `StateManager` for new state needs
+#### **ES6 Module System**
+- **State Management**: Use `StateManager` for all state needs with reactive updates
 - **Event Communication**: Use `globalEventBus` for module communication
 - **Map Operations**: Use `MapManager` for map-related functionality
 - **UI Components**: Use `UIManager` and `CollapsibleManager` for UI work
+- **Data Loading**: Use modern loaders like `PolygonLoader` for data management
 
-#### **Legacy System (Still active for core functionality)**
-- **Data Loading**: Legacy loaders still handle GeoJSON data
-- **Active List**: Legacy functions still manage the "All Active" section
-- **UI Updates**: Legacy functions still handle checkbox creation and updates
-- **Label Management**: Legacy functions still manage map labels
-
-#### **Integration Points**
-- **Window Exports**: ES6 modules export to `window` for legacy compatibility
-- **Event Bridge**: Modern events can trigger legacy functions
-- **State Sync**: Modern state management syncs with legacy globals
+#### **Module Integration**
+- **Import/Export**: Use standard ES6 import/export syntax
+- **Event-Driven**: Communicate between modules using the EventBus
+- **State Management**: Access shared state through StateManager
+- **Configuration**: Use ConfigurationManager for all configuration needs
 
 ### **Development Guidelines**
 
 #### **For New Features**
-1. **Use ES6 modules** for new functionality
-2. **Integrate with legacy** through window exports and events
-3. **Test both systems** to ensure compatibility
-4. **Document integration points** clearly
+1. **Create ES6 modules** following the established patterns
+2. **Use StateManager** for state management needs
+3. **Use EventBus** for module communication
+4. **Follow component patterns** established in existing modules
+5. **Add comprehensive tests** for new functionality
 
 #### **For Bug Fixes**
-1. **Identify the layer** where the bug exists
-2. **Fix in the appropriate system** (ES6 or legacy)
-3. **Test integration** between systems
-4. **Consider migration** if fixing in legacy system
+1. **Identify the module** where the bug exists
+2. **Fix in the ES6 module** system
+3. **Test module integration** and state management
+4. **Update tests** to prevent regression
 
 #### **For Performance Work**
-1. **Profile both systems** to identify bottlenecks
-2. **Optimize in the active system** first
-3. **Consider migration** for long-term performance gains
-4. **Monitor hybrid overhead** and integration costs
+1. **Profile ES6 modules** to identify bottlenecks
+2. **Optimize module performance** using modern JavaScript features
+3. **Use StateManager** for efficient state updates
+4. **Monitor module interactions** and event flow
 
 ## ES6 Module Development
 
@@ -345,10 +352,11 @@ Place your GeoJSON file in the project root or appropriate data directory.
 
 #### Step 2: Update Configuration
 
-Add category metadata to `js/config.js`:
+Add category metadata to `ConfigurationManager`:
 
 ```javascript
-window.categoryMeta.newcategory = {
+// In ConfigurationManager.js
+const newCategoryConfig = {
   type: 'polygon', // 'polygon' or 'point'
   nameProp: 'NAME_FIELD', // Property containing display name
   styleFn: newCategoryStyle, // Styling function
@@ -356,6 +364,8 @@ window.categoryMeta.newcategory = {
   listId: 'newCategoryList', // HTML list element ID
   toggleAllId: 'toggleAllNewCategory', // Toggle all button ID
 };
+
+configurationManager.set('categoryMeta.newcategory', newCategoryConfig);
 ```
 
 #### Step 3: Add HTML Elements
@@ -375,45 +385,66 @@ Update `index.html` with the necessary UI elements:
 
 #### Step 4: Create Data Loader
 
-Create a loader in `js/loaders/`:
+Create a modern ES6 loader in `js/modules/`:
 
 ```javascript
-// js/loaders/newcategory.js
-window.loadNewCategory = async function () {
-  try {
-    const response = await fetch('path/to/newcategory.geojson');
-    const data = await response.json();
+// js/modules/NewCategoryLoader.js
+import { stateManager } from './StateManager.js';
+import { globalEventBus } from './EventBus.js';
 
-    // Process and display data
-    // Add to state management
-    // Update UI components
-  } catch (error) {
-    console.error('Failed to load new category:', error);
+export class NewCategoryLoader {
+  constructor() {
+    this.isLoaded = false;
   }
-};
+
+  async loadCategory() {
+    try {
+      const response = await fetch('path/to/newcategory.geojson');
+      const data = await response.json();
+
+      // Process and display data
+      stateManager.set('newCategoryData', data);
+      
+      // Emit event for UI updates
+      globalEventBus.emit('newcategory:loaded', { data });
+      
+      this.isLoaded = true;
+    } catch (error) {
+      console.error('Failed to load new category:', error);
+      globalEventBus.emit('newcategory:error', { error });
+    }
+  }
+}
+
+export const newCategoryLoader = new NewCategoryLoader();
 ```
 
 #### Step 5: Update State Management
 
-Add the new category to `js/state.js`:
+Add the new category to `StateManager`:
 
 ```javascript
-// Add to appropriate state arrays
-window.layerNames.newcategory = new Map();
-window.layerEmphasis.newcategory = new Set();
-window.layerLabels.newcategory = new Set();
+// In StateManager.js or during initialization
+stateManager.set('layerNames.newcategory', new Map());
+stateManager.set('layerEmphasis.newcategory', new Set());
+stateManager.set('layerLabels.newcategory', new Set());
 ```
 
 ### 2. Creating New UI Components
 
 #### Component Structure
 
-All UI components should extend `ComponentBase`:
+All UI components should follow the modern ES6 module pattern:
 
 ```javascript
-class NewComponent extends window.ComponentBase {
+// js/modules/NewComponent.js
+import { globalEventBus } from './EventBus.js';
+import { stateManager } from './StateManager.js';
+
+export class NewComponent {
   constructor(config) {
-    super(config);
+    this.config = config;
+    this.isInitialized = false;
     this.init();
   }
 
@@ -421,10 +452,12 @@ class NewComponent extends window.ComponentBase {
     // Component initialization
     this.setupEventListeners();
     this.render();
+    this.isInitialized = true;
   }
 
   setupEventListeners() {
-    // Event handling setup
+    // Event handling setup using EventBus
+    globalEventBus.on('newcomponent:action', this.handleAction.bind(this));
   }
 
   render() {
@@ -433,22 +466,32 @@ class NewComponent extends window.ComponentBase {
 
   destroy() {
     // Cleanup
-    super.destroy();
+    globalEventBus.off('newcomponent:action', this.handleAction.bind(this));
   }
 }
+
+export const newComponent = new NewComponent();
 ```
 
 #### Registration
 
-Register new components in `js/bootstrap.js`:
+Register new components in `ES6Bootstrap.js`:
 
 ```javascript
-// In AppBootstrap.init()
-this.components.push(
-  new NewComponent({
-    // Configuration options
-  })
-);
+// In ES6Bootstrap.js
+import { newComponent } from './NewComponent.js';
+
+// Add to initialization sequence
+async initNewComponent() {
+  try {
+    console.log('🎯 ES6Bootstrap: Initializing NewComponent...');
+    await newComponent.init();
+    console.log('✅ ES6Bootstrap: NewComponent ready');
+  } catch (error) {
+    console.error('🚨 ES6Bootstrap: NewComponent initialization failed:', error);
+    throw error;
+  }
+}
 ```
 
 ## Development Workflows
