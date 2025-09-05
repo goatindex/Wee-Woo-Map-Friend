@@ -1,6 +1,7 @@
 /**
  * Jest test setup for WeeWoo Map Friend
- * Configures testing environment and global mocks for ES6 modules
+ * Modern ES6 Architecture with Real-Code Testing
+ * Minimal mocking - only for external dependencies and browser APIs
  */
 
 // Mock global objects that aren't available in jsdom
@@ -62,13 +63,13 @@ global.fetch = jest.fn(() =>
   })
 );
 
-// Mock console methods to reduce test noise
-global.console = {
-  ...console,
-  log: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn()
-};
+// Keep console methods for real-code testing - only suppress in specific tests if needed
+// global.console = {
+//   ...console,
+//   log: jest.fn(),
+//   warn: jest.fn(),
+//   error: jest.fn()
+// };
 
 // Mock window methods - location is provided by jsdom
 
@@ -133,7 +134,8 @@ global.window = {
   }
 };
 
-// Note: ES6 module mocks are handled per-test file as needed
+// Note: ES6 module mocks are minimized - prefer real implementations
+// Only mock external dependencies (Leaflet, Turf, Proj4) and browser APIs
 
 // Clean up after each test
 afterEach(() => {

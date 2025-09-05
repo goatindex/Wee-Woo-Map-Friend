@@ -1,6 +1,7 @@
 /**
  * Jest Configuration for WeeWoo Map Friend
- * Supports ES6 modules and modern JavaScript features
+ * Modern ES6 Architecture with Real-Code Testing
+ * Supports ES6 modules and real implementation testing
  */
 
 module.exports = {
@@ -15,12 +16,14 @@ module.exports = {
     '^.+\\.js$': 'babel-jest'
   },
   
-  // Module name mapping for cleaner imports
+  // Module name mapping for cleaner imports (updated for current architecture)
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/js/$1',
     '^@modules/(.*)$': '<rootDir>/js/modules/$1',
     '^@components/(.*)$': '<rootDir>/js/components/$1',
-    '^@utils/(.*)$': '<rootDir>/js/utils/$1'
+    '^@utils/(.*)$': '<rootDir>/js/utils/$1',
+    '^@types/(.*)$': '<rootDir>/js/types/$1',
+    '^@native/(.*)$': '<rootDir>/js/native/$1'
   },
   
   // Setup files
@@ -53,13 +56,13 @@ module.exports = {
     '!js/modules/**/index.js'
   ],
   
-  // Coverage thresholds (lowered during migration)
+  // Coverage thresholds (realistic for real-code testing)
   coverageThreshold: {
     global: {
-      branches: 25,
-      functions: 25,
-      lines: 25,
-      statements: 25
+      branches: 30,
+      functions: 35,
+      lines: 30,
+      statements: 30
     }
   },
   

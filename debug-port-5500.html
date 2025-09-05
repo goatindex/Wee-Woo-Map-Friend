@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Port 5500 Debug - WeeWoo Map Friend</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        #console-output { background: #f8f9fa; padding: 10px; border: 1px solid #dee2e6; height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Port 5500 Debug - WeeWoo Map Friend</h1>
+    
+    <div class="debug-section info">
+        <h3>Debug Information</h3>
+        <p><strong>Current URL:</strong> <span id="current-url"></span></p>
+        <p><strong>Server Port:</strong> <span id="server-port"></span></p>
+        <p><strong>User Agent:</strong> <span id="user-agent"></span></p>
+        <p><strong>Timestamp:</strong> <span id="timestamp"></span></p>
+    </div>
+
+    <div class="debug-section">
+        <h3>Debug Controls</h3>
+        <button onclick="testFileAccess()">Test File Access</button>
+        <button onclick="testModuleImport()">Test Module Import</button>
+        <button onclick="testBootstrapInit()">Test Bootstrap Init</button>
+        <button onclick="testMapCreation()">Test Map Creation</button>
+        <button onclick="clearConsole()">Clear Console</button>
+    </div>
+
+    <div class="debug-section">
+        <h3>Console Output</h3>
+        <div id="console-output"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>Test Results</h3>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>Map Container</h3>
+        <div id="map" style="height: 400px; border: 2px solid #ccc;"></div>
+    </div>
+
+    <script>
+        // Set debug info
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('server-port').textContent = window.location.port;
+        document.getElementById('user-agent').textContent = navigator.userAgent;
+        document.getElementById('timestamp').textContent = new Date().toISOString();
+
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const consoleOutput = document.getElementById('console-output');
+        const testResults = document.getElementById('test-results');
+
+        function addToConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.style.color = type === 'error' ? 'red' : type === 'warn' ? 'orange' : 'black';
+            div.textContent = `[${timestamp}] ${message}`;
+            consoleOutput.appendChild(div);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        console.log = (...args) => {
+            originalLog(...args);
+            addToConsole(args.join(' '), 'log');
+        };
+
+        console.error = (...args) => {
+            originalError(...args);
+            addToConsole(args.join(' '), 'error');
+        };
+
+        console.warn = (...args) => {
+            originalWarn(...args);
+            addToConsole(args.join(' '), 'warn');
+        };
+
+        // Test functions
+        window.testFileAccess = async function() {
+            try {
+                console.log('🧪 Testing file access...');
+                
+                const files = [
+                    'js/modules/main.js',
+                    'js/modules/ApplicationBootstrap.js',
+                    'js/modules/DependencyRegistry.js',
+                    'js/modules/EventBus.js',
+                    'js/modules/StateManager.js'
+                ];
+                
+                for (const file of files) {
+                    try {
+                        const response = await fetch(file);
+                        if (response.ok) {
+                            console.log(`✅ ${file} - OK (${response.status})`);
+                            addTestResult(`File Access: ${file}`, 'success', `OK (${response.status})`);
+                        } else {
+                            console.error(`❌ ${file} - Failed (${response.status})`);
+                            addTestResult(`File Access: ${file}`, 'error', `Failed (${response.status})`);
+                        }
+                    } catch (error) {
+                        console.error(`❌ ${file} - Error: ${error.message}`);
+                        addTestResult(`File Access: ${file}`, 'error', `Error: ${error.message}`);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ File access test failed:', error);
+                addTestResult('File Access Test', 'error', `Failed: ${error.message}`);
+            }
+        };
+
+        window.testModuleImport = async function() {
+            try {
+                console.log('🧪 Testing module import...');
+                
+                const { applicationBootstrap } = await import('./js/modules/ApplicationBootstrap.js');
+                
+                if (applicationBootstrap) {
+                    console.log('✅ ApplicationBootstrap imported successfully');
+                    addTestResult('Module Import', 'success', 'ApplicationBootstrap imported');
+                } else {
+                    throw new Error('ApplicationBootstrap not found');
+                }
+            } catch (error) {
+                console.error('❌ Module import failed:', error);
+                addTestResult('Module Import', 'error', `Failed: ${error.message}`);
+            }
+        };
+
+        window.testBootstrapInit = async function() {
+            try {
+                console.log('🧪 Testing bootstrap initialization...');
+                
+                const { applicationBootstrap } = await import('./js/modules/ApplicationBootstrap.js');
+                
+                if (applicationBootstrap && typeof applicationBootstrap.init === 'function') {
+                    console.log('✅ Bootstrap init method available');
+                    
+                    // Try to initialize
+                    await applicationBootstrap.init();
+                    console.log('✅ Bootstrap initialization successful');
+                    addTestResult('Bootstrap Init', 'success', 'Initialization successful');
+                } else {
+                    throw new Error('Bootstrap init method not available');
+                }
+            } catch (error) {
+                console.error('❌ Bootstrap initialization failed:', error);
+                addTestResult('Bootstrap Init', 'error', `Failed: ${error.message}`);
+            }
+        };
+
+        window.testMapCreation = async function() {
+            try {
+                console.log('🧪 Testing map creation...');
+                
+                // Try to import Leaflet
+                const L = await import('https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js');
+                
+                if (L) {
+                    console.log('✅ Leaflet imported successfully');
+                    
+                    // Try to create a simple map
+                    const map = L.map('map').setView([-37.8136, 144.9631], 10);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(map);
+                    
+                    console.log('✅ Map created successfully');
+                    addTestResult('Map Creation', 'success', 'Map created and displayed');
+                } else {
+                    throw new Error('Leaflet not available');
+                }
+            } catch (error) {
+                console.error('❌ Map creation failed:', error);
+                addTestResult('Map Creation', 'error', `Failed: ${error.message}`);
+            }
+        };
+
+        window.clearConsole = function() {
+            consoleOutput.innerHTML = '';
+            testResults.innerHTML = '';
+        };
+
+        function addTestResult(testName, status, message) {
+            const div = document.createElement('div');
+            div.className = `debug-section ${status}`;
+            div.innerHTML = `<strong>${testName}:</strong> ${message}`;
+            testResults.appendChild(div);
+        }
+
+        // Auto-run basic tests on load
+        console.log('🚀 Port 5500 Debug Page Loaded');
+        console.log('📋 Run individual tests using the buttons above');
+        
+        // Auto-test file access
+        setTimeout(() => {
+            testFileAccess();
+        }, 1000);
+    </script>
+</body>
+</html>

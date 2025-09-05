@@ -340,14 +340,49 @@ export class StateManager extends EventBus {
   }
   
   /**
+   * Check for circular references in an object
+   * @param {any} obj - Object to check
+   * @param {Set} seen - Set of already seen objects
+   * @returns {boolean} True if circular reference detected
+   */
+  _hasCircularReference(obj, seen = new Set()) {
+    if (obj === null || typeof obj !== 'object') {
+      return false;
+    }
+    
+    if (seen.has(obj)) {
+      return true;
+    }
+    
+    seen.add(obj);
+    
+    for (const value of Object.values(obj)) {
+      if (this._hasCircularReference(value, seen)) {
+        return true;
+      }
+    }
+    
+    seen.delete(obj);
+    return false;
+  }
+
+  /**
    * Set state value
    * @param {string|Object} path - Property path or object of key-value pairs
    * @param {any} value - Value to set (ignored if path is object)
    */
   set(path, value) {
+    // Check for circular references
+    if (this._hasCircularReference(value)) {
+      throw new Error('Circular reference detected in state value');
+    }
+    
     if (typeof path === 'object') {
       // Batch update
       Object.entries(path).forEach(([key, val]) => {
+        if (this._hasCircularReference(val)) {
+          throw new Error(`Circular reference detected in state value for key: ${key}`);
+        }
         this.state[key] = val;
       });
     } else {
