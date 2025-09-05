@@ -1,0 +1,47 @@
+{
+  "qualityMetrics": {
+    "criticalPathCoverage": 0,
+    "errorBoundaryCoverage": 12.860892388451445,
+    "edgeCaseCoverage": 12.440944881889763,
+    "integrationCoverage": 14.36532507739938,
+    "performanceCoverage": 13.785046728971961,
+    "overallQuality": 9.236715507997918
+  },
+  "recommendations": [
+    {
+      "type": "critical",
+      "message": "Critical path coverage is low. Focus on testing core functionality paths.",
+      "current": "0.0",
+      "target": 80
+    },
+    {
+      "type": "error-handling",
+      "message": "Error boundary coverage is low. Add more error handling tests.",
+      "current": "12.9",
+      "target": 70
+    },
+    {
+      "type": "edge-cases",
+      "message": "Edge case coverage is low. Test boundary conditions and null/undefined scenarios.",
+      "current": "12.4",
+      "target": 60
+    },
+    {
+      "type": "integration",
+      "message": "Integration coverage is low. Test module interactions and dependencies.",
+      "current": "14.4",
+      "target": 70
+    },
+    {
+      "type": "performance",
+      "message": "Performance coverage is low. Test performance-critical code paths.",
+      "current": "13.8",
+      "target": 50
+    }
+  ],
+  "summary": {
+    "overallQuality": "9.2",
+    "grade": "F",
+    "status": "Poor"
+  }
+}

@@ -385,9 +385,130 @@ export class DeviceManager {
   }
 }
 
+/**
+ * DeviceContext - Legacy compatibility wrapper for DeviceManager
+ * Provides the expected global interface for legacy code
+ */
+export class DeviceContext {
+  constructor(deviceManager) {
+    this.deviceManager = deviceManager;
+  }
+
+  /**
+   * Get device context - legacy compatibility method
+   * @returns {Object} Device context object
+   */
+  getContext() {
+    return this.deviceManager.getContext();
+  }
+
+  /**
+   * Check if device is mobile - legacy compatibility method
+   * @returns {boolean} True if mobile device
+   */
+  isMobile() {
+    return this.deviceManager.getContext().isMobile;
+  }
+
+  /**
+   * Check if device is tablet - legacy compatibility method
+   * @returns {boolean} True if tablet device
+   */
+  isTablet() {
+    return this.deviceManager.getContext().isTablet;
+  }
+
+  /**
+   * Check if device is desktop - legacy compatibility method
+   * @returns {boolean} True if desktop device
+   */
+  isDesktop() {
+    return this.deviceManager.getContext().isDesktop;
+  }
+
+  /**
+   * Get current breakpoint - legacy compatibility method
+   * @returns {string} Current breakpoint
+   */
+  getBreakpoint() {
+    return this.deviceManager.getContext().breakpoint;
+  }
+
+  /**
+   * Get platform information - legacy compatibility method
+   * @returns {string} Platform identifier
+   */
+  getPlatform() {
+    return this.deviceManager.getContext().platform;
+  }
+
+  /**
+   * Get browser information - legacy compatibility method
+   * @returns {string} Browser identifier
+   */
+  getBrowser() {
+    return this.deviceManager.getContext().browser;
+  }
+
+  /**
+   * Check if device supports touch - legacy compatibility method
+   * @returns {boolean} True if touch supported
+   */
+  isTouch() {
+    return this.deviceManager.getContext().isTouch;
+  }
+
+  /**
+   * Check if device is PWA - legacy compatibility method
+   * @returns {boolean} True if PWA
+   */
+  isPWA() {
+    return this.deviceManager.getContext().isPWA;
+  }
+
+  /**
+   * Get orientation - legacy compatibility method
+   * @returns {string} Orientation (portrait/landscape)
+   */
+  getOrientation() {
+    return this.deviceManager.getContext().orientation;
+  }
+
+  /**
+   * Get screen dimensions - legacy compatibility method
+   * @returns {Object} Screen dimensions
+   */
+  getDimensions() {
+    const context = this.deviceManager.getContext();
+    return {
+      width: context.width,
+      height: context.height,
+      pixelRatio: context.pixelRatio
+    };
+  }
+}
+
 // Create singleton instance
 export const deviceManager = new DeviceManager();
+
+// Create DeviceContext wrapper
+export const deviceContext = new DeviceContext(deviceManager);
 
 // Legacy compatibility exports
 export const getResponsiveContext = () => deviceManager.getContext();
 export const isMobileSize = () => deviceManager.getContext().isMobile;
+
+// Global setup for legacy compatibility
+if (typeof window !== 'undefined') {
+  // Set up the global DeviceContext that ES6Bootstrap expects
+  window.DeviceContext = deviceContext;
+  
+  // Also set up the deviceManager for direct access
+  window.deviceManager = deviceManager;
+  
+  // Legacy compatibility functions
+  window.getResponsiveContext = getResponsiveContext;
+  window.isMobileSize = isMobileSize;
+  
+  console.log('✅ DeviceManager: Global DeviceContext setup complete');
+}

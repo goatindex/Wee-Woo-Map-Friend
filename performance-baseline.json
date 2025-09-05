@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-09-05T01:36:24.759Z",
+  "metrics": {
+    "moduleInitialization": {
+      "ApplicationBootstrap.init": 538.263200044632,
+      "StateManager.init": 10.009199976921082,
+      "MapManager.init": 5.380699992179871
+    },
+    "functionExecution": {
+      "StateManager.get": 0.009999990463256836,
+      "StateManager.set": 0.013000011444091797,
+      "EventBus.emit": 0.012199997901916504,
+      "EventBus.on": 0.03100001811981201
+    },
+    "domManipulation": {
+      "ComponentBase.createElement": 0.22269999980926514
+    },
+    "eventHandling": {
+      "EventBus.multipleOn": 0.21549999713897705,
+      "EventBus.multipleEmit": 0.3489999771118164
+    },
+    "memoryUsage": {
+      "current": 114438424
+    }
+  },
+  "violations": [],
+  "summary": {
+    "totalViolations": 0,
+    "categories": 5,
+    "status": "PASS"
+  }
+}

@@ -3,31 +3,23 @@
  */
 
 import { DataLoadingOrchestrator, dataLoadingOrchestrator } from './DataLoadingOrchestrator.js';
-
-// Mock dependencies
-jest.mock('./EventBus.js', () => ({
-  globalEventBus: {
-    emit: jest.fn(),
-    on: jest.fn()
-  }
-}));
-
-jest.mock('./StateManager.js', () => ({
-  stateManager: {
-    get: jest.fn(() => null)
-  }
-}));
-
-jest.mock('./ConfigurationManager.js', () => ({
-  configurationManager: {
-    get: jest.fn(() => ({}))
-  }
-}));
+import { globalEventBus } from './EventBus.js';
+import { stateManager } from './StateManager.js';
+import { configurationManager } from './ConfigurationManager.js';
 
 describe('DataLoadingOrchestrator', () => {
   let orchestrator;
+  let mockPolygonLoader;
 
   beforeEach(() => {
+    // Mock polygon loader for state manager
+    mockPolygonLoader = {
+      loadCategory: jest.fn().mockResolvedValue({ success: true })
+    };
+    
+    // Set up state manager with mock polygon loader BEFORE creating orchestrator
+    stateManager.set('polygonLoader', mockPolygonLoader);
+    
     // Create a fresh instance for testing
     orchestrator = new DataLoadingOrchestrator();
     
@@ -47,6 +39,9 @@ describe('DataLoadingOrchestrator', () => {
     if (orchestrator) {
       orchestrator = null;
     }
+    // Clean up state
+    stateManager.reset();
+    jest.clearAllMocks();
   });
 
   describe('Initialization', () => {
@@ -69,6 +64,18 @@ describe('DataLoadingOrchestrator', () => {
       expect(orchestrator.loadingConfig.priorities.lga).toBe('high');
       expect(orchestrator.loadingConfig.priorities.cfa).toBe('medium');
       expect(orchestrator.loadingConfig.priorities.frv).toBe('low');
+    });
+
+    test('should initialize successfully with real dependencies', async () => {
+      // Mock event bus emit to track events
+      const emitSpy = jest.spyOn(globalEventBus, 'emit');
+      
+      await orchestrator.init();
+      
+      expect(orchestrator.initialized).toBe(true);
+      expect(emitSpy).toHaveBeenCalledWith('dataOrchestrator:ready', expect.any(Object));
+      
+      emitSpy.mockRestore();
     });
   });
 
@@ -169,6 +176,21 @@ describe('DataLoadingOrchestrator', () => {
       const errorInfo = orchestrator.errorRecovery.get('test');
       expect(errorInfo.retryCount).toBe(2);
     });
+
+    test('should emit error events when handling errors', () => {
+      const error = new Error('Test error');
+      const emitSpy = jest.spyOn(globalEventBus, 'emit');
+      
+      orchestrator.handleLoadingError('test', error);
+      
+      expect(emitSpy).toHaveBeenCalledWith('dataOrchestrator:categoryError', expect.objectContaining({
+        category: 'test',
+        error: error,
+        orchestrator: orchestrator
+      }));
+      
+      emitSpy.mockRestore();
+    });
   });
 
   describe('Readiness Check', () => {
@@ -191,6 +213,48 @@ describe('DataLoadingOrchestrator', () => {
 
     test('should expose global instance on window', () => {
       expect(window.dataLoadingOrchestrator).toBe(dataLoadingOrchestrator);
+    });
+  });
+
+  describe('Category Loading', () => {
+    test('should load category successfully', async () => {
+      // Initialize the orchestrator first to set up the polygon loader
+      await orchestrator.init();
+      
+      // Use a category that wasn't loaded during initialization
+      const emitSpy = jest.spyOn(globalEventBus, 'emit');
+      
+      await orchestrator.loadCategory('frv');
+      
+      expect(mockPolygonLoader.loadCategory).toHaveBeenCalledWith('frv', 'geojson/frv.geojson');
+      expect(orchestrator.loadedCategories.has('frv')).toBe(true);
+      expect(emitSpy).toHaveBeenCalledWith('dataOrchestrator:categoryLoaded', expect.objectContaining({
+        category: 'frv',
+        duration: expect.any(Number),
+        orchestrator: orchestrator
+      }));
+      
+      emitSpy.mockRestore();
+    });
+
+    test('should handle category loading errors', async () => {
+      // Initialize the orchestrator first to set up the polygon loader
+      await orchestrator.init();
+      
+      // Use a category that wasn't loaded during initialization
+      const error = new Error('Load failed');
+      mockPolygonLoader.loadCategory.mockRejectedValueOnce(error);
+      const emitSpy = jest.spyOn(globalEventBus, 'emit');
+      
+      await expect(orchestrator.loadCategory('frv')).rejects.toThrow('Load failed');
+      
+      expect(emitSpy).toHaveBeenCalledWith('dataOrchestrator:categoryError', expect.objectContaining({
+        category: 'frv',
+        error: error,
+        orchestrator: orchestrator
+      }));
+      
+      emitSpy.mockRestore();
     });
   });
 

@@ -48,6 +48,10 @@
     "lint": "echo 'Linting not configured yet'",
     "quality:check": "npm run lint && npm run test:coverage",
     "quality:report": "npm run test:coverage && npm run lint",
+    "coverage:quality": "node scripts/coverage-quality-report.js",
+    "coverage:quality:html": "node scripts/coverage-quality-report.js && open coverage-quality/coverage-quality-report.html",
+    "test:performance:regression": "jest tests/performance-regression.test.js",
+    "test:performance:baseline": "jest tests/performance-regression.test.js --updateSnapshot",
     "budget:check": "node scripts/check-performance-budget.js",
     "prepare:appstore": "npm run build && npm run icons && npm run cap:sync"
   },

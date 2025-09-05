@@ -4,24 +4,24 @@
  * Replaces legacy script loading with modern ES6 module system
  */
 
-import { es6Bootstrap } from './ES6Bootstrap.js';
+import { applicationBootstrap } from './ApplicationBootstrap.js';
 import { globalEventBus } from './EventBus.js';
 import { migrationDashboard } from './MigrationDashboard.js';
 
 /**
- * Main application entry point
+ * Main application entry point with unified bootstrap system
  */
 async function main() {
-  console.log('🚀 WeeWoo Map Friend: ES6 Module System Starting');
+  console.log('🚀 WeeWoo Map Friend: Unified Application Bootstrap Starting');
   
   try {
-    // Initialize the ES6 bootstrap system
-    await es6Bootstrap.init();
+    // Initialize the unified application bootstrap system
+    await applicationBootstrap.init();
     
-    console.log('✅ ES6 Module System: Bootstrap complete');
+    console.log('✅ Unified Application Bootstrap: Bootstrap complete');
     
     // Emit ready event
-    globalEventBus.emit('app:es6ready', { bootstrap: es6Bootstrap });
+    globalEventBus.emit('app:es6ready', { bootstrap: applicationBootstrap });
     
     // Show migration dashboard for monitoring
     if (window.location.search.includes('debug=true') || window.location.hash.includes('debug')) {
@@ -29,13 +29,13 @@ async function main() {
     }
     
   } catch (error) {
-    console.error('🚨 ES6 Module System: Failed to start:', error);
+    console.error('🚨 Unified Application Bootstrap: Failed to start:', error);
     
     // Emit error event
     globalEventBus.emit('app:es6error', { error });
     
-    // The bootstrap system should have already fallen back to legacy
-    console.log('🔄 ES6 Module System: Continuing with legacy fallback');
+    // The bootstrap system should have already handled the error
+    console.log('🔄 Unified Application Bootstrap: Error handled by bootstrap');
   }
 }
 
@@ -50,4 +50,4 @@ if (typeof window !== 'undefined') {
 }
 
 // Export for testing and manual initialization
-export { main, es6Bootstrap };
+export { main, applicationBootstrap };
