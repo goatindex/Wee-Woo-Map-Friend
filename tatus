@@ -1,0 +1,7 @@
+  backup-week-2-start                      [m 147f8cc Week 1: Preparation and Testing Complete
+  backup-week-3-start                      [m 35183d6 Week 2: Bridge System Removal Complete
+  backup/pre-migration-state               [m 3d0cbc4 Pre-migration state: ES6 foundation complete, legacy inventory ready
+* [32mfeature/controlled-aggressive-elimination[m 0038275 Controlled, aggressive elimination of legacy modules and migration artifacts; introduce ApplicationBootstrap, DependencyRegistry, and new test coverage for core managers. Remove obsolete files (AppBootstrap, ES6Bootstrap, app.js, migration logs, legacy docs). Update coverage and test reports to reflect new architecture. Establish performance and diagnostic baselines. Refactor test battery for real-code validation and ES6 modularity. See project_docs/testing-reflection-2025.md for rationale and next steps.
+  feature/es6-migration-phase1             [m 171988d [ahead 5]  PHASE 1.4 COMPLETE: js/bootstrap.js  ES6Bootstrap.js
+  feature/es6-migration-phase2             [m 9f3f830 Refactor logging system: introduce StructuredLogger and modular transports
+  main                                     [m 3d0cbc4 [ahead 1] Pre-migration state: ES6 foundation complete, legacy inventory ready
