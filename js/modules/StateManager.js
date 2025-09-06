@@ -102,6 +102,9 @@ export class StateManager extends EventBus {
     // Initialize with legacy state from window globals
     this._migrateLegacyState();
     
+    // Store state in state manager for other modules to access
+    this.set('state', this._state);
+    
     // Set up legacy compatibility layer
     this._setupLegacyCompatibility();
     

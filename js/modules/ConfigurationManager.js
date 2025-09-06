@@ -5,6 +5,7 @@
  */
 
 import { globalEventBus } from './EventBus.js';
+import { stateManager } from './StateManager.js';
 
 /**
  * @class ConfigurationManager
@@ -27,6 +28,9 @@ export class ConfigurationManager {
     
     // Initialize configuration
     this._initializeConfiguration();
+    
+    // Store config in state manager for other modules to access
+    stateManager.set('config', this._config);
     
     console.log('🔧 ConfigurationManager: Configuration system initialized');
   }

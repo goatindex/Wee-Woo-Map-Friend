@@ -311,7 +311,8 @@ export class PolygonLoader {
     // Create layers for each key
     featuresByKey.forEach((keyFeatures, key) => {
       try {
-        const style = meta.styleFn ? meta.styleFn() : {};
+        const styleFn = configurationManager.getStyle(category);
+        const style = styleFn ? styleFn() : {};
         const layer = L.geoJSON(keyFeatures, {
           style,
           pane: category
@@ -343,14 +344,34 @@ export class PolygonLoader {
         currentFeatureLayers[category] = {};
       }
       
-      // Group layers by key
+      // Group layers by key - store layer references and essential data for labels
       const layersByKey = {};
-      processedData.features.forEach(feature => {
-        const key = feature._key;
-        if (!layersByKey[key]) {
-          layersByKey[key] = [];
+      layers.forEach(layer => {
+        // Get the key from the layer's features
+        if (layer.getLayers && layer.getLayers().length > 0) {
+          const firstFeature = layer.getLayers()[0];
+          if (firstFeature.feature && firstFeature.feature._key) {
+            const key = firstFeature.feature._key;
+            if (!layersByKey[key]) {
+              layersByKey[key] = [];
+            }
+            
+            // Store essential data for labels instead of full layer object
+            const layerData = {
+              _leaflet_id: layer._leaflet_id,
+              _key: key,
+              bounds: layer.getBounds ? layer.getBounds() : null
+            };
+            
+            // Store the actual layer reference in a separate Map for when we need it
+            if (!this.layerReferences) {
+              this.layerReferences = new Map();
+            }
+            this.layerReferences.set(layer._leaflet_id, layer);
+            
+            layersByKey[key].push(layerData);
+          }
         }
-        layersByKey[key].push(feature);
       });
       
       currentFeatureLayers[category] = layersByKey;

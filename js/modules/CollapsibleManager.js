@@ -72,6 +72,21 @@ export class CollapsibleManager {
     // Listen for section state changes
     globalEventBus.on('ui:sectionStateChange', ({ headerId, expanded }) => {
       this.updateStickyClasses();
+      
+      // Handle special cases for activeHeader
+      if (headerId === 'activeHeader') {
+        const header = document.getElementById('activeHeader');
+        const list = document.getElementById('activeList');
+        if (header && list) {
+          if (expanded) {
+            header.classList.remove('collapsed');
+            list.style.display = '';
+          } else {
+            header.classList.add('collapsed');
+            list.style.display = 'none';
+          }
+        }
+      }
     });
     
     // Listen for window resize to update sticky classes
@@ -193,6 +208,22 @@ export class CollapsibleManager {
           if (targetList) targetList.style.display = 'none';
         }
       });
+    }
+    
+    // Special handling for activeHeader - prevent collapse when there are active items
+    if (headerId === 'activeHeader') {
+      const activeList = document.getElementById('activeList');
+      const hasActiveItems = activeList && activeList.children.length > 1; // More than just header
+      
+      if (hasActiveItems && header.classList.contains('collapsed')) {
+        // Don't allow collapse when there are active items - force it to stay expanded
+        console.log('setupCollapsible: Preventing collapse of activeHeader - has active items');
+        header.classList.remove('collapsed');
+        list.style.display = '';
+        section.expanded = true;
+        this.updateStickyClasses();
+        return;
+      }
     }
     
     // Toggle this section

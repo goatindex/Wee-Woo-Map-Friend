@@ -112,6 +112,10 @@ export class DataLoadingOrchestrator {
       const polygonLoaderModule = stateManager.get('polygonLoader');
       if (polygonLoaderModule) {
         this.polygonLoader = polygonLoaderModule;
+        console.log('✅ DataLoadingOrchestrator: PolygonLoader found in state manager');
+        console.log('🔍 DataLoadingOrchestrator: PolygonLoader type:', typeof this.polygonLoader);
+        console.log('🔍 DataLoadingOrchestrator: PolygonLoader has loadCategory:', typeof this.polygonLoader.loadCategory);
+        console.log('🔍 DataLoadingOrchestrator: PolygonLoader keys:', Object.keys(this.polygonLoader));
         break;
       }
       
@@ -121,7 +125,20 @@ export class DataLoadingOrchestrator {
     }
     
     if (!this.polygonLoader) {
-      throw new Error('DataLoadingOrchestrator: PolygonLoader not available after timeout');
+      // Try to import PolygonLoader directly as fallback
+      try {
+        console.log('🔄 DataLoadingOrchestrator: Trying direct import of PolygonLoader...');
+        const { polygonLoader } = await import('./PolygonLoader.js');
+        if (polygonLoader) {
+          this.polygonLoader = polygonLoader;
+          console.log('✅ DataLoadingOrchestrator: PolygonLoader imported directly');
+        } else {
+          throw new Error('PolygonLoader not found in module');
+        }
+      } catch (error) {
+        console.error('❌ DataLoadingOrchestrator: Failed to import PolygonLoader directly:', error);
+        throw new Error('DataLoadingOrchestrator: PolygonLoader not available after timeout and direct import failed');
+      }
     }
     
     console.log('✅ DataLoadingOrchestrator: Dependencies ready');

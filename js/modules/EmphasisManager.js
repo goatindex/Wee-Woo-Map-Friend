@@ -5,6 +5,7 @@
  */
 
 import { logger } from './StructuredLogger.js';
+import { stateManager } from './StateManager.js';
 
 /**
  * EmphasisManager - Handles emphasis visual state for map features
@@ -129,11 +130,14 @@ export class EmphasisManager {
             
             // If not emphasised, revert to base opacity from config
             if (!on) {
-              // Get base opacity from config
-              const styleFn = config.categoryMeta && config.categoryMeta[category]?.styleFn;
-              if (styleFn) {
-                const styleResult = styleFn();
-                base = styleResult.fillOpacity ?? base;
+              // Get base opacity from config using ConfigurationManager
+              const configurationManager = stateManager.get('configurationManager');
+              if (configurationManager) {
+                const styleFn = configurationManager.getStyle(category);
+                if (styleFn) {
+                  const styleResult = styleFn();
+                  base = styleResult.fillOpacity ?? base;
+                }
               }
               layer.setStyle({ fillOpacity: base });
             } else {

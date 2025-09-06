@@ -66,51 +66,97 @@ export class ApplicationBootstrap {
   }
 
   /**
-   * Initialize core modules directly
+   * Initialize core modules directly with comprehensive error handling
    */
   async initializeCoreModules() {
     this.logger.info('Initializing core modules...');
     
-    try {
-      // Initialize core modules in dependency order
-      const { deviceManager } = await import('./DeviceManager.js');
-      await deviceManager.init();
-      
-      const { collapsibleManager } = await import('./CollapsibleManager.js');
-      await collapsibleManager.init();
-      
-      const { searchManager } = await import('./SearchManager.js');
-      await searchManager.init();
-      
-      const { activeListManager } = await import('./ActiveListManager.js');
-      await activeListManager.init();
-      
-      const { mapManager } = await import('./MapManager.js');
-      await mapManager.init();
-      
-      const { layerManager } = await import('./LayerManager.js');
-      await layerManager.init();
-      
-      const { polygonLoader } = await import('./PolygonLoader.js');
-      await polygonLoader.init();
-      
-      const { labelManager } = await import('./LabelManager.js');
-      await labelManager.init();
-      
-      const { emphasisManager } = await import('./EmphasisManager.js');
-      await emphasisManager.init();
-      
-      const { utilityManager } = await import('./UtilityManager.js');
-      await utilityManager.init();
-      
-      const { uiManager } = await import('./UIManager.js');
-      await uiManager.init();
-      
-      this.logger.info('All core modules initialized');
-    } catch (error) {
-      this.logger.warn('Some modules failed to initialize', { error: error.message });
-      // Continue with initialization - some modules may be optional
+    const moduleInitializers = [
+      { name: 'DeviceManager', path: './DeviceManager.js', required: true },
+      { name: 'CollapsibleManager', path: './CollapsibleManager.js', required: true },
+      { name: 'SearchManager', path: './SearchManager.js', required: true },
+      { name: 'ActiveListManager', path: './ActiveListManager.js', required: true },
+      { name: 'MapManager', path: './MapManager.js', required: true },
+      { name: 'LayerManager', path: './LayerManager.js', required: true },
+      { name: 'PolygonLoader', path: './PolygonLoader.js', required: true },
+      { name: 'LabelManager', path: './LabelManager.js', required: false },
+      { name: 'EmphasisManager', path: './EmphasisManager.js', required: false },
+      { name: 'UtilityManager', path: './UtilityManager.js', required: false },
+      { name: 'UIManager', path: './UIManager.js', required: false }
+    ];
+    
+    const initializedModules = new Map();
+    
+    for (const moduleInfo of moduleInitializers) {
+      try {
+        this.logger.info(`Loading module: ${moduleInfo.name}`);
+        const module = await import(moduleInfo.path);
+        
+        // Get the main export (usually a singleton instance)
+        // Try different naming conventions for the export
+        let moduleInstance = module[moduleInfo.name.toLowerCase()] || 
+                            module[moduleInfo.name.charAt(0).toLowerCase() + moduleInfo.name.slice(1)] ||
+                            module[moduleInfo.name] || 
+                            module.default;
+        
+        // Debug logging for module loading
+        console.log(`🔍 ApplicationBootstrap: Loading ${moduleInfo.name}`);
+        console.log(`🔍 ApplicationBootstrap: Module keys:`, Object.keys(module));
+        console.log(`🔍 ApplicationBootstrap: ModuleInstance type:`, typeof moduleInstance);
+        console.log(`🔍 ApplicationBootstrap: ModuleInstance has init:`, typeof moduleInstance?.init);
+        
+        // Special handling for PolygonLoader - get the singleton instance
+        if (moduleInfo.name === 'PolygonLoader' && typeof moduleInstance === 'function') {
+          // If we got the class, try to get the singleton instance
+          moduleInstance = module.polygonLoader || moduleInstance;
+        }
+        
+        if (!moduleInstance) {
+          throw new Error(`Module ${moduleInfo.name} does not export expected instance`);
+        }
+        
+        // Initialize the module
+        if (typeof moduleInstance.init === 'function') {
+          await moduleInstance.init();
+          this.logger.info(`✅ ${moduleInfo.name} initialized successfully`);
+        } else {
+          this.logger.warn(`⚠️ ${moduleInfo.name} has no init method, skipping initialization`);
+        }
+        
+        initializedModules.set(moduleInfo.name, moduleInstance);
+        
+        // Special handling for PolygonLoader
+        if (moduleInfo.name === 'PolygonLoader') {
+          // Ensure PolygonLoader is fully initialized before storing
+          if (moduleInstance.initialized) {
+            stateManager.set('polygonLoader', moduleInstance);
+            console.log('✅ ApplicationBootstrap: PolygonLoader stored in state manager');
+            console.log('🔍 ApplicationBootstrap: PolygonLoader type:', typeof moduleInstance);
+            console.log('🔍 ApplicationBootstrap: PolygonLoader has loadCategory:', typeof moduleInstance.loadCategory);
+          } else {
+            console.warn('⚠️ ApplicationBootstrap: PolygonLoader not fully initialized, storing anyway');
+            stateManager.set('polygonLoader', moduleInstance);
+            console.log('🔍 ApplicationBootstrap: PolygonLoader type:', typeof moduleInstance);
+            console.log('🔍 ApplicationBootstrap: PolygonLoader has loadCategory:', typeof moduleInstance.loadCategory);
+          }
+        }
+        
+      } catch (error) {
+        const errorMsg = `Failed to initialize ${moduleInfo.name}: ${error.message}`;
+        
+        if (moduleInfo.required) {
+          this.logger.error(`❌ ${errorMsg}`);
+          throw new Error(`Required module ${moduleInfo.name} failed to initialize: ${error.message}`);
+        } else {
+          this.logger.warn(`⚠️ ${errorMsg} (optional module)`);
+        }
+      }
     }
+    
+    this.logger.info(`Core modules initialization complete. ${initializedModules.size}/${moduleInitializers.length} modules loaded`);
+    
+    // Store initialized modules for later use
+    this.initializedModules = initializedModules;
   }
 
   /**
@@ -267,12 +313,38 @@ export class ApplicationBootstrap {
   }
 
   /**
-   * Load data and UI components
+   * Load data and UI components with error handling
    */
   async loadComponents() {
-    const { polygonLoader } = await import('./PolygonLoader.js');
-    if (polygonLoader && typeof polygonLoader.loadAllPolygons === 'function') {
-      await polygonLoader.loadAllPolygons();
+    try {
+      this.logger.info('Loading data and UI components...');
+      
+      const { DataLoadingOrchestrator } = await import('./DataLoadingOrchestrator.js');
+      if (!DataLoadingOrchestrator) {
+        throw new Error('DataLoadingOrchestrator class not found in module');
+      }
+      
+      const orchestrator = new DataLoadingOrchestrator();
+      if (typeof orchestrator.init !== 'function') {
+        throw new Error('DataLoadingOrchestrator instance has no init method');
+      }
+      
+      await orchestrator.init();
+      this.logger.info('✅ DataLoadingOrchestrator initialized');
+      
+      if (typeof orchestrator.loadInitialData !== 'function') {
+        throw new Error('DataLoadingOrchestrator instance has no loadInitialData method');
+      }
+      
+      await orchestrator.loadInitialData();
+      this.logger.info('✅ Data loading completed');
+      
+    } catch (error) {
+      this.logger.error('❌ Failed to load components', { 
+        error: error.message, 
+        stack: error.stack 
+      });
+      throw new Error(`Component loading failed: ${error.message}`);
     }
   }
 

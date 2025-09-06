@@ -297,9 +297,12 @@ export class ActiveListManager {
       // Populate rows
       ['ses','lga','cfa','ambulance','police','frv'].forEach(cat => this.addItems(cat, activeList));
 
-      // If no rows, remove header to reduce visual noise and keep collapsed
+      // Check if we have any items after populating
       const headerEl = document.getElementById('activeHeader');
-      if (activeList.children.length === 1) { // only header present
+      const hasItems = activeList.children.length > 1; // More than just header
+      
+      if (!hasItems) {
+        // No items - clear content and collapse
         activeList.innerHTML = '';
         if (headerEl) headerEl.classList.add('collapsed');
         activeList.style.display = 'none';
@@ -307,6 +310,12 @@ export class ActiveListManager {
         // There are items; ensure section is expanded
         if (headerEl) headerEl.classList.remove('collapsed');
         activeList.style.display = '';
+        
+        // Notify CollapsibleManager that the active section should be expanded
+        globalEventBus.emit('ui:sectionStateChange', {
+          headerId: 'activeHeader',
+          expanded: true
+        });
       }
       
       console.log('✅ ActiveListManager: Active list updated');

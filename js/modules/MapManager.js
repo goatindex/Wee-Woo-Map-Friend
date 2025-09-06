@@ -84,12 +84,14 @@ export class MapManager {
       // Set up map events
       this.setupMapEvents();
       
-      // Store only serializable map state in state manager
-      // Store map instance separately to avoid circular references
+      // Store the actual map instance in state manager for other modules to use
+      stateManager.set('map', this.map);
+      
+      // Also store serializable map state for debugging and persistence
       const center = this.map.getCenter();
       const bounds = this.map.getBounds();
       
-      stateManager.set('map', {
+      stateManager.set('mapState', {
         id: this.map._leaflet_id,
         center: {
           lat: center.lat,

@@ -6,6 +6,7 @@
 
 import { logger } from './StructuredLogger.js';
 import { globalEventBus } from './EventBus.js';
+import { stateManager } from './StateManager.js';
 
 /**
  * LabelManager - Handles creation and management of map name labels
@@ -114,13 +115,39 @@ export class LabelManager {
     const timer = this.logger.time('get-polygon-label-anchor');
     
     try {
-      const bounds = layer.getBounds();
-      if (bounds && bounds.isValid()) {
-        timer.end({ method: 'bounds-center', success: true });
-        return bounds.getCenter();
+      // Handle new layer data structure with bounds
+      if (layer && layer.bounds && layer.bounds.isValid && layer.bounds.isValid()) {
+        timer.end({ method: 'stored-bounds', success: true });
+        return layer.bounds.getCenter();
       }
       
-      let latlngs = layer.getLatLngs ? layer.getLatLngs() : [];
+      // Handle Leaflet GeoJSON layer
+      if (layer && typeof layer.getBounds === 'function') {
+        const bounds = layer.getBounds();
+        if (bounds && bounds.isValid()) {
+          timer.end({ method: 'bounds-center', success: true });
+          return bounds.getCenter();
+        }
+      }
+      
+      // Handle Leaflet layer with getLatLngs method
+      let latlngs = [];
+      if (layer && typeof layer.getLatLngs === 'function') {
+        latlngs = layer.getLatLngs();
+      } else if (layer && layer.getLayers && typeof layer.getLayers === 'function') {
+        // Handle GeoJSON layer with multiple sub-layers
+        const subLayers = layer.getLayers();
+        for (const subLayer of subLayers) {
+          if (subLayer.getLatLngs && typeof subLayer.getLatLngs === 'function') {
+            const subLatLngs = subLayer.getLatLngs();
+            latlngs = latlngs.concat(subLatLngs);
+          }
+        }
+      } else if (layer && layer.geometry && layer.geometry.coordinates) {
+        // Handle raw GeoJSON feature
+        latlngs = this.extractCoordinatesFromGeoJSON(layer.geometry);
+      }
+      
       latlngs = this.flattenCoordinates(latlngs);
       
       if (!latlngs.length) {
@@ -142,6 +169,33 @@ export class LabelManager {
       this.logger.error('Failed to get polygon label anchor', { error: error.message });
       return L.latLng(0, 0);
     }
+  }
+
+  /**
+   * Extract coordinates from GeoJSON geometry.
+   */
+  extractCoordinatesFromGeoJSON(geometry) {
+    if (!geometry || !geometry.coordinates) return [];
+    
+    const coords = geometry.coordinates;
+    
+    if (geometry.type === 'Point') {
+      return [L.latLng(coords[1], coords[0])];
+    } else if (geometry.type === 'Polygon') {
+      // Polygon coordinates are an array of rings, we want the outer ring
+      const outerRing = coords[0];
+      return outerRing.map(coord => L.latLng(coord[1], coord[0]));
+    } else if (geometry.type === 'MultiPolygon') {
+      // MultiPolygon coordinates are an array of polygons
+      const allCoords = [];
+      coords.forEach(polygon => {
+        const outerRing = polygon[0];
+        allCoords.push(...outerRing.map(coord => L.latLng(coord[1], coord[0])));
+      });
+      return allCoords;
+    }
+    
+    return [];
   }
 
   /**
@@ -217,14 +271,23 @@ export class LabelManager {
   /**
    * Ensure a single visible label exists for a category/key.
    */
-  ensureLabel(category, key, displayName, isPoint, layerOrMarker, dependencies) {
+  ensureLabel(category, key, displayName, isPoint, layerOrMarker, dependencies = null) {
     const timer = this.logger.time('ensure-label');
     
     try {
-      const { map, state, config } = dependencies;
+      // Get dependencies from state manager if not provided
+      let map, state, config;
+      
+      if (dependencies) {
+        ({ map, state, config } = dependencies);
+      } else {
+        map = stateManager.get('map');
+        state = stateManager.get('state') || {};
+        config = stateManager.get('config') || {};
+      }
       
       if (!map) {
-        throw new Error('Map instance not provided');
+        throw new Error('Map instance not available in state manager');
       }
       
       this.removeLabel(category, key, dependencies);
@@ -298,11 +361,19 @@ export class LabelManager {
   /**
    * Remove an existing label for category/key from the map.
    */
-  removeLabel(category, key, dependencies) {
+  removeLabel(category, key, dependencies = null) {
     const timer = this.logger.time('remove-label');
     
     try {
-      const { map, state } = dependencies;
+      // Get dependencies from state manager if not provided
+      let map, state;
+      
+      if (dependencies) {
+        ({ map, state } = dependencies);
+      } else {
+        map = stateManager.get('map');
+        state = stateManager.get('state') || {};
+      }
       
       if (!state.nameLabelMarkers || !state.nameLabelMarkers[category]) {
         timer.end({ category, key, reason: 'no-markers', success: true });
@@ -328,11 +399,19 @@ export class LabelManager {
   /**
    * Clean up all labels.
    */
-  destroy(dependencies) {
+  destroy(dependencies = null) {
     const timer = this.logger.time('destroy-labels');
     
     try {
-      const { map, state } = dependencies;
+      // Get dependencies from state manager if not provided
+      let map, state;
+      
+      if (dependencies) {
+        ({ map, state } = dependencies);
+      } else {
+        map = stateManager.get('map');
+        state = stateManager.get('state') || {};
+      }
       
       if (!state.nameLabelMarkers || !map) {
         timer.end({ reason: 'no-markers-or-map', success: true });
