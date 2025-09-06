@@ -23,6 +23,12 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:es6": "jest --testPathPattern=modules",
+    "test:es6:watch": "jest --testPathPattern=modules --watch",
+    "test:es6:coverage": "jest --testPathPattern=modules --coverage",
+    "test:legacy": "jest --testPathIgnorePatterns=modules",
+    "test:all": "jest --passWithNoTests",
+    "analyze:legacy": "node scripts/analyze-legacy-usage.js",
     "test:phase1": "jest tests/Phase1TestFramework.test.js",
     "test:performance": "jest tests/performance/",
     "test:performance:suite": "jest tests/performance/PerformanceTestSuite.test.js",
@@ -42,9 +48,14 @@
     "lint": "echo 'Linting not configured yet'",
     "quality:check": "npm run lint && npm run test:coverage",
     "quality:report": "npm run test:coverage && npm run lint",
+    "coverage:quality": "node scripts/coverage-quality-report.js",
+    "coverage:quality:html": "node scripts/coverage-quality-report.js && open coverage-quality/coverage-quality-report.html",
+    "test:performance:regression": "jest tests/performance-regression.test.js",
+    "test:performance:baseline": "jest tests/performance-regression.test.js --updateSnapshot",
     "budget:check": "node scripts/check-performance-budget.js",
     "prepare:appstore": "npm run build && npm run icons && npm run cap:sync"
   },
+
   "devDependencies": {
     "@babel/preset-env": "^7.22.0",
     "@capacitor/android": "^5.4.0",
@@ -63,7 +74,9 @@
     "babel-jest": "^29.7.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "puppeteer": "^24.17.1",
+    "lighthouse": "^12.8.2",
+    "playwright": "^1.55.0",
+    "puppeteer": "^24.18.0",
     "sharp": "^0.32.0"
   },
   "keywords": [

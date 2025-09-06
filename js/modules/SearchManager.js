@@ -6,6 +6,7 @@
 
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
+import { configurationManager } from './ConfigurationManager.js';
 
 /**
  * @class SearchManager
@@ -86,23 +87,45 @@ export class SearchManager {
    * Initialize the global search input
    */
   initSearch() {
-    this.searchBox = document.getElementById('globalSidebarSearch');
-    this.dropdown = document.getElementById('sidebarSearchDropdown');
+    const box = document.getElementById('globalSidebarSearch');
+    const dropdown = document.getElementById('sidebarSearchDropdown');
     
-    if (!this.searchBox || !this.dropdown) {
+    if (!box || !dropdown) {
       console.warn('SearchManager: Search elements not found');
       return;
     }
     
+    this.searchBox = box;
+    this.dropdown = dropdown;
+    
     console.log('SearchManager: Initializing search functionality');
     
-    // Set up search input event listener
-    this.searchBox.addEventListener('input', this.handleSearchInput);
+    // Set up search input event listener with exact legacy behavior
+    box.addEventListener('input', e => {
+      clearTimeout(this.searchTimeout);
+      const val = e.target.value.trim().toLowerCase();
+      if (!val) {
+        dropdown.innerHTML = '';
+        dropdown.classList.remove('active');
+        dropdown.style.display = 'none';
+        return;
+      }
+      this.searchTimeout = setTimeout(() => {
+        console.log('Search input:', val);
+        const namesByCategory = stateManager.get('namesByCategory', {});
+        const nameToKey = stateManager.get('nameToKey', {});
+        console.log('namesByCategory:', JSON.stringify(namesByCategory));
+        console.log('nameToKey:', JSON.stringify(nameToKey));
+        this.performSearch(val);
+      }, 120);
+    });
     
     // Set up blur event listener to hide dropdown
-    this.searchBox.addEventListener('blur', () => {
+    box.addEventListener('blur', () => {
       setTimeout(() => {
-        this.hideDropdown();
+        dropdown.innerHTML = '';
+        dropdown.classList.remove('active');
+        dropdown.style.display = 'none';
       }, 200);
     });
     
@@ -146,11 +169,12 @@ export class SearchManager {
       return;
     }
     
-    // Get search data from state manager or global variables
-    const namesByCategory = window.namesByCategory || {};
-    const nameToKey = window.nameToKey || {};
-    const outlineColors = window.outlineColors || {};
-    const labelColorAdjust = window.labelColorAdjust || {};
+    // Get search data from global variables (legacy compatibility)
+    const namesByCategory = stateManager.get('namesByCategory', {});
+    const nameToKey = stateManager.get('nameToKey', {});
+    const outlineColors = configurationManager.get('outlineColors', {});
+    const labelColorAdjust = configurationManager.get('labelColorAdjust', {});
+    const adjustHexColor = configurationManager.get('adjustHexColor', ((color, factor) => color));
     
     console.log('SearchManager: Search data available:', {
       categories: Object.keys(namesByCategory).length,
@@ -158,38 +182,88 @@ export class SearchManager {
       hasColors: !!outlineColors
     });
     
-    // Perform search
+    // Perform search with exact legacy logic
     const results = [];
-    const searchCategories = category ? [category] : Object.keys(namesByCategory);
-    
-    searchCategories.forEach(cat => {
-      const names = namesByCategory[cat] || [];
+    Object.entries(namesByCategory).forEach(([cat, names]) => {
       names.forEach(name => {
+        // Case-insensitive search and key lookup
         if (name.toLowerCase().includes(query)) {
           // Find key in a case-insensitive way
-          let key = nameToKey[cat]?.[name];
+          let key = nameToKey[cat][name];
           if (!key) {
             // Try to find key by lowercasing all keys
             const lowerName = name.toLowerCase();
-            for (const k in (nameToKey[cat] || {})) {
+            for (const k in nameToKey[cat]) {
               if (k.toLowerCase() === lowerName) {
                 key = nameToKey[cat][k];
                 break;
               }
             }
           }
-          
-          if (key) {
-            results.push({ cat, name, key });
-          }
+          results.push({ cat, name, key });
         }
       });
     });
     
-    console.log('SearchManager: Search results:', results);
+    console.log('Dropdown results:', results);
     
-    // Display results
-    this.displayResults(results);
+    // Display results with exact legacy behavior
+    if (results.length === 0) {
+      this.dropdown.innerHTML = '<div class="dropdown-item">No matches</div>';
+      this.dropdown.classList.add('active');
+      this.dropdown.style.display = 'block';
+      return;
+    }
+    
+    this.dropdown.innerHTML = results.map(r => {
+      const base = outlineColors[r.cat] || '#333';
+      const factor = (labelColorAdjust[r.cat] ?? 1.0);
+      const color = adjustHexColor(base, factor);
+      return `<div class="dropdown-item" data-cat="${r.cat}" data-key="${r.key}"><span class="name" style="color:${color}">${r.name}</span> <span style="color:#888;font-size:0.9em;">(${r.cat.toUpperCase()})</span></div>`;
+    }).join('');
+    
+    this.dropdown.classList.add('active');
+    this.dropdown.style.display = 'block';
+    
+    // Handle click on dropdown item with exact legacy behavior
+    this.dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const cat = item.getAttribute('data-cat');
+        const key = item.getAttribute('data-key');
+        const sidebarId = `${cat}_${key}`;
+        const el = document.getElementById(sidebarId);
+        if (el) {
+          // Expand the section if collapsed
+          const headerId = `${cat}Header`;
+          const header = document.getElementById(headerId);
+          if (header && header.classList.contains('collapsed')) {
+            header.click();
+          }
+          // Determine the checkbox element and a container to scroll/highlight
+          let cb = null;
+          let container = null;
+          if (el.tagName === 'INPUT') {
+            cb = el; // e.g., ambulance entries where the input has the id
+            container = el.closest('.sidebar-list-row') || el.parentElement || el;
+          } else {
+            cb = el.querySelector('input[type="checkbox"]');
+            container = el;
+          }
+          if (cb && !cb.checked) {
+            cb.checked = true;
+            cb.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          if (container && container.scrollIntoView) {
+            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            container.classList.add('search-highlight');
+            setTimeout(() => container.classList.remove('search-highlight'), 1200);
+          }
+        }
+        this.dropdown.innerHTML = '';
+        this.dropdown.classList.remove('active');
+        this.searchBox.value = '';
+      });
+    });
   }
   
   /**
@@ -206,9 +280,9 @@ export class SearchManager {
     }
     
     // Get color utilities from global scope
-    const outlineColors = window.outlineColors || {};
-    const labelColorAdjust = window.labelColorAdjust || {};
-    const adjustHexColor = window.adjustHexColor || ((color, factor) => color);
+    const outlineColors = configurationManager.get('outlineColors', {});
+    const labelColorAdjust = configurationManager.get('labelColorAdjust', {});
+    const adjustHexColor = configurationManager.get('adjustHexColor', ((color, factor) => color));
     
     // Build results HTML
     const resultsHTML = results.map(result => {
@@ -312,8 +386,8 @@ export class SearchManager {
    * Build search index from available data
    */
   buildSearchIndex() {
-    const namesByCategory = window.namesByCategory || {};
-    const nameToKey = window.nameToKey || {};
+    const namesByCategory = stateManager.get('namesByCategory', {});
+    const nameToKey = stateManager.get('nameToKey', {});
     
     this.searchIndex.clear();
     
@@ -389,7 +463,7 @@ export class SearchManager {
 export const searchManager = new SearchManager();
 
 // Export for legacy compatibility
+// Export for global access (ES6 module system)
 if (typeof window !== 'undefined') {
-  window.initSearch = () => searchManager.initSearch();
   window.SearchManager = searchManager;
 }

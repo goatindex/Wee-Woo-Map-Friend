@@ -13,10 +13,19 @@ backend/.env.*
 
 # Node (if used)
 node_modules/
-.venv/Lib/site-packages/_distutils_hack/__pycache__/__init__.cpython-311.pyc
-.venv/Lib/site-packages/_distutils_hack/__pycache__/override.cpython-311.pyc
-.venv/Lib/site-packages/pip/__init__.py
-.venv/Lib/site-packages/pip/__pip-runner__.py
+
+# Test artifacts
+test-results/
+coverage/
+playwright-report/
+test-results.xml
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
 .venv/Lib/site-packages/pip/__pycache__/__init__.cpython-311.pyc
 .venv/Lib/site-packages/pip/__pycache__/__main__.cpython-311.pyc
 .venv/Lib/site-packages/pip/__pycache__/__pip-runner__.cpython-311.pyc
@@ -993,3 +1002,19 @@ backend/requirements.txt
 js/ui/activeList.js
 backend/app.py
 .venv/pyvenv.cfg
+
+# Generated test artifacts
+coverage/
+playwright-report/
+coverage-quality/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Performance data
+performance-baseline.json
+
+# Generated files cleanup - added by cleanup script

@@ -1,383 +1,514 @@
 /**
- * @module modules/DeviceManager
- * Modern ES6-based device context management for WeeWoo Map Friend
- * Manages device detection, responsive breakpoints, and platform-specific features
+ * @module DeviceManager
+ * Advanced device detection and native app behavior management.
+ * Migrated from js/device.js
  */
 
-import { globalEventBus } from './EventBus.js';
-import { stateManager } from './StateManager.js';
+import { logger } from './StructuredLogger.js';
 
 /**
- * @class DeviceManager
- * Manages device context and responsive features
+ * DeviceManager - Comprehensive device context detection and management
  */
 export class DeviceManager {
   constructor() {
-    this.initialized = false;
-    this.deviceContext = null;
-    this.breakpointListeners = new Set();
-    this.orientationListeners = new Set();
+    this.logger = logger.createChild({ module: 'DeviceManager' });
+    this.logger.info('DeviceManager initialized');
     
-    // Bind methods
-    this.init = this.init.bind(this);
-    this.getContext = this.getContext.bind(this);
-    this.updateContext = this.updateContext.bind(this);
-    this.addBreakpointListener = this.addBreakpointListener.bind(this);
-    this.removeBreakpointListener = this.removeBreakpointListener.bind(this);
-    this.addOrientationListener = this.addOrientationListener.bind(this);
-    this.removeOrientationListener = this.removeOrientationListener.bind(this);
-    this.getStatus = this.getStatus.bind(this);
-    
-    console.log('📱 DeviceManager: Device management system initialized');
+    this.orientationTimeout = null;
+    this.lastTouchEnd = 0;
+    this.isInitialized = false;
   }
-  
+
   /**
-   * Initialize the device manager
-   */
-  async init() {
-    if (this.initialized) {
-      console.warn('DeviceManager: Already initialized');
-      return;
-    }
-    
-    try {
-      console.log('🔧 DeviceManager: Starting device manager initialization...');
-      
-      // Initialize device context
-      this.deviceContext = this.detectDeviceContext();
-      
-      // Set up responsive breakpoint detection
-      this.setupResponsiveDetection();
-      
-      // Set up orientation change detection
-      this.setupOrientationDetection();
-      
-      // Store initial context in state manager
-      stateManager.set('deviceContext', this.deviceContext);
-      
-      // Set up event listeners
-      this.setupEventListeners();
-      
-      this.initialized = true;
-      console.log('✅ DeviceManager: Device management system ready');
-      
-    } catch (error) {
-      console.error('🚨 DeviceManager: Failed to initialize:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Detect current device context
-   */
-  detectDeviceContext() {
-    const userAgent = navigator.userAgent;
-    const platform = navigator.platform;
-    
-    // Detect platform
-    let detectedPlatform = 'web';
-    if (/iPad|iPhone|iPod/.test(userAgent)) {
-      detectedPlatform = 'ios';
-    } else if (/Android/.test(userAgent)) {
-      detectedPlatform = 'android';
-    }
-    
-    // Detect device type based on screen size
-    const screenWidth = window.screen.width;
-    const screenHeight = window.screen.height;
-    const minDimension = Math.min(screenWidth, screenHeight);
-    
-    let deviceType = 'desktop';
-    if (minDimension < 768) {
-      deviceType = 'mobile';
-    } else if (minDimension < 1024) {
-      deviceType = 'tablet';
-    } else if (minDimension >= 1440) {
-      deviceType = 'large';
-    }
-    
-    // Detect orientation
-    const orientation = screenWidth > screenHeight ? 'landscape' : 'portrait';
-    
-    // Detect touch capability
-    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    
-    // Detect standalone mode (PWA)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                        window.navigator.standalone === true;
-    
-    const context = {
-      device: deviceType,
-      platform: detectedPlatform,
-      orientation: orientation,
-      hasTouch: hasTouch,
-      isStandalone: isStandalone,
-      breakpoint: deviceType,
-      screenWidth,
-      screenHeight,
-      userAgent,
-      platform: detectedPlatform
-    };
-    
-    console.log('DeviceManager: Detected device context:', context);
-    return context;
-  }
-  
-  /**
-   * Set up responsive breakpoint detection
-   */
-  setupResponsiveDetection() {
-    const updateBreakpoint = () => {
-      const oldBreakpoint = this.deviceContext.breakpoint;
-      const newBreakpoint = this.getBreakpointFromScreenSize();
-      
-      if (oldBreakpoint !== newBreakpoint) {
-        this.deviceContext.breakpoint = newBreakpoint;
-        this.deviceContext.device = newBreakpoint;
-        
-        // Update state manager
-        stateManager.set('deviceContext', this.deviceContext);
-        
-        // Emit breakpoint change event
-        globalEventBus.emit('device:breakpointChange', {
-          oldBreakpoint,
-          newBreakpoint,
-          context: this.deviceContext
-        });
-        
-        // Notify breakpoint listeners
-        this.breakpointListeners.forEach(listener => {
-          try {
-            listener(newBreakpoint, oldBreakpoint, this.deviceContext);
-          } catch (error) {
-            console.warn('DeviceManager: Breakpoint listener error:', error);
-          }
-        });
-        
-        console.log(`DeviceManager: Breakpoint changed from ${oldBreakpoint} to ${newBreakpoint}`);
-      }
-    };
-    
-    // Initial update
-    updateBreakpoint();
-    
-    // Update on resize
-    window.addEventListener('resize', this.debounce(updateBreakpoint, 150));
-  }
-  
-  /**
-   * Get breakpoint from current screen size
-   */
-  getBreakpointFromScreenSize() {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const minDimension = Math.min(width, height);
-    
-    if (minDimension < 768) return 'mobile';
-    if (minDimension < 1024) return 'tablet';
-    if (minDimension >= 1440) return 'large';
-    return 'desktop';
-  }
-  
-  /**
-   * Set up orientation change detection
-   */
-  setupOrientationDetection() {
-    const updateOrientation = () => {
-      const oldOrientation = this.deviceContext.orientation;
-      const newOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
-      
-      if (oldOrientation !== newOrientation) {
-        this.deviceContext.orientation = newOrientation;
-        
-        // Update state manager
-        stateManager.set('deviceContext', this.deviceContext);
-        
-        // Emit orientation change event
-        globalEventBus.emit('device:orientationChange', {
-          oldOrientation,
-          newOrientation,
-          context: this.deviceContext
-        });
-        
-        // Notify orientation listeners
-        this.orientationListeners.forEach(listener => {
-          try {
-            listener(newOrientation, oldOrientation, this.deviceContext);
-          } catch (error) {
-            console.warn('DeviceManager: Orientation listener error:', error);
-          }
-        });
-        
-        console.log(`DeviceManager: Orientation changed from ${oldOrientation} to ${newOrientation}`);
-      }
-    };
-    
-    // Initial update
-    updateOrientation();
-    
-    // Update on orientation change and resize
-    window.addEventListener('orientationchange', updateOrientation);
-    window.addEventListener('resize', this.debounce(updateOrientation, 150));
-  }
-  
-  /**
-   * Set up event listeners
-   */
-  setupEventListeners() {
-    // Listen for state changes
-    globalEventBus.on('stateChange', ({ property, value }) => {
-      if (property === 'deviceContext') {
-        this.deviceContext = value;
-      }
-    });
-    
-    // Listen for configuration changes
-    globalEventBus.on('config:change', ({ path, value }) => {
-      if (path.startsWith('device')) {
-        this.updateContext();
-      }
-    });
-  }
-  
-  /**
-   * Get current device context
+   * Get complete device context information
+   * @returns {Object} Device context object
    */
   getContext() {
-    return this.deviceContext;
-  }
-  
-  /**
-   * Update device context
-   */
-  updateContext() {
-    this.deviceContext = this.detectDeviceContext();
-    stateManager.set('deviceContext', this.deviceContext);
+    const timer = this.logger.time('get-device-context');
     
-    // Emit context update event
-    globalEventBus.emit('device:contextUpdate', { context: this.deviceContext });
-    
-    return this.deviceContext;
-  }
-  
-  /**
-   * Add breakpoint change listener
-   */
-  addBreakpointListener(listener) {
-    this.breakpointListeners.add(listener);
-    return () => this.removeBreakpointListener(listener);
-  }
-  
-  /**
-   * Remove breakpoint change listener
-   */
-  removeBreakpointListener(listener) {
-    this.breakpointListeners.delete(listener);
-  }
-  
-  /**
-   * Add orientation change listener
-   */
-  addOrientationListener(listener) {
-    this.orientationListeners.add(listener);
-    return () => this.removeOrientationListener(listener);
-  }
-  
-  /**
-   * Remove orientation change listener
-   */
-  removeOrientationListener(listener) {
-    this.orientationListeners.delete(listener);
-  }
-  
-  /**
-   * Check if device is mobile
-   */
-  isMobile() {
-    return this.deviceContext && this.deviceContext.device === 'mobile';
-  }
-  
-  /**
-   * Check if device is tablet
-   */
-  isTablet() {
-    return this.deviceContext && this.deviceContext.device === 'tablet';
-  }
-  
-  /**
-   * Check if device is desktop
-   */
-  isDesktop() {
-    return this.deviceContext && this.deviceContext.device === 'desktop';
-  }
-  
-  /**
-   * Check if device has touch
-   */
-  hasTouch() {
-    return this.deviceContext && this.deviceContext.hasTouch;
-  }
-  
-  /**
-   * Check if app is in standalone mode
-   */
-  isStandalone() {
-    return this.deviceContext && this.deviceContext.isStandalone;
-  }
-  
-  /**
-   * Get current breakpoint
-   */
-  getBreakpoint() {
-    return this.deviceContext ? this.deviceContext.breakpoint : 'desktop';
-  }
-  
-  /**
-   * Get current orientation
-   */
-  getOrientation() {
-    return this.deviceContext ? this.deviceContext.orientation : 'landscape';
-  }
-  
-  /**
-   * Utility function for debouncing
-   */
-  debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
+    try {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      // Get breakpoints from CSS custom properties
+      const computedStyle = getComputedStyle(document.documentElement);
+      const mobileSmall = parseInt(computedStyle.getPropertyValue('--mobile-small')?.replace('px', '')) || 480;
+      const mobileLarge = parseInt(computedStyle.getPropertyValue('--mobile-large')?.replace('px', '')) || 768;
+      const tablet = parseInt(computedStyle.getPropertyValue('--tablet')?.replace('px', '')) || 1024;
+      
+      // Determine breakpoint
+      let breakpoint = 'desktop';
+      if (width <= mobileSmall) breakpoint = 'mobile-small';
+      else if (width <= mobileLarge) breakpoint = 'mobile-large';
+      else if (width <= tablet) breakpoint = 'tablet';
+      
+      // Platform detection
+      const platform = this.detectPlatform();
+      const browser = this.detectBrowser();
+      
+      const context = {
+        // Screen dimensions
+        width,
+        height,
+        pixelRatio: window.devicePixelRatio || 1,
+        
+        // Responsive breakpoints
+        breakpoint,
+        isMobile: width <= mobileLarge,
+        isTablet: width > mobileLarge && width <= tablet,
+        isDesktop: width > tablet,
+        
+        // Orientation
+        orientation: width > height ? 'landscape' : 'portrait',
+        orientationAngle: screen.orientation?.angle || 0,
+        
+        // Input capabilities
+        isTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+        hasHover: window.matchMedia('(hover: hover)').matches,
+        hasCoarsePointer: window.matchMedia('(pointer: coarse)').matches,
+        hasFinePointer: window.matchMedia('(pointer: fine)').matches,
+        
+        // App mode detection
+        isStandalone: window.matchMedia('(display-mode: standalone)').matches,
+        isPWA: window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches,
+        isFullscreen: window.matchMedia('(display-mode: fullscreen)').matches,
+        
+        // Platform and browser
+        platform,
+        browser,
+        isWebView: this.isWebView(),
+        
+        // Device capabilities
+        hasGeolocation: 'geolocation' in navigator,
+        hasServiceWorker: 'serviceWorker' in navigator,
+        hasOfflineSupport: 'onLine' in navigator,
+        hasDeviceMotion: 'DeviceMotionEvent' in window,
+        hasDeviceOrientation: 'DeviceOrientationEvent' in window,
+        
+        // Network
+        isOnline: navigator.onLine,
+        connectionType: this.getConnectionType(),
+        
+        // Safe areas (for notched devices)
+        safeAreas: this.getSafeAreas()
       };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
+      
+      timer.end({ 
+        breakpoint, 
+        platform, 
+        browser,
+        isMobile: context.isMobile,
+        isPWA: context.isPWA,
+        success: true 
+      });
+      
+      return context;
+      
+    } catch (error) {
+      timer.end({ 
+        error: error.message,
+        success: false 
+      });
+      
+      this.logger.error('Failed to get device context', {
+        error: error.message,
+        stack: error.stack
+      });
+      
+      // Return fallback context
+      return {
+        width: window.innerWidth || 1024,
+        height: window.innerHeight || 768,
+        pixelRatio: 1,
+        breakpoint: 'desktop',
+        isMobile: false,
+        isTablet: false,
+        isDesktop: true,
+        orientation: 'landscape',
+        orientationAngle: 0,
+        isTouch: false,
+        hasHover: true,
+        hasCoarsePointer: false,
+        hasFinePointer: true,
+        isStandalone: false,
+        isPWA: false,
+        isFullscreen: false,
+        platform: 'unknown',
+        browser: 'unknown',
+        isWebView: false,
+        hasGeolocation: false,
+        hasServiceWorker: false,
+        hasOfflineSupport: false,
+        hasDeviceMotion: false,
+        hasDeviceOrientation: false,
+        isOnline: true,
+        connectionType: 'unknown',
+        safeAreas: { top: '0px', right: '0px', bottom: '0px', left: '0px' }
+      };
+    }
   }
-  
+
   /**
-   * Get device manager status
+   * Detect platform (iOS, Android, Windows, macOS, Linux)
+   * @returns {string} Platform identifier
    */
-  getStatus() {
-    return {
-      initialized: this.initialized,
-      deviceContext: this.deviceContext,
-      breakpointListeners: this.breakpointListeners.size,
-      orientationListeners: this.orientationListeners.size
-    };
+  detectPlatform() {
+    try {
+      const ua = navigator.userAgent.toLowerCase();
+      const platform = navigator.platform?.toLowerCase() || '';
+      
+      if (/iphone|ipod/.test(ua)) return 'ios-phone';
+      if (/ipad/.test(ua) || (platform.includes('mac') && navigator.maxTouchPoints > 0)) return 'ios-tablet';
+      if (/android/.test(ua)) {
+        // Distinguish between Android phones and tablets
+        return /mobile/.test(ua) ? 'android-phone' : 'android-tablet';
+      }
+      if (/windows/.test(ua) || platform.includes('win')) return 'windows';
+      if (platform.includes('mac')) return 'macos';
+      if (/linux/.test(ua) || platform.includes('linux')) return 'linux';
+      
+      return 'unknown';
+      
+    } catch (error) {
+      this.logger.error('Failed to detect platform', { error: error.message });
+      return 'unknown';
+    }
   }
-  
+
   /**
-   * Check if device manager is ready
+   * Detect browser
+   * @returns {string} Browser identifier
    */
-  isReady() {
-    return this.initialized;
+  detectBrowser() {
+    try {
+      const ua = navigator.userAgent;
+      
+      if (/Edg\//.test(ua)) return 'edge';
+      if (/Chrome\//.test(ua) && !/Edg\//.test(ua)) return 'chrome';
+      if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) return 'safari';
+      if (/Firefox\//.test(ua)) return 'firefox';
+      if (/MSIE|Trident\//.test(ua)) return 'ie';
+      
+      return 'unknown';
+      
+    } catch (error) {
+      this.logger.error('Failed to detect browser', { error: error.message });
+      return 'unknown';
+    }
+  }
+
+  /**
+   * Check if running in a WebView
+   * @returns {boolean} True if in WebView
+   */
+  isWebView() {
+    try {
+      const ua = navigator.userAgent;
+      
+      // Common WebView indicators
+      return /wv|WebView|Version\/.*Chrome/.test(ua) ||
+             window.navigator.standalone === true ||
+             (window.matchMedia('(display-mode: standalone)').matches && 
+              !/Safari/.test(ua));
+              
+    } catch (error) {
+      this.logger.error('Failed to detect WebView', { error: error.message });
+      return false;
+    }
+  }
+
+  /**
+   * Get connection type information
+   * @returns {Object|string} Connection information or 'unknown'
+   */
+  getConnectionType() {
+    try {
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      
+      if (!connection) return 'unknown';
+      
+      return {
+        effectiveType: connection.effectiveType || 'unknown',
+        type: connection.type || 'unknown',
+        downlink: connection.downlink || 0,
+        rtt: connection.rtt || 0,
+        saveData: connection.saveData || false
+      };
+      
+    } catch (error) {
+      this.logger.error('Failed to get connection type', { error: error.message });
+      return 'unknown';
+    }
+  }
+
+  /**
+   * Get safe area insets for notched devices
+   * @returns {Object} Safe area insets
+   */
+  getSafeAreas() {
+    try {
+      const computedStyle = getComputedStyle(document.documentElement);
+      
+      return {
+        top: computedStyle.getPropertyValue('env(safe-area-inset-top)') || '0px',
+        right: computedStyle.getPropertyValue('env(safe-area-inset-right)') || '0px',
+        bottom: computedStyle.getPropertyValue('env(safe-area-inset-bottom)') || '0px',
+        left: computedStyle.getPropertyValue('env(safe-area-inset-left)') || '0px'
+      };
+      
+    } catch (error) {
+      this.logger.error('Failed to get safe areas', { error: error.message });
+      return { top: '0px', right: '0px', bottom: '0px', left: '0px' };
+    }
+  }
+
+  /**
+   * Initialize device context system
+   * @returns {Object} Initial device context
+   */
+  init() {
+    const timer = this.logger.time('init-device-manager');
+    
+    try {
+      if (this.isInitialized) {
+        this.logger.warn('DeviceManager already initialized');
+        return this.getContext();
+      }
+      
+      this.logger.info('Initializing device context system');
+      
+      const context = this.getContext();
+      this.logger.info('Current device context', { 
+        platform: context.platform,
+        browser: context.browser,
+        breakpoint: context.breakpoint,
+        isMobile: context.isMobile,
+        isPWA: context.isPWA 
+      });
+      
+      // Update CSS properties
+      this.updateCSSProperties(context);
+      
+      // Dispatch initial context event
+      window.dispatchEvent(new CustomEvent('deviceContextReady', {
+        detail: { context }
+      }));
+      
+      this.isInitialized = true;
+      
+      timer.end({ 
+        platform: context.platform,
+        breakpoint: context.breakpoint,
+        success: true 
+      });
+      
+      return context;
+      
+    } catch (error) {
+      timer.end({ 
+        error: error.message,
+        success: false 
+      });
+      
+      this.logger.error('Failed to initialize DeviceManager', {
+        error: error.message,
+        stack: error.stack
+      });
+      
+      return this.getContext(); // Return fallback context
+    }
+  }
+
+  /**
+   * Update CSS custom properties based on device context
+   * @param {Object} context - Device context
+   */
+  updateCSSProperties(context) {
+    try {
+      const root = document.documentElement;
+      
+      // Update viewport dimensions
+      root.style.setProperty('--viewport-width', `${context.width}px`);
+      root.style.setProperty('--viewport-height', `${context.height}px`);
+      
+      // Update device pixel ratio
+      root.style.setProperty('--pixel-ratio', context.pixelRatio.toString());
+      
+      // Update orientation
+      root.style.setProperty('--orientation', context.orientation);
+      root.style.setProperty('--orientation-angle', `${context.orientationAngle}deg`);
+      
+      // Update platform info
+      root.style.setProperty('--platform', context.platform);
+      root.style.setProperty('--breakpoint', context.breakpoint);
+      
+      this.logger.debug('CSS properties updated', { 
+        breakpoint: context.breakpoint,
+        orientation: context.orientation 
+      });
+      
+    } catch (error) {
+      this.logger.error('Failed to update CSS properties', { error: error.message });
+    }
+  }
+
+  /**
+   * Clean up device manager
+   */
+  destroy() {
+    const timer = this.logger.time('destroy-device-manager');
+    
+    try {
+      // Clear orientation timeout
+      if (this.orientationTimeout) {
+        clearTimeout(this.orientationTimeout);
+        this.orientationTimeout = null;
+      }
+      
+      // Remove event listeners (they'll be cleaned up when the page unloads)
+      this.isInitialized = false;
+      
+      timer.end({ success: true });
+      
+      this.logger.info('DeviceManager destroyed');
+      
+    } catch (error) {
+      timer.end({ 
+        error: error.message,
+        success: false 
+      });
+      
+      this.logger.error('Failed to destroy DeviceManager', {
+        error: error.message
+      });
+    }
   }
 }
 
-// Export singleton instance
+/**
+ * DeviceContext - Legacy compatibility wrapper for DeviceManager
+ * Provides the expected global interface for legacy code
+ */
+export class DeviceContext {
+  constructor(deviceManager) {
+    this.deviceManager = deviceManager;
+  }
+
+  /**
+   * Get device context - legacy compatibility method
+   * @returns {Object} Device context object
+   */
+  getContext() {
+    return this.deviceManager.getContext();
+  }
+
+  /**
+   * Check if device is mobile - legacy compatibility method
+   * @returns {boolean} True if mobile device
+   */
+  isMobile() {
+    return this.deviceManager.getContext().isMobile;
+  }
+
+  /**
+   * Check if device is tablet - legacy compatibility method
+   * @returns {boolean} True if tablet device
+   */
+  isTablet() {
+    return this.deviceManager.getContext().isTablet;
+  }
+
+  /**
+   * Check if device is desktop - legacy compatibility method
+   * @returns {boolean} True if desktop device
+   */
+  isDesktop() {
+    return this.deviceManager.getContext().isDesktop;
+  }
+
+  /**
+   * Get current breakpoint - legacy compatibility method
+   * @returns {string} Current breakpoint
+   */
+  getBreakpoint() {
+    return this.deviceManager.getContext().breakpoint;
+  }
+
+  /**
+   * Get platform information - legacy compatibility method
+   * @returns {string} Platform identifier
+   */
+  getPlatform() {
+    return this.deviceManager.getContext().platform;
+  }
+
+  /**
+   * Get browser information - legacy compatibility method
+   * @returns {string} Browser identifier
+   */
+  getBrowser() {
+    return this.deviceManager.getContext().browser;
+  }
+
+  /**
+   * Check if device supports touch - legacy compatibility method
+   * @returns {boolean} True if touch supported
+   */
+  isTouch() {
+    return this.deviceManager.getContext().isTouch;
+  }
+
+  /**
+   * Check if device is PWA - legacy compatibility method
+   * @returns {boolean} True if PWA
+   */
+  isPWA() {
+    return this.deviceManager.getContext().isPWA;
+  }
+
+  /**
+   * Get orientation - legacy compatibility method
+   * @returns {string} Orientation (portrait/landscape)
+   */
+  getOrientation() {
+    return this.deviceManager.getContext().orientation;
+  }
+
+  /**
+   * Get screen dimensions - legacy compatibility method
+   * @returns {Object} Screen dimensions
+   */
+  getDimensions() {
+    const context = this.deviceManager.getContext();
+    return {
+      width: context.width,
+      height: context.height,
+      pixelRatio: context.pixelRatio
+    };
+  }
+}
+
+// Create singleton instance
 export const deviceManager = new DeviceManager();
 
-// Export for legacy compatibility
+// Create DeviceContext wrapper
+export const deviceContext = new DeviceContext(deviceManager);
+
+// Legacy compatibility exports
+export const getResponsiveContext = () => deviceManager.getContext();
+export const isMobileSize = () => deviceManager.getContext().isMobile;
+
+// Global setup for legacy compatibility
 if (typeof window !== 'undefined') {
-  window.DeviceManager = deviceManager;
+  // Set up the global DeviceContext that ES6Bootstrap expects
+  window.DeviceContext = deviceContext;
+  
+  // Also set up the deviceManager for direct access
+  window.deviceManager = deviceManager;
+  
+  // Legacy compatibility functions
+  window.getResponsiveContext = getResponsiveContext;
+  window.isMobileSize = isMobileSize;
+  
+  console.log('✅ DeviceManager: Global DeviceContext setup complete');
 }

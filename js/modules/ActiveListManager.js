@@ -7,6 +7,9 @@
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
 import { configurationManager } from './ConfigurationManager.js';
+import { logger } from './StructuredLogger.js';
+import { emphasisManager } from './EmphasisManager.js';
+import { labelManager } from './LabelManager.js';
 
 /**
  * @class ActiveListManager
@@ -20,11 +23,12 @@ export class ActiveListManager {
     this.bulkOperationActive = false;
     this.pendingUpdates = new Set();
     
+    // Create module-specific logger
+    this.logger = logger.createChild({ module: 'ActiveListManager' });
+    
     // Bind methods
     this.init = this.init.bind(this);
     this.updateActiveList = this.updateActiveList.bind(this);
-    this.addItem = this.addItem.bind(this);
-    this.removeItem = this.removeItem.bind(this);
     this.beginBulkOperation = this.beginBulkOperation.bind(this);
     this.endBulkOperation = this.endBulkOperation.bind(this);
     this.setupEventListeners = this.setupEventListeners.bind(this);
@@ -173,47 +177,132 @@ export class ActiveListManager {
    * Begin a bulk operation
    */
   beginBulkOperation() {
-    this.bulkOperationActive = true;
-    this.pendingUpdates.clear();
-    console.log('🔄 ActiveListManager: Bulk operation started');
+    // Check if we're already in a bulk operation
+    if (window.BulkOperationManager && window.BulkOperationManager.isActive()) {
+      console.log('🔄 Active list bulk operation started (within existing bulk operation)');
+      this.bulkOperationActive = true;
+      // Mark that we need an active list update when the bulk operation ends
+      window.BulkOperationManager.markActiveListUpdatePending();
+    } else {
+      console.log('🔄 Active list bulk operation started (standalone)');
+      this.bulkOperationActive = true;
+    }
   }
   
   /**
    * End a bulk operation
    */
   endBulkOperation() {
+    console.log('endActiveListBulk called, _bulkActive:', this.bulkOperationActive, '_bulkPending:', this.pendingUpdates.has('activeList'));
     this.bulkOperationActive = false;
+    const pending = this.pendingUpdates.has('activeList');
+    this.pendingUpdates.clear();
     
-    // Process any pending updates
-    if (this.pendingUpdates.has('activeList')) {
-      this.pendingUpdates.delete('activeList');
-      this.scheduleUpdate();
+    // If we're in a unified bulk operation, the manager will handle the update
+    if (window.BulkOperationManager && window.BulkOperationManager.isActive()) {
+      console.log('🔄 Active list bulk operation ended (within unified bulk operation)');
+      // The BulkOperationManager will call updateActiveList when it ends
+    } else {
+      console.log('🔄 Active list bulk operation ended (standalone)');
+      if (pending) {
+        console.log('Pending update detected, calling updateActiveList');
+        this.updateActiveList();
+      } else {
+        console.log('No pending update, not calling updateActiveList');
+      }
     }
-    
-    console.log('✅ ActiveListManager: Bulk operation ended');
   }
   
   /**
    * Update the active list display
    */
   updateActiveList() {
+    if (this.bulkOperationActive) { 
+      this.pendingUpdates.add('activeList'); 
+      return; 
+    }
+    
     try {
-      if (!this.activeListContainer) {
-        this.activeListContainer = document.getElementById('activeList');
-        if (!this.activeListContainer) {
-          console.warn('⚠️ ActiveListManager: Active list container not found');
-          return;
-        }
+      const activeList = document.getElementById('activeList');
+      if (!activeList) {
+        console.warn('⚠️ ActiveListManager: Active list container not found');
+        return;
       }
       
-      // Get current state
-      const featureLayers = stateManager.get('featureLayers', {});
-      const namesByCategory = stateManager.get('namesByCategory', {});
-      const emphasised = stateManager.get('emphasised', {});
-      const categoryMeta = configurationManager.get('categoryMeta', {});
+      this.activeListContainer = activeList;
+      activeList.innerHTML = '';
+
+      // Header row with new columns
+      const headerRow = document.createElement('div');
+      headerRow.className = 'active-list-header';
+      headerRow.style.display = 'flex'; 
+      headerRow.style.alignItems = 'center'; 
+      headerRow.style.marginBottom = '4px';
       
-      // Render the active list
-      this.renderActiveList(featureLayers, namesByCategory, emphasised, categoryMeta);
+      // Spacer for remove button
+      const spacer = document.createElement('span');
+      spacer.style.width = '32px';
+      headerRow.appendChild(spacer);
+      
+      // Name header
+      const nameHeader = document.createElement('span');
+      nameHeader.textContent = 'Name';
+      nameHeader.className = 'active-list-name-header';
+      nameHeader.style.flex = '1';
+      nameHeader.style.textAlign = 'left';
+      headerRow.appendChild(nameHeader);
+      
+      // Emphasise header
+      const emphHeader = document.createElement('span');
+      emphHeader.textContent = '📢';
+      emphHeader.title = 'Emphasise';
+      emphHeader.style.display = 'flex';
+      emphHeader.style.justifyContent = 'center';
+      emphHeader.style.alignItems = 'center';
+      emphHeader.style.width = '32px';
+      emphHeader.style.fontWeight = 'bold';
+      emphHeader.classList.add('active-list-icon-header');
+      headerRow.appendChild(emphHeader);
+      
+      // Show Name header
+      const nameLabelHeader = document.createElement('span');
+      nameLabelHeader.textContent = '🏷️';
+      nameLabelHeader.title = 'Show Name';
+      nameLabelHeader.style.display = 'flex';
+      nameLabelHeader.style.justifyContent = 'center';
+      nameLabelHeader.style.alignItems = 'center';
+      nameLabelHeader.style.width = '32px';
+      nameLabelHeader.style.fontWeight = 'bold';
+      nameLabelHeader.classList.add('active-list-icon-header');
+      headerRow.appendChild(nameLabelHeader);
+      
+      // 7/7 header
+      const sevenHeader = document.createElement('span');
+      sevenHeader.textContent = '🌦️';
+      sevenHeader.title = '7-day weather';
+      sevenHeader.style.display = 'flex';
+      sevenHeader.style.justifyContent = 'center';
+      sevenHeader.style.alignItems = 'center';
+      sevenHeader.style.width = '32px';
+      sevenHeader.style.fontWeight = 'bold';
+      sevenHeader.classList.add('active-list-icon-header');
+      headerRow.appendChild(sevenHeader);
+      activeList.appendChild(headerRow);
+
+      // Populate rows
+      ['ses','lga','cfa','ambulance','police','frv'].forEach(cat => this.addItems(cat, activeList));
+
+      // If no rows, remove header to reduce visual noise and keep collapsed
+      const headerEl = document.getElementById('activeHeader');
+      if (activeList.children.length === 1) { // only header present
+        activeList.innerHTML = '';
+        if (headerEl) headerEl.classList.add('collapsed');
+        activeList.style.display = 'none';
+      } else {
+        // There are items; ensure section is expanded
+        if (headerEl) headerEl.classList.remove('collapsed');
+        activeList.style.display = '';
+      }
       
       console.log('✅ ActiveListManager: Active list updated');
       
@@ -222,6 +311,203 @@ export class ActiveListManager {
     }
   }
   
+  /**
+   * Append visible items for a given category to the active list container.
+   * Populates row metadata (lat/lon for polygons) used by the weather box feature.
+   * @param {'ses'|'lga'|'cfa'|'ambulance'|'police'|'frv'} category
+   * @param {HTMLElement} container
+   */
+  addItems(category, container) {
+    const meta = window.categoryMeta?.[category];
+    const namesByCategory = stateManager.get('namesByCategory', {});
+    const featureLayers = stateManager.get('featureLayers', {});
+    if (!namesByCategory[category] || !featureLayers[category]) return;
+    
+    namesByCategory[category].forEach(name => {
+      const nameToKey = stateManager.get('nameToKey', {});
+      const key = nameToKey[category]?.[name];
+      if (!key) return;
+      
+      const cb = this.getCategoryCheckbox(category, key);
+      if (!cb || !cb.checked) return; // Only show checked/visible items
+      
+      const row = document.createElement('div');
+      row.className = 'active-list-row';
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.marginBottom = '2px';
+      
+      // Set lat/lon for polygons
+      if (meta?.type === 'polygon' && featureLayers[category][key] && featureLayers[category][key][0]) {
+        const layer = featureLayers[category][key][0];
+        if (layer && layer.getBounds) {
+          const center = layer.getBounds().getCenter();
+          row.dataset.lat = center.lat;
+          row.dataset.lon = center.lng;
+        }
+      }
+      
+      // Remove (red X) button
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '✖';
+      removeBtn.title = 'Remove from active';
+      removeBtn.style.color = '#d32f2f';
+      removeBtn.style.background = 'none';
+      removeBtn.style.border = 'none';
+      removeBtn.style.fontSize = '1.2em';
+      removeBtn.style.cursor = 'pointer';
+      removeBtn.style.width = '32px';
+      removeBtn.style.margin = '0 2px 0 0';
+      removeBtn.onclick = () => {
+        cb.checked = false;
+        cb.dispatchEvent(new Event('change', { bubbles: true }));
+        this.updateActiveList();
+      };
+      row.appendChild(removeBtn);
+      
+      // Name
+      const nameSpan = document.createElement('span');
+      nameSpan.classList.add('active-list-name');
+      // Use formatted name for ambulance
+      if (category === 'ambulance') {
+        nameSpan.textContent = this.formatAmbulanceName(name);
+      } else if (category === 'police') {
+        nameSpan.textContent = this.formatPoliceName(name);
+      } else {
+        nameSpan.textContent = name;
+      }
+      nameSpan.style.flex = '1';
+      // Set color to match polygon border (with optional adjustment)
+      const outlineColors = configurationManager.get('outlineColors', {});
+      const labelColorAdjust = configurationManager.get('labelColorAdjust', {});
+      const adjustHexColor = configurationManager.get('adjustHexColor', ((color, factor) => color));
+      const baseColor = outlineColors[category];
+      const factor = labelColorAdjust[category] ?? 1.0;
+      if (baseColor && adjustHexColor) {
+        nameSpan.style.color = adjustHexColor(baseColor, factor);
+      }
+      row.appendChild(nameSpan);
+      
+      // Emphasise toggle
+      const emphCell = document.createElement('span');
+      emphCell.style.display = 'flex';
+      emphCell.style.justifyContent = 'center';
+      emphCell.style.alignItems = 'center';
+      emphCell.style.width = '32px';
+      const emphCb = document.createElement('input');
+      emphCb.type = 'checkbox';
+      const emphasised = stateManager.get('emphasised', {});
+      emphCb.checked = !!emphasised[category]?.[key];
+      emphCb.title = 'Emphasise';
+      emphCb.style.width = '18px';
+      emphCb.style.height = '18px';
+      emphCb.style.margin = '0';
+      emphCb.addEventListener('change', e => {
+        if (emphasisManager) {
+          emphasisManager.setEmphasis(category, key, e.target.checked, meta?.type === 'point');
+        }
+        this.updateActiveList();
+      });
+      emphCell.appendChild(emphCb);
+      row.appendChild(emphCell);
+      
+      // Show Name toggle
+      const labelCell = document.createElement('span');
+      labelCell.style.display = 'flex';
+      labelCell.style.justifyContent = 'center';
+      labelCell.style.alignItems = 'center';
+      labelCell.style.width = '32px';
+      const labelCb = document.createElement('input');
+      labelCb.type = 'checkbox';
+      // Default: checked when first added
+      labelCb.checked = true;
+      labelCb.title = 'Show Name';
+      labelCb.style.width = '18px';
+      labelCb.style.height = '18px';
+      labelCb.style.margin = '0';
+      labelCb.addEventListener('change', e => {
+        if (e.target.checked) {
+          let layerOrMarker = null;
+          let isPoint = (meta?.type === 'point');
+          if (isPoint) {
+            layerOrMarker = featureLayers[category][key];
+          } else {
+            layerOrMarker = featureLayers[category][key] && featureLayers[category][key][0];
+          }
+          if (labelManager) {
+            labelManager.ensureLabel(category, key, name, isPoint, layerOrMarker);
+          }
+        } else {
+          if (labelManager) {
+            labelManager.removeLabel(category, key);
+          }
+        }
+      });
+      labelCell.appendChild(labelCb);
+      row.appendChild(labelCell);
+      
+      // After checkbox is added, if checked, show label
+      if (labelCb.checked) {
+        let layerOrMarker = null;
+        let isPoint = (meta?.type === 'point');
+        if (isPoint) {
+          layerOrMarker = featureLayers[category][key];
+        } else {
+          layerOrMarker = featureLayers[category][key] && featureLayers[category][key][0];
+        }
+        if (layerOrMarker && labelManager) {
+          labelManager.ensureLabel(category, key, name, isPoint, layerOrMarker);
+        }
+      }
+      
+      // 7/7 Weather checkbox (inline, right of label toggle)
+      const sevenCell = document.createElement('span');
+      sevenCell.style.display = 'flex';
+      sevenCell.style.justifyContent = 'center';
+      sevenCell.style.alignItems = 'center';
+      sevenCell.style.width = '32px';
+      const sevenCb = document.createElement('input');
+      sevenCb.type = 'checkbox';
+      sevenCb.className = 'sevenSevenCheckbox';
+      sevenCb.title = 'Show 7-day weather';
+      sevenCb.style.width = '18px';
+      sevenCb.style.height = '18px';
+      sevenCb.style.margin = '0';
+      sevenCb.addEventListener('change', async (e) => {
+        if (e.target.checked) {
+          document.querySelectorAll('.sevenSevenCheckbox').forEach(cb => {
+            if (cb !== sevenCb) cb.checked = false;
+          });
+          const lat = row.dataset.lat;
+          const lon = row.dataset.lon;
+          if (lat && lon && meta?.type === 'polygon') {
+            // Show loading state while fetching
+            if (this.weatherBox) {
+              this.weatherBox.innerHTML = '<div style="display:flex;gap:8px;align-items:center"><span>Loading weather…</span><span class="spinner" style="width:12px;height:12px;border:2px solid #ccc;border-top-color:#333;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite"></span></div>';
+              this.weatherBox.style.display = 'block';
+            }
+            try {
+              const { forecastData, historyData } = await this.fetchWeatherData(lat, lon);
+              this.renderWeatherBox(forecastData, historyData);
+            } catch (err) {
+              if (this.weatherBox) {
+                this.weatherBox.innerHTML = '<span style="color:red">Error loading weather data.</span>';
+                this.weatherBox.style.display = 'block';
+              }
+            }
+          } else {
+            this.hideWeatherBox();
+          }
+        } else {
+          this.hideWeatherBox();
+        }
+      });
+      sevenCell.appendChild(sevenCb);
+      row.appendChild(sevenCell);
+      container.appendChild(row);
+    });
+  }
+
   /**
    * Render the active list HTML
    */
@@ -489,12 +775,12 @@ export class ActiveListManager {
           layerOrMarker = layer && layer[0];
         }
         
-        if (window.ensureLabel) {
-          window.ensureLabel(category, key, name, isPoint, layerOrMarker);
+        if (labelManager) {
+          labelManager.ensureLabel(category, key, name, isPoint, layerOrMarker);
         }
       } else {
-        if (window.removeLabel) {
-          window.removeLabel(category, key);
+        if (labelManager) {
+          labelManager.removeLabel(category, key);
         }
       }
     });
@@ -513,8 +799,8 @@ export class ActiveListManager {
         layerOrMarker = layer[0];
       }
       
-      if (layerOrMarker && window.ensureLabel) {
-        window.ensureLabel(category, key, name, isPoint, layerOrMarker);
+      if (layerOrMarker && labelManager) {
+        labelManager.ensureLabel(category, key, name, isPoint, layerOrMarker);
       }
     }
   }
@@ -696,8 +982,8 @@ export class ActiveListManager {
     stateManager.set('emphasised', currentEmphasised);
     
     // Call legacy function if available
-    if (window.setEmphasis) {
-      window.setEmphasis(category, key, emphasised);
+    if (emphasisManager) {
+      emphasisManager.setEmphasis(category, key, emphasised);
     }
   }
   
@@ -764,7 +1050,8 @@ export class ActiveListManager {
 // Export singleton instance
 export const activeListManager = new ActiveListManager();
 
-// Export for global access
+// Export for global access (ES6 module system)
 if (typeof window !== 'undefined') {
+  window.ActiveListManager = ActiveListManager;
   window.activeListManager = activeListManager;
 }

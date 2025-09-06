@@ -8,6 +8,8 @@ import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
 import { configurationManager } from './ConfigurationManager.js';
 import { layerManager } from './LayerManager.js';
+import { logger } from './StructuredLogger.js';
+import { labelManager } from './LabelManager.js';
 
 /**
  * @class PolygonLoader
@@ -19,6 +21,9 @@ export class PolygonLoader {
     this.loadingCategories = new Set();
     this.loadedCategories = new Set();
     this.categoryData = new Map(); // category -> { features, layers, names, nameToKey }
+    
+    // Create module-specific logger
+    this.logger = logger.createChild({ module: 'PolygonLoader' });
     
     // Bind methods
     this.init = this.init.bind(this);
@@ -32,7 +37,7 @@ export class PolygonLoader {
     this.isCategoryLoading = this.isCategoryLoading.bind(this);
     this.getStatus = this.getStatus.bind(this);
     
-    console.log('📐 PolygonLoader: Polygon loading system initialized');
+    this.logger.info('Polygon loading system initialized');
   }
   
   /**
@@ -40,12 +45,12 @@ export class PolygonLoader {
    */
   async init() {
     if (this.initialized) {
-      console.warn('PolygonLoader: Already initialized');
+      this.logger.warn('Already initialized');
       return;
     }
     
     try {
-      console.log('🔧 PolygonLoader: Starting polygon loader initialization...');
+      this.logger.info('Starting polygon loader initialization...');
       
       // Wait for dependencies
       await this.waitForDependencies();
@@ -54,10 +59,10 @@ export class PolygonLoader {
       this.setupEventListeners();
       
       this.initialized = true;
-      console.log('✅ PolygonLoader: Polygon loading system ready');
+      this.logger.info('Polygon loading system ready');
       
     } catch (error) {
-      console.error('🚨 PolygonLoader: Failed to initialize:', error);
+      this.logger.error('Failed to initialize', { error: error.message, stack: error.stack });
       throw error;
     }
   }
@@ -375,10 +380,21 @@ export class PolygonLoader {
       }
       stateManager.set('nameLabelMarkers', currentNameLabelMarkers);
       
-      console.log(`✅ PolygonLoader: State updated for category ${category}`);
+      // Initialize SES facility markers and coordinates
+      if (!stateManager.get('sesFacilityMarkers')) {
+        stateManager.set('sesFacilityMarkers', {});
+      }
+      if (!stateManager.get('sesFacilityCoords')) {
+        stateManager.set('sesFacilityCoords', {});
+      }
+      
+      this.logger.info(`State updated for category ${category}`);
       
     } catch (error) {
-      console.error(`🚨 PolygonLoader: Failed to update state for ${category}:`, error);
+      this.logger.error(`Failed to update state for ${category}`, { 
+        error: error.message, 
+        stack: error.stack 
+      });
       throw error;
     }
   }
@@ -490,39 +506,188 @@ export class PolygonLoader {
   }
   
   /**
-   * Handle "Show All" toggle
+   * Handle "Show All" toggle with optimized bulk operations
    */
-  handleShowAllToggle(category, checked) {
+  async handleShowAllToggle(category, checked) {
     try {
       const categoryData = this.categoryData.get(category);
       if (!categoryData) return;
       
-      // Begin bulk operation
-      globalEventBus.emit('bulk:begin', { category, operation: 'showAll' });
+      const meta = configurationManager.get(`categoryMeta.${category}`);
+      const toggleAll = document.getElementById(meta.toggleAllId);
       
-      try {
-        categoryData.names.forEach(displayName => {
-          const key = categoryData.nameToKey[displayName];
-          const checkbox = document.getElementById(`${category}_${key}`);
-          
-          if (checkbox && checkbox.checked !== checked) {
-            checkbox.checked = checked;
-            this.handleFeatureToggle(category, key, checked, displayName);
-          }
-        });
-        
-      } finally {
-        // End bulk operation
-        globalEventBus.emit('bulk:end', { category, operation: 'showAll' });
+      // Optimistic UI: disable toggle and show loading state
+      if (toggleAll) {
+        toggleAll.disabled = true;
+        toggleAll.title = `${checked ? 'Loading' : 'Unloading'} ${categoryData.names.length} ${category} items...`;
       }
       
-      console.log(`✅ PolygonLoader: Show All toggle handled for ${category}`);
+      // Begin bulk operation for performance
+      const bulkStarted = stateManager.beginBulkOperation('toggleAll', categoryData.names.length);
+      if (!bulkStarted) {
+        this.logger.warn('Bulk operation already active, proceeding without bulk optimization');
+      }
+      
+      try {
+        // Category-specific batch sizes for optimal performance
+        const batchSizes = {
+          'ses': 15,
+          'lga': 8,
+          'cfa': 12,
+          'frv': 5,
+          'ambulance': 20,
+          'police': 20
+        };
+        const batchSize = batchSizes[category] || 10;
+        
+        for (let i = 0; i < categoryData.names.length; i += batchSize) {
+          const batch = categoryData.names.slice(i, i + batchSize);
+          
+          // Process current batch - direct layer manipulation for performance
+          batch.forEach(displayName => {
+            const key = categoryData.nameToKey[displayName];
+            const container = document.getElementById(`${category}_${key}`);
+            let rowCb = null;
+            
+            if (container && container.tagName !== 'INPUT') {
+              rowCb = container.querySelector('input[type="checkbox"]');
+            } else {
+              rowCb = container; // it's already the input
+            }
+            
+            // Update checkbox state WITHOUT dispatching change event during bulk operation
+            if (rowCb) {
+              rowCb.checked = checked;
+              this.logger.debug(`Updated checkbox ${category}_${key}: ${checked} (bulk operation)`);
+            } else {
+              this.logger.warn(`No checkbox found for ${category}_${key}`);
+            }
+            
+            // Direct layer manipulation (bypass change event for performance)
+            this.handleFeatureToggleDirect(category, key, checked, displayName);
+          });
+          
+          // Yield control after each batch with progress feedback
+          const processed = Math.min(i + batchSize, categoryData.names.length);
+          if (toggleAll) {
+            toggleAll.title = `${checked ? 'Loading' : 'Unloading'} ${processed}/${categoryData.names.length} ${category} items...`;
+          }
+          
+          // Progressive yielding: smaller batches get shorter delays
+          const yieldDelay = batchSize <= 8 ? 8 : 
+                            batchSize <= 12 ? 12 : 16;
+          
+          await new Promise(resolve => {
+            requestAnimationFrame(() => {
+              setTimeout(resolve, yieldDelay);
+            });
+          });
+        }
+        
+      } finally {
+        // End bulk operations and process deferred items
+        stateManager.endBulkOperation();
+        
+        // Restore toggle state
+        if (toggleAll) {
+          toggleAll.disabled = false;
+          toggleAll.title = `Toggle all ${category} items`;
+        }
+      }
+      
+      this.logger.info(`Show All toggle handled for ${category}`, { 
+        checked, 
+        itemCount: categoryData.names.length 
+      });
       
     } catch (error) {
-      console.error(`🚨 PolygonLoader: Failed to handle Show All toggle for ${category}:`, error);
+      this.logger.error(`Failed to handle Show All toggle for ${category}`, { 
+        error: error.message, 
+        stack: error.stack 
+      });
     }
   }
   
+  /**
+   * Handle feature toggle directly (for bulk operations)
+   */
+  handleFeatureToggleDirect(category, key, checked, displayName) {
+    try {
+      const map = stateManager.get('map');
+      if (!map) return;
+      
+      const featureLayers = stateManager.get('featureLayers', {});
+      const categoryLayers = featureLayers[category]?.[key];
+      
+      if (!categoryLayers) return;
+      
+      categoryLayers.forEach(layer => {
+        if (checked) {
+          layer.addTo(map);
+          
+          // Handle special category logic
+          if (category === 'ambulance') {
+            this.addPolygonPlus(map, layer);
+          }
+          if (category === 'ses') {
+            this.showSesChevron(key, map);
+          }
+          
+          // Defer label creation during bulk operation
+          if (stateManager.get('isBulkOperation')) {
+            const meta = configurationManager.get(`categoryMeta.${category}`);
+            if (meta.type === 'polygon') {
+              const labelName = this.formatDisplayName(category, displayName);
+              stateManager.addPendingLabel({
+                category, 
+                key, 
+                labelName, 
+                isPoint: false, 
+                layer: layer
+              });
+            }
+          } else {
+            // Show name label for polygons
+            const meta = configurationManager.get(`categoryMeta.${category}`);
+            if (meta.type === 'polygon') {
+              const labelName = this.formatDisplayName(category, displayName);
+              this.ensureLabel(category, key, labelName, false, layer);
+            }
+          }
+        } else {
+          map.removeLayer(layer);
+          
+          // Handle special category logic
+          if (category === 'ambulance') {
+            this.removePolygonPlus(layer, map);
+          }
+          if (category === 'ses') {
+            this.hideSesChevron(key, map);
+          }
+          
+          // Clean up emphasis and labels
+          const emphasised = stateManager.get('emphasised', {});
+          if (emphasised[category]) {
+            emphasised[category][key] = false;
+            stateManager.set('emphasised', emphasised);
+          }
+          
+          const nameLabelMarkers = stateManager.get('nameLabelMarkers', {});
+          if (nameLabelMarkers[category]?.[key]) {
+            map.removeLayer(nameLabelMarkers[category][key]);
+            nameLabelMarkers[category][key] = null;
+            stateManager.set('nameLabelMarkers', nameLabelMarkers);
+          }
+        }
+      });
+      
+    } catch (error) {
+      this.logger.warn(`Feature toggle direct failed for ${category}/${key}`, { 
+        error: error.message 
+      });
+    }
+  }
+
   /**
    * Handle special category logic (SES chevrons, ambulance polygon plus, etc.)
    */
@@ -538,7 +703,9 @@ export class PolygonLoader {
         this.removePolygonPlus(key);
       }
     } catch (error) {
-      console.warn(`PolygonLoader: Special category logic failed for ${category}/${key}:`, error);
+      this.logger.warn(`Special category logic failed for ${category}/${key}`, { 
+        error: error.message 
+      });
     }
   }
   
@@ -610,49 +777,125 @@ export class PolygonLoader {
     }
   }
   
-  showSesChevron(key) {
-    if (window.showSesChevron) {
-      const map = stateManager.get('map');
-      if (map) window.showSesChevron(key, map);
-    }
+  /**
+   * Create SES chevron icon
+   */
+  makeSesChevronIcon() {
+    const outlineColors = configurationManager.get('outlineColors', {});
+    const color = outlineColors.ses || '#FF9900';
+    const size = 14; // height of triangle
+    const half = 8;  // half width of base
+    const html = `<div style="width:0;height:0;border-left:${half}px solid transparent;border-right:${half}px solid transparent;border-top:${size}px solid ${color};"></div>`;
+    return L.divIcon({
+      className: 'ses-chevron',
+      html,
+      iconSize: [16, 14],
+      iconAnchor: [8, 14]
+    });
   }
-  
-  hideSesChevron(key) {
-    if (window.hideSesChevron) {
-      const map = stateManager.get('map');
-      if (map) window.hideSesChevron(key, map);
-    }
-  }
-  
-  addPolygonPlus(key) {
-    if (window.addPolygonPlus) {
-      const map = stateManager.get('map');
-      if (map) {
-        const layer = layerManager.getLayer('ambulance', key);
-        if (layer) window.addPolygonPlus(map, layer);
+
+  /**
+   * Show SES chevron marker
+   */
+  showSesChevron(key, map = null) {
+    try {
+      if (!map) {
+        map = stateManager.get('map');
+        if (!map) return;
       }
+      
+      // Check if marker already exists
+      const sesFacilityMarkers = stateManager.get('sesFacilityMarkers', {});
+      if (sesFacilityMarkers[key]) return;
+      
+      // Get coordinates
+      const sesFacilityCoords = stateManager.get('sesFacilityCoords', {});
+      const coordData = sesFacilityCoords[key.toLowerCase()];
+      if (!coordData) return;
+      
+      // Create and add marker
+      const icon = this.makeSesChevronIcon();
+      const marker = L.marker([coordData.lat, coordData.lng], { 
+        icon, 
+        pane: 'ses' 
+      }).addTo(map);
+      
+      // Store marker reference
+      sesFacilityMarkers[key] = marker;
+      stateManager.set('sesFacilityMarkers', sesFacilityMarkers);
+      
+      this.logger.debug(`SES chevron shown for ${key}`);
+      
+    } catch (error) {
+      this.logger.warn(`Failed to show SES chevron for ${key}`, { 
+        error: error.message 
+      });
     }
   }
   
-  removePolygonPlus(key) {
-    if (window.removePolygonPlus) {
-      const map = stateManager.get('map');
-      if (map) {
-        const layer = layerManager.getLayer('ambulance', key);
-        if (layer) window.removePolygonPlus(layer, map);
+  /**
+   * Hide SES chevron marker
+   */
+  hideSesChevron(key, map = null) {
+    try {
+      if (!map) {
+        map = stateManager.get('map');
+        if (!map) return;
       }
+      
+      const sesFacilityMarkers = stateManager.get('sesFacilityMarkers', {});
+      const marker = sesFacilityMarkers[key];
+      
+      if (marker) {
+        map.removeLayer(marker);
+        delete sesFacilityMarkers[key];
+        stateManager.set('sesFacilityMarkers', sesFacilityMarkers);
+        
+        this.logger.debug(`SES chevron hidden for ${key}`);
+      }
+      
+    } catch (error) {
+      this.logger.warn(`Failed to hide SES chevron for ${key}`, { 
+        error: error.message 
+      });
+    }
+  }
+  
+  addPolygonPlus(map, layer) {
+    try {
+      if (window.addPolygonPlus) {
+        window.addPolygonPlus(map, layer);
+        this.logger.debug('Polygon plus added');
+      }
+    } catch (error) {
+      this.logger.warn('Failed to add polygon plus', { 
+        error: error.message 
+      });
+    }
+  }
+  
+  removePolygonPlus(layer, map) {
+    try {
+      if (window.removePolygonPlus) {
+        window.removePolygonPlus(layer, map);
+        this.logger.debug('Polygon plus removed');
+      }
+    } catch (error) {
+      this.logger.warn('Failed to remove polygon plus', { 
+        error: error.message 
+      });
     }
   }
   
   ensureLabel(category, key, name, isPoint, layer) {
-    if (window.ensureLabel) {
-      window.ensureLabel(category, key, name, isPoint, layer);
+    if (labelManager) {
+      labelManager.ensureLabel(category, key, name, isPoint, layer);
     }
   }
   
   removeLabel(category, key) {
-    if (window.removeLabel) {
-      window.removeLabel(category, key);
+    if (labelManager) {
+      labelManager.removeLabel(category, key);
     }
   }
   
