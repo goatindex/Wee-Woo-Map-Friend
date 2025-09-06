@@ -9,6 +9,7 @@ import { stateManager } from './StateManager.js';
 import { collapsibleManager } from './CollapsibleManager.js';
 import { searchManager } from './SearchManager.js';
 import { fabManager } from './FABManager.js';
+import { logger } from './StructuredLogger.js';
 
 /**
  * @class UIManager
@@ -21,6 +22,9 @@ export class UIManager {
     this.uiState = new Map();
     this.responsiveBreakpoints = new Map();
     
+    // Create module-specific logger
+    this.logger = logger.createChild({ module: 'UIManager' });
+    
     // Bind methods
     this.init = this.init.bind(this);
     this.initComponents = this.initComponents.bind(this);
@@ -29,7 +33,12 @@ export class UIManager {
     this.updateUIState = this.updateUIState.bind(this);
     this.getStatus = this.getStatus.bind(this);
     
-    console.log('🎨 UIManager: UI management system initialized');
+    this.logger.info('UI management system initialized', {
+      operation: 'constructor',
+      components: this.components.size,
+      uiState: this.uiState.size,
+      responsiveBreakpoints: this.responsiveBreakpoints.size
+    });
   }
   
   /**
@@ -37,12 +46,20 @@ export class UIManager {
    */
   async init() {
     if (this.initialized) {
-      console.warn('UIManager: Already initialized');
+      this.logger.warn('Already initialized', {
+        operation: 'init',
+        currentState: 'initialized'
+      });
       return;
     }
     
+    const timer = this.logger.time('ui-manager-initialization');
     try {
-      console.log('🔧 UIManager: Starting initialization...');
+      this.logger.info('Starting initialization', {
+        operation: 'init',
+        components: this.components.size,
+        uiState: this.uiState.size
+      });
       
       // Set up responsive handling
       this.setupResponsiveHandling();
@@ -57,10 +74,25 @@ export class UIManager {
       this.initializeUIState();
       
       this.initialized = true;
+      timer.end({
+        success: true,
+        components: this.components.size,
+        uiState: this.uiState.size
+      });
       this.logger.info('UI management system ready');
       
     } catch (error) {
-      console.error('🚨 UIManager: Failed to initialize:', error);
+      timer.end({
+        success: false,
+        error: error.message,
+        components: this.components.size
+      });
+      this.logger.error('Failed to initialize', {
+        operation: 'init',
+        error: error.message,
+        stack: error.stack,
+        components: this.components.size
+      });
       throw error;
     }
   }
@@ -69,7 +101,10 @@ export class UIManager {
    * Initialize all UI components
    */
   async initComponents() {
-    console.log('🔧 UIManager: Initializing UI components...');
+    this.logger.info('Initializing UI components', {
+      operation: 'initComponents',
+      availableComponents: ['collapsible', 'search', 'fab']
+    });
     
     const componentPromises = [];
     
@@ -80,7 +115,12 @@ export class UIManager {
           this.components.set('collapsible', collapsibleManager);
           this.logger.info('Collapsible manager ready');
         }).catch(error => {
-          console.error('❌ UIManager: Collapsible manager failed:', error);
+          this.logger.error('Collapsible manager failed', {
+            operation: 'initComponents',
+            component: 'collapsible',
+            error: error.message,
+            stack: error.stack
+          });
         })
       );
     }
@@ -92,7 +132,12 @@ export class UIManager {
           this.components.set('search', searchManager);
           this.logger.info('Search manager ready');
         }).catch(error => {
-          console.error('❌ UIManager: Search manager failed:', error);
+          this.logger.error('Search manager failed', {
+            operation: 'initComponents',
+            component: 'search',
+            error: error.message,
+            stack: error.stack
+          });
         })
       );
     }
@@ -104,7 +149,12 @@ export class UIManager {
           this.components.set('fab', fabManager);
           this.logger.info('FAB manager ready');
         }).catch(error => {
-          console.error('❌ UIManager: FAB manager failed:', error);
+          this.logger.error('FAB manager failed', {
+            operation: 'initComponents',
+            component: 'fab',
+            error: error.message,
+            stack: error.stack
+          });
         })
       );
     }
@@ -136,7 +186,11 @@ export class UIManager {
     // Initial call
     this.handleResize();
     
-    console.log('✅ UIManager: Responsive handling setup complete');
+    this.logger.info('Responsive handling setup complete', {
+      operation: 'setupResponsiveHandling',
+      breakpoints: Array.from(this.responsiveBreakpoints.keys()),
+      debounceDelay: 250
+    });
   }
   
   /**
@@ -199,7 +253,12 @@ export class UIManager {
     // Listen for component ready events
     globalEventBus.on('ui:componentReady', ({ component, instance }) => {
       this.components.set(component, instance);
-      console.log('✅ UIManager: Component ready:', component);
+      this.logger.info('Component ready', {
+        operation: 'setupEventListeners',
+        component,
+        totalComponents: this.components.size,
+        hasInstance: !!instance
+      });
     });
     
     // Listen for device context changes
@@ -243,7 +302,16 @@ export class UIManager {
     this.updateUIState('orientation', window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
     this.updateUIState('components', Array.from(this.components.keys()));
     
-    console.log('✅ UIManager: UI state initialized');
+    this.logger.info('UI state initialized', {
+      operation: 'initializeUIState',
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight
+      },
+      orientation: window.innerWidth > window.innerHeight ? 'landscape' : 'portrait',
+      components: Array.from(this.components.keys()),
+      uiStateKeys: Array.from(this.uiState.keys())
+    });
   }
   
   /**

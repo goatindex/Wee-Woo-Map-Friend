@@ -7,6 +7,7 @@
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
 import { configurationManager } from './ConfigurationManager.js';
+import { logger } from './StructuredLogger.js';
 
 /**
  * @class MapManager
@@ -19,6 +20,9 @@ export class MapManager {
     this.defaultView = null;
     this.baseTileLayer = null;
     this.zoomControl = null;
+    
+    // Create module-specific logger
+    this.logger = logger.createChild({ module: 'MapManager' });
     
     // Map configuration
     this.config = {
@@ -44,7 +48,10 @@ export class MapManager {
     this.isReady = this.isReady.bind(this);
     this.getStatus = this.getStatus.bind(this);
     
-    console.log('🗺️ MapManager: Map management system initialized');
+    this.logger.info('Map management system initialized', {
+      module: 'MapManager',
+      timestamp: Date.now()
+    });
   }
   
   /**
@@ -52,19 +59,30 @@ export class MapManager {
    */
   async init() {
     if (this.initialized) {
-      console.warn('MapManager: Already initialized - skipping duplicate initialization');
+      this.logger.warn('Already initialized - skipping duplicate initialization', {
+        operation: 'init',
+        currentState: 'initialized'
+      });
       return;
     }
     
     // Additional guard: check if map container already has a map
     const mapContainer = document.getElementById('map');
     if (mapContainer && mapContainer._leaflet_id) {
-      console.warn('MapManager: Map container already has a Leaflet map - cleaning up first');
+      this.logger.warn('Map container already has a Leaflet map - cleaning up first', {
+        operation: 'init',
+        containerId: 'map',
+        action: 'cleanup_required'
+      });
       this.cleanup();
     }
     
+    const timer = this.logger.time('map-initialization');
     try {
-      console.log('🔧 MapManager: Starting map initialization...');
+      this.logger.info('Starting map initialization', {
+        operation: 'init',
+        config: this.config
+      });
       
       // Wait for Leaflet to be available
       await this.waitForLeaflet();
@@ -121,10 +139,34 @@ export class MapManager {
       globalEventBus.emit('map:ready', { map: this.map, manager: this });
       
       this.initialized = true;
-      this.logger.info('Map system ready');
+      timer.end({
+        success: true,
+        mapId: this.map._leaflet_id,
+        center: this.map.getCenter(),
+        zoom: this.map.getZoom()
+      });
+      this.logger.info('Map system ready', {
+        mapId: this.map._leaflet_id,
+        center: this.map.getCenter(),
+        zoom: this.map.getZoom(),
+        bounds: this.map.getBounds(),
+        tileLayer: this.baseTileLayer ? 'configured' : 'missing',
+        zoomControl: this.zoomControl ? 'configured' : 'missing',
+        panes: Object.keys(this.map.panes).length
+      });
       
     } catch (error) {
-      console.error('🚨 MapManager: Failed to initialize:', error);
+      timer.end({
+        success: false,
+        error: error.message,
+        config: this.config
+      });
+      this.logger.error('Map initialization failed', {
+        operation: 'init',
+        error: error.message,
+        stack: error.stack,
+        config: this.config
+      });
       globalEventBus.emit('map:error', { error });
       throw error;
     }
@@ -136,21 +178,45 @@ export class MapManager {
    */
   async waitForLeaflet() {
     if (typeof L !== 'undefined') {
-      this.logger.info('Leaflet already available');
+      this.logger.info('Leaflet already available', {
+        operation: 'waitForLeaflet',
+        version: L.version,
+        loadTime: 0,
+        source: 'preloaded'
+      });
       return;
     }
     
-    console.log('⏳ MapManager: Waiting for Leaflet library...');
+    const timer = this.logger.time('leaflet-load');
+    this.logger.debug('Waiting for Leaflet library', {
+      operation: 'waitForLeaflet',
+      maxWaitTime: 10000
+    });
     
+    const startTime = Date.now();
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
+        timer.end({
+          success: false,
+          error: 'timeout',
+          loadTime: Date.now() - startTime
+        });
         reject(new Error('Timeout waiting for Leaflet library - check network connection and CDN availability'));
       }, 10000); // 10 second timeout
       
       const checkLeaflet = () => {
         if (typeof L !== 'undefined') {
           clearTimeout(timeout);
-          this.logger.info('Leaflet library loaded successfully');
+          timer.end({
+            success: true,
+            loadTime: Date.now() - startTime,
+            version: L.version
+          });
+          this.logger.info('Leaflet library loaded successfully', {
+            operation: 'waitForLeaflet',
+            loadTime: Date.now() - startTime,
+            version: L.version
+          });
           resolve();
         } else {
           // Use requestAnimationFrame for better performance than setTimeout
@@ -166,6 +232,7 @@ export class MapManager {
    * Create the Leaflet map instance
    */
   createMap() {
+    const timer = this.logger.time('map-creation');
     try {
       const mapContainer = document.getElementById('map');
       if (!mapContainer) {
@@ -178,10 +245,31 @@ export class MapManager {
       // Legacy compatibility handled through StateManager
       // No direct window.map assignment to avoid fragmented state
       
-      this.logger.info('Map instance created');
+      timer.end({
+        success: true,
+        mapId: this.map._leaflet_id,
+        config: this.config
+      });
+      this.logger.info('Map instance created', {
+        operation: 'createMap',
+        mapId: this.map._leaflet_id,
+        config: this.config,
+        containerId: 'map',
+        containerExists: !!mapContainer
+      });
       
     } catch (error) {
-      console.error('🚨 MapManager: Failed to create map:', error);
+      timer.end({
+        success: false,
+        error: error.message,
+        config: this.config
+      });
+      this.logger.error('Failed to create map', {
+        operation: 'createMap',
+        error: error.message,
+        stack: error.stack,
+        config: this.config
+      });
       throw error;
     }
   }
@@ -196,10 +284,20 @@ export class MapManager {
       });
       
       this.baseTileLayer.addTo(this.map);
-      this.logger.info('Base tile layer added');
+      this.logger.info('Base tile layer added', {
+        operation: 'setupBaseTileLayer',
+        tileUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        attribution: '© OpenStreetMap contributors',
+        mapId: this.map._leaflet_id
+      });
       
     } catch (error) {
-      console.error('🚨 MapManager: Failed to setup base tile layer:', error);
+      this.logger.error('Failed to setup base tile layer', {
+        operation: 'setupBaseTileLayer',
+        error: error.message,
+        stack: error.stack,
+        tileUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+      });
       throw error;
     }
   }
@@ -211,17 +309,24 @@ export class MapManager {
     try {
       // Get device context for positioning
       const deviceContext = stateManager.get('deviceContext');
-      const position = deviceContext?.device === 'mobile' ? 'bottomright' : 'topleft';
+      // Position zoom controls to avoid conflict with layer menu
+      // Layer menu is positioned at topright, so use topright for mobile and bottomright for desktop
+      const position = deviceContext?.device === 'mobile' ? 'topright' : 'bottomright';
       
       this.zoomControl = L.control.zoom({
         position: position
       });
       
       this.zoomControl.addTo(this.map);
-      this.logger.info('Zoom control added');
+      this.logger.info('Zoom control added', { position });
       
     } catch (error) {
-      console.error('🚨 MapManager: Failed to setup zoom control:', error);
+      this.logger.error('Failed to setup zoom control', {
+        operation: 'setupZoomControl',
+        error: error.message,
+        stack: error.stack,
+        position: position
+      });
       throw error;
     }
   }
@@ -246,10 +351,18 @@ export class MapManager {
         this.map.getPane(name).style.zIndex = String(z);
       });
       
-      console.log('✅ MapManager: Map panes created');
+      this.logger.debug('Map panes created', {
+        operation: 'setupMapPanes',
+        paneCount: Object.keys(this.map.panes).length
+      });
       
     } catch (error) {
-      console.error('🚨 MapManager: Failed to setup map panes:', error);
+      this.logger.error('Failed to setup map panes', {
+        operation: 'setupMapPanes',
+        error: error.message,
+        stack: error.stack,
+        panes: panes
+      });
       throw error;
     }
   }
@@ -289,10 +402,17 @@ export class MapManager {
         }
       });
       
-      console.log('✅ MapManager: Map events configured');
+      this.logger.debug('Map events configured', {
+        operation: 'setupMapEvents',
+        eventCount: Object.keys(this.map._events || {}).length
+      });
       
     } catch (error) {
-      console.error('🚨 MapManager: Failed to setup map events:', error);
+      this.logger.error('Failed to setup map events', {
+        operation: 'setupMapEvents',
+        error: error.message,
+        stack: error.stack
+      });
       throw error;
     }
   }
@@ -306,10 +426,19 @@ export class MapManager {
     try {
       this.map.setView(this.defaultView.center, this.defaultView.zoom);
       globalEventBus.emit('map:reset', { map: this.map });
-      console.log('✅ MapManager: Map view reset');
+      this.logger.info('Map view reset', {
+        operation: 'resetView',
+        center: this.defaultView.center,
+        zoom: this.defaultView.zoom
+      });
       
     } catch (error) {
-      console.error('🚨 MapManager: Failed to reset map view:', error);
+      this.logger.error('Failed to reset map view', {
+        operation: 'resetView',
+        error: error.message,
+        stack: error.stack,
+        defaultView: this.defaultView
+      });
     }
   }
   
@@ -341,10 +470,19 @@ export class MapManager {
   cleanup() {
     if (this.map) {
       try {
+        const mapId = this.map._leaflet_id;
         this.map.remove();
-        console.log('✅ MapManager: Existing map cleaned up');
+        this.logger.info('Existing map cleaned up', {
+          operation: 'cleanup',
+          mapId: mapId,
+          action: 'map_removed'
+        });
       } catch (error) {
-        console.warn('MapManager: Error cleaning up map:', error);
+        this.logger.warn('Error cleaning up map', {
+          operation: 'cleanup',
+          error: error.message,
+          stack: error.stack
+        });
       }
       this.map = null;
     }

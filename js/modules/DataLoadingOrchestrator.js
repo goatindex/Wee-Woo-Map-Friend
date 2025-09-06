@@ -72,12 +72,20 @@ export class DataLoadingOrchestrator {
    */
   async init() {
     if (this.initialized) {
-      this.logger.warn('Already initialized');
+      this.logger.warn('Already initialized', {
+        operation: 'init',
+        currentState: 'initialized'
+      });
       return;
     }
     
+    const timer = this.logger.time('orchestrator-initialization');
     try {
-      this.logger.info('Starting initialization...');
+      this.logger.info('Starting initialization', {
+        operation: 'init',
+        config: this.loadingConfig,
+        categories: Object.keys(this.loadingConfig.urls)
+      });
       
       // Wait for dependencies
       await this.waitForDependencies();
@@ -89,15 +97,32 @@ export class DataLoadingOrchestrator {
       this.setupDataManagement();
       
       this.initialized = true;
-      this.logger.info('Initialization complete');
+      timer.end({
+        success: true,
+        categories: Object.keys(this.loadingConfig.urls),
+        loadedCategories: Array.from(this.loadedCategories)
+      });
+      this.logger.info('Initialization complete', {
+        operation: 'init',
+        categories: Object.keys(this.loadingConfig.urls),
+        loadedCategories: Array.from(this.loadedCategories),
+        duration: `${timer.duration.toFixed(2)}ms`
+      });
       
       // Emit ready event
       globalEventBus.emit('dataOrchestrator:ready', { orchestrator: this });
       
     } catch (error) {
-      this.logger.error('Initialization failed', { 
+      timer.end({
+        success: false,
         error: error.message,
-        stack: error.stack 
+        categories: Object.keys(this.loadingConfig.urls)
+      });
+      this.logger.error('Initialization failed', { 
+        operation: 'init',
+        error: error.message,
+        stack: error.stack,
+        categories: Object.keys(this.loadingConfig.urls)
       });
       this.handleLoadingError('initialization', error);
       throw error;
@@ -155,7 +180,12 @@ export class DataLoadingOrchestrator {
    * Load initial data with priority-based orchestration
    */
   async loadInitialData() {
-    this.logger.info('Starting initial data loading...');
+    const timer = this.logger.time('initial-data-loading');
+    this.logger.info('Starting initial data loading', {
+      operation: 'loadInitialData',
+      phase: 'initial',
+      totalCategories: Object.keys(this.loadingConfig.urls).length
+    });
     
     this.loadingPhase = 'initial';
     
@@ -164,24 +194,34 @@ export class DataLoadingOrchestrator {
     
     // Load high priority first (blocking)
     if (categoriesByPriority.high.length > 0) {
-      this.logger.info('Loading high-priority data...', { 
-        categories: categoriesByPriority.high 
+      this.logger.info('Loading high-priority data', { 
+        operation: 'loadInitialData',
+        priority: 'high',
+        categories: categoriesByPriority.high,
+        count: categoriesByPriority.high.length
       });
       await this.loadCategoriesInParallel(categoriesByPriority.high, 'high');
     }
     
     // Load medium priority (non-blocking)
     if (categoriesByPriority.medium.length > 0) {
-      this.logger.info('Loading medium-priority data...', { 
-        categories: categoriesByPriority.medium 
+      this.logger.info('Loading medium-priority data', { 
+        operation: 'loadInitialData',
+        priority: 'medium',
+        categories: categoriesByPriority.medium,
+        count: categoriesByPriority.medium.length
       });
       this.loadCategoriesInParallel(categoriesByPriority.medium, 'medium');
     }
     
     // Load low priority (background)
     if (categoriesByPriority.low.length > 0) {
-      this.logger.info('Loading low-priority data...', { 
-        categories: categoriesByPriority.low 
+      this.logger.info('Loading low-priority data', { 
+        operation: 'loadInitialData',
+        priority: 'low',
+        categories: categoriesByPriority.low,
+        count: categoriesByPriority.low.length,
+        delay: '500ms'
       });
       setTimeout(() => {
         this.loadCategoriesInParallel(categoriesByPriority.low, 'low');
@@ -189,7 +229,20 @@ export class DataLoadingOrchestrator {
     }
     
     this.loadingPhase = 'complete';
-    this.logger.info('Initial data loading orchestrated');
+    timer.end({
+      success: true,
+      highPriority: categoriesByPriority.high.length,
+      mediumPriority: categoriesByPriority.medium.length,
+      lowPriority: categoriesByPriority.low.length
+    });
+    this.logger.info('Initial data loading orchestrated', {
+      operation: 'loadInitialData',
+      phase: 'complete',
+      highPriority: categoriesByPriority.high.length,
+      mediumPriority: categoriesByPriority.medium.length,
+      lowPriority: categoriesByPriority.low.length,
+      duration: `${timer.duration.toFixed(2)}ms`
+    });
   }
   
   /**
@@ -218,7 +271,15 @@ export class DataLoadingOrchestrator {
     for (let i = 0; i < categories.length; i += batchSize) {
       const batch = categories.slice(i, i + batchSize);
       
-      this.logger.debug(`Loading ${priority} priority batch`, { batch });
+      this.logger.debug(`Loading ${priority} priority batch`, { 
+        operation: 'loadCategoriesInParallel',
+        priority,
+        batch,
+        batchSize: batch.length,
+        totalCategories: categories.length,
+        batchIndex: Math.floor(i / batchSize) + 1,
+        totalBatches: Math.ceil(categories.length / batchSize)
+      });
       
       // Load batch in parallel
       const batchPromises = batch.map(category => this.loadCategory(category));
@@ -230,10 +291,21 @@ export class DataLoadingOrchestrator {
         results.forEach((result, index) => {
           const category = batch[index];
           if (result.status === 'fulfilled') {
-            this.logger.info(`${category} loaded successfully`);
+            this.logger.info(`${category} loaded successfully`, {
+              operation: 'batchLoadResult',
+              category,
+              priority,
+              batchIndex: Math.floor(i / batchSize) + 1,
+              status: 'fulfilled'
+            });
             this.loadedCategories.add(category);
           } else {
             this.logger.error(`${category} failed to load`, { 
+              operation: 'batchLoadResult',
+              category,
+              priority,
+              batchIndex: Math.floor(i / batchSize) + 1,
+              status: 'rejected',
               error: result.reason.message,
               stack: result.reason.stack 
             });
@@ -248,9 +320,13 @@ export class DataLoadingOrchestrator {
         
       } catch (error) {
         this.logger.error('Batch loading failed', { 
+          operation: 'loadCategoriesInParallel',
+          priority,
+          batch,
+          batchSize: batch.length,
+          batchIndex: Math.floor(i / batchSize) + 1,
           error: error.message,
-          stack: error.stack,
-          batch 
+          stack: error.stack
         });
         batch.forEach(category => this.handleLoadingError(category, error));
       }
@@ -276,11 +352,15 @@ export class DataLoadingOrchestrator {
       throw new Error(`DataLoadingOrchestrator: No URL configured for category ${category}`);
     }
     
-    this.logger.debug(`Loading ${category} from ${url}`);
+    this.logger.debug(`Loading ${category} from ${url}`, {
+      operation: 'loadCategory',
+      category,
+      url,
+      priority: this.loadingConfig.priorities[category]
+    });
     
-    // Start performance tracking
-    const startTime = performance.now();
-    this.performanceMetrics.set(category, { start: startTime });
+    // Start StructuredLogger performance tracking
+    const timer = this.logger.time('category-load');
     
     // Create loading promise
     const loadingPromise = this.executeCategoryLoad(category, url);
@@ -289,13 +369,12 @@ export class DataLoadingOrchestrator {
     try {
       const result = await loadingPromise;
       
-      // Record success metrics
-      const duration = performance.now() - startTime;
-      this.performanceMetrics.set(category, { 
-        start: startTime, 
-        end: performance.now(), 
-        duration: duration,
-        success: true 
+      // End timer with success metrics
+      timer.end({
+        success: true,
+        category,
+        priority: this.loadingConfig.priorities[category],
+        url
       });
       
       this.loadedCategories.add(category);
@@ -304,24 +383,27 @@ export class DataLoadingOrchestrator {
       // Emit success event
       globalEventBus.emit('dataOrchestrator:categoryLoaded', { 
         category, 
-        duration, 
+        duration: timer.duration, 
         orchestrator: this 
       });
       
       this.logger.info(`${category} loaded successfully`, { 
-        duration: `${duration.toFixed(2)}ms` 
+        operation: 'loadCategory',
+        category,
+        priority: this.loadingConfig.priorities[category],
+        duration: `${timer.duration.toFixed(2)}ms`,
+        url
       });
       return result;
       
     } catch (error) {
-      // Record failure metrics
-      const duration = performance.now() - startTime;
-      this.performanceMetrics.set(category, { 
-        start: startTime, 
-        end: performance.now(), 
-        duration: duration,
+      // End timer with failure metrics
+      timer.end({
         success: false,
-        error: error.message 
+        category,
+        priority: this.loadingConfig.priorities[category],
+        error: error.message,
+        url
       });
       
       this.loadingPromises.delete(category);
@@ -346,8 +428,11 @@ export class DataLoadingOrchestrator {
       const fallbackUrl = this.loadingConfig.fallbackUrls[category];
       if (fallbackUrl) {
         this.logger.warn(`Primary URL failed for ${category}, trying fallback`, { 
+          operation: 'executeCategoryLoad',
           category,
-          fallbackUrl 
+          primaryUrl: url,
+          fallbackUrl,
+          error: error.message
         });
         return await this.polygonLoader.loadCategory(category, fallbackUrl);
       }
@@ -383,11 +468,23 @@ export class DataLoadingOrchestrator {
     const priority = this.loadingConfig.priorities[category];
     if (priority === 'high') {
       // High priority: retry immediately
-      this.logger.info(`Retrying high-priority ${category}...`);
+      this.logger.info(`Retrying high-priority ${category}`, {
+        operation: 'handleLoadingError',
+        category,
+        priority,
+        retryDelay: '1000ms',
+        retryCount: this.errorRecovery.get(category)?.retryCount || 0
+      });
       setTimeout(() => this.retryFailedLoad(category), 1000);
     } else if (priority === 'medium') {
       // Medium priority: retry with delay
-      this.logger.info(`Retrying medium-priority ${category} in 5s...`);
+      this.logger.info(`Retrying medium-priority ${category} in 5s`, {
+        operation: 'handleLoadingError',
+        category,
+        priority,
+        retryDelay: '5000ms',
+        retryCount: this.errorRecovery.get(category)?.retryCount || 0
+      });
       setTimeout(() => this.retryFailedLoad(category), 5000);
     }
     // Low priority: no automatic retry
@@ -403,20 +500,32 @@ export class DataLoadingOrchestrator {
     const maxRetries = 3;
     if (errorInfo.retryCount > maxRetries) {
       this.logger.error(`Max retries exceeded for ${category}`, { 
+        operation: 'retryFailedLoad',
         category,
         retryCount: errorInfo.retryCount,
-        maxRetries 
+        maxRetries,
+        priority: this.loadingConfig.priorities[category]
       });
       return;
     }
     
-    this.logger.info(`Retry ${errorInfo.retryCount}/${maxRetries} for ${category}`);
+    this.logger.info(`Retry ${errorInfo.retryCount}/${maxRetries} for ${category}`, {
+      operation: 'retryFailedLoad',
+      category,
+      retryCount: errorInfo.retryCount,
+      maxRetries,
+      priority: this.loadingConfig.priorities[category]
+    });
     
     try {
       await this.loadCategory(category);
     } catch (error) {
       this.logger.error(`Retry failed for ${category}`, { 
+        operation: 'retryFailedLoad',
         category,
+        retryCount: errorInfo.retryCount,
+        maxRetries,
+        priority: this.loadingConfig.priorities[category],
         error: error.message,
         stack: error.stack 
       });

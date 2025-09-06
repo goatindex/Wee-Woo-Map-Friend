@@ -5,6 +5,7 @@
  */
 
 import { EventBus } from './EventBus.js';
+import { logger } from './StructuredLogger.js';
 
 /**
  * @class Router
@@ -20,6 +21,9 @@ export class Router extends EventBus {
     this.defaultRoute = 'intro';
     this.basePath = '#in_app_docs/';
     
+    // Create module-specific logger
+    this.logger = logger.createChild({ module: 'Router' });
+    
     // Bind methods
     this.handleHashChange = this.handleHashChange.bind(this);
     this.handlePopState = this.handlePopState.bind(this);
@@ -27,6 +31,13 @@ export class Router extends EventBus {
     // Set up event listeners
     window.addEventListener('hashchange', this.handleHashChange);
     window.addEventListener('popstate', this.handlePopState);
+    
+    this.logger.info('Router initialized', {
+      operation: 'constructor',
+      defaultRoute: this.defaultRoute,
+      basePath: this.basePath,
+      routesCount: this.routes.size
+    });
   }
   
   /**
@@ -109,7 +120,13 @@ export class Router extends EventBus {
       this.emit('route:changed', { from: oldRoute, to: path, route });
       
     } catch (error) {
-      console.error('Router: Error handling route:', error);
+      this.logger.error('Error handling route', {
+        operation: 'navigate',
+        path,
+        route,
+        error: error.message,
+        stack: error.stack
+      });
       this.emit('route:error', { path, route, error });
     }
   }
@@ -270,7 +287,13 @@ export class DocsRouter extends Router {
       this.emit('docs:loaded', { filename, title, content: parsedContent });
       
     } catch (error) {
-      console.error('DocsRouter: Failed to load documentation:', error);
+      this.logger.error('Failed to load documentation', {
+        operation: 'loadDocumentation',
+        filename,
+        title,
+        error: error.message,
+        stack: error.stack
+      });
       this.emit('docs:error', { filename, title, error });
       
       // Show error content

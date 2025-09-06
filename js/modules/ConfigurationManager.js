@@ -6,6 +6,7 @@
 
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
+import { logger } from './StructuredLogger.js';
 
 /**
  * @class ConfigurationManager
@@ -16,6 +17,9 @@ export class ConfigurationManager {
     this._config = {};
     this._validators = new Map();
     this._watchers = new Map();
+    
+    // Create module-specific logger
+    this.logger = logger.createChild({ module: 'ConfigurationManager' });
     
     // Bind methods
     this.get = this.get.bind(this);
@@ -32,7 +36,12 @@ export class ConfigurationManager {
     // Store config in state manager for other modules to access
     stateManager.set('config', this._config);
     
-    console.log('🔧 ConfigurationManager: Configuration system initialized');
+    this.logger.info('Configuration system initialized', {
+      operation: 'constructor',
+      configKeys: Object.keys(this._config),
+      validators: this._validators.size,
+      watchers: this._watchers.size
+    });
   }
   
   /**
@@ -162,7 +171,13 @@ export class ConfigurationManager {
       adjustHexColor: this._adjustHexColor.bind(this)
     };
     
-    console.log('✅ ConfigurationManager: Default configuration loaded');
+    this.logger.info('Default configuration loaded', {
+      operation: '_initializeConfiguration',
+      configSections: Object.keys(this._config),
+      outlineColors: Object.keys(this._config.outlineColors),
+      fillColors: Object.keys(this._config.fillColors),
+      styles: Object.keys(this._config.styles)
+    });
   }
   
   /**
@@ -226,7 +241,13 @@ export class ConfigurationManager {
       const validator = this._validators.get(path);
       const validationResult = validator(value);
       if (validationResult !== true) {
-        console.warn(`⚠️ ConfigurationManager: Validation failed for '${path}':`, validationResult);
+        this.logger.warn('Validation failed', {
+          operation: '_setValue',
+          path,
+          value,
+          validationResult,
+          validator: this._validators.get(path).name || 'anonymous'
+        });
         return;
       }
     }
@@ -244,12 +265,26 @@ export class ConfigurationManager {
         try {
           watcher(value, oldValue);
         } catch (error) {
-          console.error(`ConfigurationManager: Error in watcher for '${path}':`, error);
+          this.logger.error('Error in watcher', {
+            operation: '_setValue',
+            path,
+            value,
+            oldValue,
+            error: error.message,
+            stack: error.stack
+          });
         }
       });
     }
     
-    console.log(`🔧 ConfigurationManager: Updated '${path}'`);
+    this.logger.debug('Configuration updated', {
+      operation: '_setValue',
+      path,
+      value,
+      oldValue,
+      hasWatchers: this._watchers.has(path),
+      watcherCount: this._watchers.get(path)?.length || 0
+    });
   }
   
   /**
@@ -283,7 +318,12 @@ export class ConfigurationManager {
   addValidator(path, validator) {
     if (typeof validator === 'function') {
       this._validators.set(path, validator);
-      console.log(`🔧 ConfigurationManager: Added validator for '${path}'`);
+      this.logger.debug('Validator added', {
+        operation: 'addValidator',
+        path,
+        validatorName: validator.name || 'anonymous',
+        totalValidators: this._validators.size
+      });
     }
   }
   
@@ -354,7 +394,12 @@ export class ConfigurationManager {
   reset() {
     this._initializeConfiguration();
     globalEventBus.emit('config:reset');
-    console.log('🔄 ConfigurationManager: Configuration reset to defaults');
+    this.logger.info('Configuration reset to defaults', {
+      operation: 'reset',
+      configKeys: Object.keys(this._config),
+      validators: this._validators.size,
+      watchers: this._watchers.size
+    });
   }
   
   /**
@@ -377,7 +422,12 @@ export class ConfigurationManager {
     if (configData && configData.config) {
       this._config = { ...this._config, ...configData.config };
       globalEventBus.emit('config:imported', { config: this._config });
-      console.log('📥 ConfigurationManager: Configuration imported');
+      this.logger.info('Configuration imported', {
+        operation: 'import',
+        importedKeys: Object.keys(configData.config),
+        totalKeys: Object.keys(this._config).length,
+        hasConfig: !!configData.config
+      });
     }
   }
   

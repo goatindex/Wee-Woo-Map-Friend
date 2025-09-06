@@ -184,6 +184,7 @@ html, body { overflow-x: hidden; }
   box-shadow: var(--shadow-md);
   min-width: 260px;
   width: var(--sidebar-width-desktop);
+  max-width: calc(100vw - 20px); /* Ensure it doesn't exceed viewport width */
   display: block;
   transition: transform .2s ease, opacity .2s ease;
 }

@@ -5,6 +5,7 @@
  */
 
 import { globalEventBus } from './EventBus.js';
+import { logger } from './StructuredLogger.js';
 
 /**
  * @class MobileDocsNavManager
@@ -15,6 +16,9 @@ export class MobileDocsNavManager {
     this.initialized = false;
     this.mobileBreakpoint = 720;
     this.periodicCheckInterval = null;
+    
+    // Create module-specific logger
+    this.logger = logger.createChild({ module: 'MobileDocsNavManager' });
     
     // Bind methods
     this.init = this.init.bind(this);
@@ -32,7 +36,11 @@ export class MobileDocsNavManager {
     this.onDocsOpen = this.onDocsOpen.bind(this);
     this.debounce = this.debounce.bind(this);
     
-    console.log('📱 MobileDocsNavManager: Mobile documentation navigation system initialized');
+    this.logger.info('Mobile documentation navigation system initialized', {
+      operation: 'constructor',
+      mobileBreakpoint: this.mobileBreakpoint,
+      initialized: this.initialized
+    });
   }
   
   /**
@@ -40,12 +48,20 @@ export class MobileDocsNavManager {
    */
   async init() {
     if (this.initialized) {
-      console.warn('MobileDocsNavManager: Already initialized');
+      this.logger.warn('Already initialized', {
+        operation: 'init',
+        currentState: 'initialized'
+      });
       return;
     }
     
+    const timer = this.logger.time('mobile-docs-nav-initialization');
     try {
-      console.log('🚀 MobileDocsNavManager: Initializing mobile documentation navigation');
+      this.logger.info('Initializing mobile documentation navigation', {
+        operation: 'init',
+        mobileBreakpoint: this.mobileBreakpoint,
+        windowWidth: window.innerWidth
+      });
       this.logger.debug('Window width check', { 
         width: window.innerWidth, 
         isMobile: window.innerWidth <= this.mobileBreakpoint 
@@ -64,7 +80,11 @@ export class MobileDocsNavManager {
       
       // Listen for window resize to adapt navigation
       window.addEventListener('resize', this.debounce(() => {
-        console.log('🔄 MobileDocsNavManager: Window resized to:', window.innerWidth);
+        this.logger.debug('Window resized', {
+          operation: 'resize',
+          newWidth: window.innerWidth,
+          isMobile: window.innerWidth <= this.mobileBreakpoint
+        });
         this.setupDocsNavigation();
       }, 250));
       
@@ -72,7 +92,12 @@ export class MobileDocsNavManager {
       this.periodicCheckInterval = setInterval(() => {
         const docsVisible = !document.querySelector('.docs-drawer[hidden]');
         if (docsVisible && window.innerWidth <= this.mobileBreakpoint) {
-          console.log('🔄 MobileDocsNavManager: Periodic check - docs are visible');
+          this.logger.debug('Periodic check - docs are visible', {
+            operation: 'periodicCheck',
+            docsVisible: true,
+            windowWidth: window.innerWidth,
+            isMobile: window.innerWidth <= this.mobileBreakpoint
+          });
           this.setupDocsNavigation();
         }
       }, 2000);
@@ -81,10 +106,25 @@ export class MobileDocsNavManager {
       globalEventBus.on('docs:opened', this.onDocsOpen);
       
       this.initialized = true;
-      console.log('✅ MobileDocsNavManager: Mobile documentation navigation system ready');
+      timer.end({
+        success: true,
+        mobileBreakpoint: this.mobileBreakpoint,
+        hasPeriodicCheck: !!this.periodicCheckInterval
+      });
+      this.logger.info('Mobile documentation navigation system ready');
       
     } catch (error) {
-      console.error('🚨 MobileDocsNavManager: Failed to initialize:', error);
+      timer.end({
+        success: false,
+        error: error.message,
+        mobileBreakpoint: this.mobileBreakpoint
+      });
+      this.logger.error('Failed to initialize', {
+        operation: 'init',
+        error: error.message,
+        stack: error.stack,
+        mobileBreakpoint: this.mobileBreakpoint
+      });
       throw error;
     }
   }
@@ -93,7 +133,11 @@ export class MobileDocsNavManager {
    * Set up mobile-friendly documentation navigation
    */
   setupDocsNavigation() {
-    console.log('📱 MobileDocsNavManager: Setting up navigation');
+    this.logger.info('Setting up navigation', {
+      operation: 'setupDocsNavigation',
+      windowWidth: window.innerWidth,
+      mobileBreakpoint: this.mobileBreakpoint
+    });
     this.logger.debug('Window resize check', { width: window.innerWidth });
     
     // Create immediate test element
@@ -103,7 +147,11 @@ export class MobileDocsNavManager {
     this.logger.debug('TOC element check', { tocFound: !!toc });
     
     if (!toc) {
-      console.log('❌ MobileDocsNavManager: No TOC found, cannot proceed');
+      this.logger.warn('No TOC found, cannot proceed', {
+        operation: 'setupDocsNavigation',
+        tocFound: false,
+        windowWidth: window.innerWidth
+      });
       return;
     }
     
@@ -114,13 +162,23 @@ export class MobileDocsNavManager {
     });
     
     if (!isMobile) {
-      console.log('❌ MobileDocsNavManager: Not mobile, removing mobile elements');
+      this.logger.info('Not mobile, removing mobile elements', {
+        operation: 'setupDocsNavigation',
+        isMobile: false,
+        windowWidth: window.innerWidth,
+        mobileBreakpoint: this.mobileBreakpoint
+      });
       // Remove mobile elements on desktop
       this.removeMobileElements();
       return;
     }
     
-    console.log('✅ MobileDocsNavManager: Mobile detected, adding navigation');
+    this.logger.info('Mobile detected, adding navigation', {
+      operation: 'setupDocsNavigation',
+      isMobile: true,
+      windowWidth: window.innerWidth,
+      mobileBreakpoint: this.mobileBreakpoint
+    });
     // Add mobile navigation elements
     this.addMobileNavigation(toc);
   }
@@ -153,13 +211,20 @@ export class MobileDocsNavManager {
     testEl.innerHTML = '🔴 MOBILE NAV TEST<br>Width: ' + window.innerWidth;
     
     document.body.appendChild(testEl);
-    console.log('🔴 MobileDocsNavManager: Test element created');
+    this.logger.debug('Test element created', {
+      operation: 'createTestElement',
+      windowWidth: window.innerWidth,
+      elementClass: 'mobile-nav-test'
+    });
     
     // Remove test element after 5 seconds
     setTimeout(() => {
       if (testEl.parentNode) {
         testEl.remove();
-        console.log('🔴 MobileDocsNavManager: Test element removed');
+        this.logger.debug('Test element removed', {
+          operation: 'createTestElement',
+          duration: '5000ms'
+        });
       }
     }, 5000);
   }
@@ -168,7 +233,11 @@ export class MobileDocsNavManager {
    * Add mobile navigation elements - hamburger menu style
    */
   addMobileNavigation(toc) {
-    console.log('📱 MobileDocsNavManager: Adding hamburger menu navigation');
+    this.logger.info('Adding hamburger menu navigation', {
+      operation: 'addMobileNavigation',
+      hasToc: !!toc,
+      windowWidth: window.innerWidth
+    });
     
     // Remove any existing mobile navigation
     this.removeMobileElements();
@@ -178,7 +247,11 @@ export class MobileDocsNavManager {
     const pageTitle = docsContent ? docsContent.querySelector('h1') : null;
     
     if (!pageTitle) {
-      console.log('❌ MobileDocsNavManager: No page title found, cannot add hamburger menu');
+      this.logger.warn('No page title found, cannot add hamburger menu', {
+        operation: 'addMobileNavigation',
+        hasDocsContent: !!docsContent,
+        hasPageTitle: false
+      });
       return;
     }
     
@@ -211,7 +284,11 @@ export class MobileDocsNavManager {
     const menuLinks = document.createElement('div');
     menuLinks.className = 'docs-menu-links';
     
-    console.log('🔗 MobileDocsNavManager: Found', tocLinks.length, 'navigation links');
+    this.logger.debug('Found navigation links', {
+      operation: 'addMobileNavigation',
+      linkCount: tocLinks.length,
+      hasTocLinks: tocLinks.length > 0
+    });
     
     tocLinks.forEach(link => {
       const menuLink = document.createElement('a');
@@ -247,14 +324,23 @@ export class MobileDocsNavManager {
     // Add event handlers
     this.setupHamburgerHandlers(hamburgerBtn, dropdownMenu);
     
-    console.log('✅ MobileDocsNavManager: Hamburger menu created successfully');
+    this.logger.info('Hamburger menu created successfully', {
+      operation: 'addMobileNavigation',
+      linkCount: tocLinks.length,
+      hasHamburgerBtn: !!hamburgerBtn,
+      hasDropdownMenu: !!dropdownMenu
+    });
   }
   
   /**
    * Set up hamburger button event handlers
    */
   setupHamburgerHandlers(hamburgerBtn, dropdownMenu) {
-    console.log('🔧 MobileDocsNavManager: Setting up hamburger handlers');
+    this.logger.debug('Setting up hamburger handlers', {
+      operation: 'setupHamburgerHandlers',
+      hasHamburgerBtn: !!hamburgerBtn,
+      hasDropdownMenu: !!dropdownMenu
+    });
     
     // Toggle menu on button click
     hamburgerBtn.addEventListener('click', (e) => {
@@ -294,7 +380,12 @@ export class MobileDocsNavManager {
    * Open dropdown menu
    */
   openDropdownMenu(hamburgerBtn, dropdownMenu) {
-    console.log('📂 MobileDocsNavManager: Opening dropdown menu');
+    this.logger.debug('Opening dropdown menu', {
+      operation: 'openDropdownMenu',
+      hasHamburgerBtn: !!hamburgerBtn,
+      hasDropdownMenu: !!dropdownMenu,
+      hasNativeFeatures: !!window.NativeFeatures
+    });
     
     dropdownMenu.classList.remove('hidden');
     hamburgerBtn.classList.add('active');
@@ -311,7 +402,11 @@ export class MobileDocsNavManager {
    * Close dropdown menu
    */
   closeDropdownMenu(hamburgerBtn, dropdownMenu) {
-    console.log('📁 MobileDocsNavManager: Closing dropdown menu');
+    this.logger.debug('Closing dropdown menu', {
+      operation: 'closeDropdownMenu',
+      hasHamburgerBtn: !!hamburgerBtn,
+      hasDropdownMenu: !!dropdownMenu
+    });
     
     dropdownMenu.classList.add('hidden');
     hamburgerBtn.classList.remove('active');
@@ -416,7 +511,11 @@ export class MobileDocsNavManager {
    * Update navigation when docs content changes
    */
   onDocsOpen() {
-    console.log('MobileDocsNavManager: Docs opened, setting up navigation');
+    this.logger.info('Docs opened, setting up navigation', {
+      operation: 'onDocsOpen',
+      windowWidth: window.innerWidth,
+      isMobile: window.innerWidth <= this.mobileBreakpoint
+    });
     // Small delay to ensure DOM is ready
     setTimeout(() => {
       this.setupDocsNavigation();
@@ -473,7 +572,11 @@ export class MobileDocsNavManager {
     globalEventBus.off('docs:opened', this.onDocsOpen);
     
     this.initialized = false;
-    console.log('🧹 MobileDocsNavManager: Cleaned up resources');
+    this.logger.info('Cleaned up resources', {
+      operation: 'cleanup',
+      initialized: false,
+      hasPeriodicCheck: !!this.periodicCheckInterval
+    });
   }
 }
 
