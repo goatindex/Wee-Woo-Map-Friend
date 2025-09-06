@@ -593,12 +593,5 @@ export class AmbulanceLoader {
 // Export singleton instance
 export const ambulanceLoader = new AmbulanceLoader();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.ambulanceLoader = ambulanceLoader;
-  // Legacy compatibility
-  window.loadAmbulance = () => ambulanceLoader.load();
-  window.getAmbulanceFeatures = () => ambulanceLoader.getFeatures();
-  window.showAmbulanceMarker = (key) => ambulanceLoader.showMarker(key);
-  window.hideAmbulanceMarker = (key) => ambulanceLoader.hideMarker(key);
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

@@ -252,8 +252,5 @@ export const off = (event, listener) => globalEventBus.off(event, listener);
 export const emit = (event, data, options) => globalEventBus.emit(event, data, options);
 export const emitAsync = (event, data) => globalEventBus.emitAsync(event, data);
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.EventBus = EventBus;
-  window.globalEventBus = globalEventBus;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

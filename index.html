@@ -153,27 +153,37 @@
       
       // Show custom install button or notification
       setTimeout(() => {
-        if (deferredPrompt && !window.DeviceContext.getContext().isPWA) {
-          const installMessage = document.createElement('div');
-          installMessage.style.cssText = `
-            position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
-            background: #1976d2; color: white; padding: 8px 16px; border-radius: 6px;
-            font-size: 14px; z-index: 4000; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-          `;
-          installMessage.textContent = '📱 Install WeeWoo Map as an app';
-          installMessage.addEventListener('click', async () => {
-            if (deferredPrompt) {
-              deferredPrompt.prompt();
-              const { outcome } = await deferredPrompt.userChoice;
-              console.log('PWA: Install prompt result:', outcome);
-              deferredPrompt = null;
-              installMessage.remove();
-            }
-          });
-          document.body.appendChild(installMessage);
+        try {
+          // Simple PWA detection without relying on DeviceContext
+          const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone === true;
           
-          // Auto-hide after 10 seconds
-          setTimeout(() => installMessage.remove(), 10000);
+          // Only show prompt if not already installed as PWA
+          if (deferredPrompt && !isPWA) {
+            const installMessage = document.createElement('div');
+            installMessage.style.cssText = `
+              position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+              background: #1976d2; color: white; padding: 8px 16px; border-radius: 6px;
+              font-size: 14px; z-index: 4000; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            `;
+            installMessage.textContent = '📱 Install WeeWoo Map as an app';
+            installMessage.addEventListener('click', async () => {
+              if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log('PWA: Install prompt result:', outcome);
+                deferredPrompt = null;
+                installMessage.remove();
+              }
+            });
+            document.body.appendChild(installMessage);
+            
+            // Auto-hide after 10 seconds
+            setTimeout(() => installMessage.remove(), 10000);
+          }
+        } catch (error) {
+          console.warn('PWA: Error in install prompt logic', error);
+          // If there's any error, don't show the prompt
         }
       }, 2000);
     });

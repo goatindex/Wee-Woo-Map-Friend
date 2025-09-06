@@ -346,10 +346,5 @@ export class SesFacilitiesLoader {
 // Export singleton instance
 export const sesFacilitiesLoader = new SesFacilitiesLoader();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.sesFacilitiesLoader = sesFacilitiesLoader;
-  // Legacy compatibility
-  window.loadSesFacilities = () => sesFacilitiesLoader.load();
-  window.getSESFacilities = () => sesFacilitiesLoader.getFeatures();
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

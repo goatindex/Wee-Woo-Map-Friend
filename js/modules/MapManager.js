@@ -121,7 +121,7 @@ export class MapManager {
       globalEventBus.emit('map:ready', { map: this.map, manager: this });
       
       this.initialized = true;
-      console.log('✅ MapManager: Map system ready');
+      this.logger.info('Map system ready');
       
     } catch (error) {
       console.error('🚨 MapManager: Failed to initialize:', error);
@@ -136,7 +136,7 @@ export class MapManager {
    */
   async waitForLeaflet() {
     if (typeof L !== 'undefined') {
-      console.log('✅ MapManager: Leaflet already available');
+      this.logger.info('Leaflet already available');
       return;
     }
     
@@ -150,7 +150,7 @@ export class MapManager {
       const checkLeaflet = () => {
         if (typeof L !== 'undefined') {
           clearTimeout(timeout);
-          console.log('✅ MapManager: Leaflet library loaded successfully');
+          this.logger.info('Leaflet library loaded successfully');
           resolve();
         } else {
           // Use requestAnimationFrame for better performance than setTimeout
@@ -178,7 +178,7 @@ export class MapManager {
       // Legacy compatibility handled through StateManager
       // No direct window.map assignment to avoid fragmented state
       
-      console.log('✅ MapManager: Map instance created');
+      this.logger.info('Map instance created');
       
     } catch (error) {
       console.error('🚨 MapManager: Failed to create map:', error);
@@ -196,7 +196,7 @@ export class MapManager {
       });
       
       this.baseTileLayer.addTo(this.map);
-      console.log('✅ MapManager: Base tile layer added');
+      this.logger.info('Base tile layer added');
       
     } catch (error) {
       console.error('🚨 MapManager: Failed to setup base tile layer:', error);
@@ -218,7 +218,7 @@ export class MapManager {
       });
       
       this.zoomControl.addTo(this.map);
-      console.log('✅ MapManager: Zoom control added');
+      this.logger.info('Zoom control added');
       
     } catch (error) {
       console.error('🚨 MapManager: Failed to setup zoom control:', error);
@@ -370,13 +370,39 @@ export class MapManager {
       zoomControl: !!this.zoomControl
     };
   }
+
+  /**
+   * Cleanup map manager resources
+   */
+  async cleanup() {
+    this.logger.info('Cleaning up MapManager resources');
+    
+    try {
+      // Remove map from DOM
+      if (this.map) {
+        this.map.remove();
+        this.map = null;
+      }
+      
+      // Clear references
+      this.baseTileLayer = null;
+      this.zoomControl = null;
+      this.mapPanes = {};
+      
+      // Reset state
+      this.initialized = false;
+      this.defaultView = null;
+      
+      this.logger.info('MapManager cleanup completed');
+    } catch (error) {
+      this.logger.error('MapManager cleanup failed', { error: error.message });
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance
 export const mapManager = new MapManager();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.MapManager = MapManager;
-  window.mapManager = mapManager;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

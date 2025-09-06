@@ -16,6 +16,38 @@ export class UtilityManager {
   }
 
   /**
+   * Initialize the UtilityManager
+   * @param {Object} dependencies - Dependencies object
+   */
+  async init(dependencies) {
+    const timer = this.logger.time('init-utility-manager');
+    
+    try {
+      this.logger.info('Initializing UtilityManager...');
+      
+      // Initialize any required state or setup
+      // (Currently no specific initialization needed, but this provides consistency)
+      
+      timer.end({ success: true });
+      
+      this.logger.info('UtilityManager initialization complete');
+      
+    } catch (error) {
+      timer.end({ 
+        error: error.message,
+        success: false 
+      });
+      
+      this.logger.error('Failed to initialize UtilityManager', {
+        error: error.message,
+        stack: error.stack
+      });
+      
+      throw error;
+    }
+  }
+
+  /**
    * Get current responsive breakpoint context
    * @returns {Object}
    */
@@ -480,4 +512,5 @@ export const showSidebarError = (message) => utilityManager.showSidebarError(mes
 export const convertMGA94ToLatLon = (easting, northing) => utilityManager.convertMGA94ToLatLon(easting, northing);
 export const createCheckbox = (id, label, checked, onChange) => utilityManager.createCheckbox(id, label, checked, onChange);
 
-
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

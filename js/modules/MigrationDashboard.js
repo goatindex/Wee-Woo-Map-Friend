@@ -514,19 +514,5 @@ export class MigrationDashboard {
 // Export singleton instance
 export const migrationDashboard = new MigrationDashboard();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.migrationDashboard = migrationDashboard;
-  
-  // Add keyboard shortcut to show/hide dashboard (Ctrl+Shift+M)
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key === 'M') {
-      e.preventDefault();
-      if (migrationDashboard.isVisible) {
-        migrationDashboard.hide();
-      } else {
-        migrationDashboard.show();
-      }
-    }
-  });
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

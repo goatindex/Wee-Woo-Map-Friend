@@ -498,17 +498,5 @@ export const deviceContext = new DeviceContext(deviceManager);
 export const getResponsiveContext = () => deviceManager.getContext();
 export const isMobileSize = () => deviceManager.getContext().isMobile;
 
-// Global setup for legacy compatibility
-if (typeof window !== 'undefined') {
-  // Set up the global DeviceContext that ES6Bootstrap expects
-  window.DeviceContext = deviceContext;
-  
-  // Also set up the deviceManager for direct access
-  window.deviceManager = deviceManager;
-  
-  // Legacy compatibility functions
-  window.getResponsiveContext = getResponsiveContext;
-  window.isMobileSize = isMobileSize;
-  
-  console.log('✅ DeviceManager: Global DeviceContext setup complete');
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

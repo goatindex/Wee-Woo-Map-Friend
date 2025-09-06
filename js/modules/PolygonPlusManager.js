@@ -321,3 +321,6 @@ export const addPolygonPlus = (map, polygonLayer, options) =>
 
 export const removePolygonPlus = (polygonLayer, map) => 
   polygonPlusManager.removePolygonPlus(polygonLayer, map);
+
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

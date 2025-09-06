@@ -718,6 +718,43 @@ export class StateManager extends EventBus {
   isReady() {
     return true; // StateManager is always ready after construction
   }
+
+  /**
+   * Cleanup state manager resources
+   */
+  async cleanup() {
+    this.logger.info('Cleaning up StateManager resources');
+    
+    try {
+      // Clear all watchers
+      this.watchers.clear();
+      
+      // Clear bulk operation
+      this.bulkOperation = null;
+      
+      // Reset state to initial values
+      this._state = {
+        layers: {},
+        names: {},
+        emphasised: {},
+        labels: {},
+        deviceContext: null,
+        windowSize: {
+          width: typeof window !== 'undefined' ? window.innerWidth : 1024,
+          height: typeof window !== 'undefined' ? window.innerHeight : 768
+        }
+      };
+      
+      // Reset flags
+      this.initialized = false;
+      this.lastUpdate = null;
+      
+      this.logger.info('StateManager cleanup completed');
+    } catch (error) {
+      this.logger.error('StateManager cleanup failed', { error: error.message });
+      throw error;
+    }
+  }
 }
 
 // Create global state manager instance
@@ -726,8 +763,5 @@ export const stateManager = new StateManager();
 // Export convenient access to state
 export const state = stateManager.state;
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.StateManager = StateManager;
-  window.stateManager = stateManager;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

@@ -524,12 +524,5 @@ export class FeatureEnhancer {
 // Export singleton instance
 export const featureEnhancer = new FeatureEnhancer();
 
-// Export for global access and legacy compatibility
-if (typeof window !== 'undefined') {
-  window.featureEnhancer = featureEnhancer;
-  window.addPolygonPlus = (map, layer, key) => featureEnhancer.addPolygonPlus(map, layer, key);
-  window.removePolygonPlus = (layer, map, key) => featureEnhancer.removePolygonPlus(layer, map, key);
-  window.showSesChevron = (key, map) => featureEnhancer.showSesChevron(key, map);
-  window.hideSesChevron = (key, map) => featureEnhancer.hideSesChevron(key, map);
-  window.storeSesFacilityCoords = (name, feature) => featureEnhancer.storeSesFacilityCoords(name, feature);
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

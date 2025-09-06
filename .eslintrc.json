@@ -18,6 +18,21 @@
     "prefer-const": "error",
     "curly": "error",
     "no-undef": "error",
-    "quotes": ["error", "single"]
+    "quotes": ["error", "single"],
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "CallExpression[callee.object.name='console'][callee.property.name='log']",
+        "message": "Use StructuredLogger instead of console.log. Import logger and use this.logger.info(), this.logger.debug(), etc."
+      },
+      {
+        "selector": "CallExpression[callee.object.name='console'][callee.property.name='warn']",
+        "message": "Use StructuredLogger instead of console.warn. Import logger and use this.logger.warn()."
+      },
+      {
+        "selector": "CallExpression[callee.object.name='console'][callee.property.name='error']",
+        "message": "Use StructuredLogger instead of console.error. Import logger and use this.logger.error()."
+      }
+    ]
   }
 }

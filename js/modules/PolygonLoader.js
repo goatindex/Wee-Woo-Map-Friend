@@ -981,9 +981,5 @@ export class PolygonLoader {
 // Export singleton instance
 export const polygonLoader = new PolygonLoader();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.polygonLoader = polygonLoader;
-  // Legacy compatibility
-  window.loadPolygonCategory = (category, url) => polygonLoader.loadCategory(category, url);
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

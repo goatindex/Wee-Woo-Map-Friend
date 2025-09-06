@@ -7,6 +7,7 @@
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
 import { configurationManager } from './ConfigurationManager.js';
+import { logger } from './StructuredLogger.js';
 
 /**
  * @class SearchManager
@@ -21,6 +22,9 @@ export class SearchManager {
     this.searchResults = [];
     this.searchIndex = new Map();
     
+    // Create module-specific logger
+    this.logger = logger.createChild({ module: 'SearchManager' });
+    
     // Bind methods
     this.init = this.init.bind(this);
     this.initSearch = this.initSearch.bind(this);
@@ -30,7 +34,7 @@ export class SearchManager {
     this.buildSearchIndex = this.buildSearchIndex.bind(this);
     this.getStatus = this.getStatus.bind(this);
     
-    console.log('🔍 SearchManager: Search management system initialized');
+    this.logger.debug('Search management system initialized');
   }
   
   /**
@@ -56,7 +60,7 @@ export class SearchManager {
       }
       
       this.initialized = true;
-      console.log('✅ SearchManager: Search management system ready');
+      this.logger.info('Search management system ready');
       
     } catch (error) {
       console.error('🚨 SearchManager: Failed to initialize:', error);
@@ -457,6 +461,49 @@ export class SearchManager {
   isReady() {
     return this.initialized;
   }
+
+  /**
+   * Cleanup search manager resources
+   */
+  async cleanup() {
+    this.logger.info('Cleaning up SearchManager resources');
+    
+    try {
+      // Clear search timeout
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = null;
+      }
+      
+      // Clear search results and index
+      this.searchResults = [];
+      this.searchIndex.clear();
+      
+      // Remove event listeners
+      if (this.searchBox) {
+        this.searchBox.removeEventListener('input', this.handleSearchInput);
+        this.searchBox.removeEventListener('focus', this.handleSearchFocus);
+        this.searchBox.removeEventListener('blur', this.handleSearchBlur);
+      }
+      
+      // Remove dropdown from DOM
+      if (this.dropdown && this.dropdown.parentNode) {
+        this.dropdown.parentNode.removeChild(this.dropdown);
+        this.dropdown = null;
+      }
+      
+      // Clear references
+      this.searchBox = null;
+      
+      // Reset state
+      this.initialized = false;
+      
+      this.logger.info('SearchManager cleanup completed');
+    } catch (error) {
+      this.logger.error('SearchManager cleanup failed', { error: error.message });
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance
@@ -464,6 +511,5 @@ export const searchManager = new SearchManager();
 
 // Export for legacy compatibility
 // Export for global access (ES6 module system)
-if (typeof window !== 'undefined') {
-  window.SearchManager = searchManager;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

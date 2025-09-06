@@ -739,8 +739,5 @@ export const logger = new StructuredLogger();
 // Export transport classes for testing
 export { ConsoleTransport, TestTransport, PerformanceTransport };
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.logger = logger;
-  window.StructuredLogger = StructuredLogger;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

@@ -597,12 +597,5 @@ export class PoliceLoader {
 // Export singleton instance
 export const policeLoader = new PoliceLoader();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.policeLoader = policeLoader;
-  // Legacy compatibility
-  window.loadPolice = () => policeLoader.load();
-  window.getPoliceFeatures = () => policeLoader.getFeatures();
-  window.showPoliceMarker = (key) => policeLoader.showMarker(key);
-  window.hidePoliceMarker = (key) => policeLoader.hideMarker(key);
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

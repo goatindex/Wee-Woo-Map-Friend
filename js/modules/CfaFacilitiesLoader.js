@@ -312,10 +312,5 @@ export class CfaFacilitiesLoader {
 // Export singleton instance
 export const cfaFacilitiesLoader = new CfaFacilitiesLoader();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.cfaFacilitiesLoader = cfaFacilitiesLoader;
-  // Legacy compatibility
-  window.loadCfaFacilities = () => cfaFacilitiesLoader.load();
-  window.getCfaFacilities = () => cfaFacilitiesLoader.getFeatures();
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

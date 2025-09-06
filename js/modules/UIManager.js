@@ -57,7 +57,7 @@ export class UIManager {
       this.initializeUIState();
       
       this.initialized = true;
-      console.log('✅ UIManager: UI management system ready');
+      this.logger.info('UI management system ready');
       
     } catch (error) {
       console.error('🚨 UIManager: Failed to initialize:', error);
@@ -78,7 +78,7 @@ export class UIManager {
       componentPromises.push(
         collapsibleManager.init().then(() => {
           this.components.set('collapsible', collapsibleManager);
-          console.log('✅ UIManager: Collapsible manager ready');
+          this.logger.info('Collapsible manager ready');
         }).catch(error => {
           console.error('❌ UIManager: Collapsible manager failed:', error);
         })
@@ -90,7 +90,7 @@ export class UIManager {
       componentPromises.push(
         searchManager.init().then(() => {
           this.components.set('search', searchManager);
-          console.log('✅ UIManager: Search manager ready');
+          this.logger.info('Search manager ready');
         }).catch(error => {
           console.error('❌ UIManager: Search manager failed:', error);
         })
@@ -102,7 +102,7 @@ export class UIManager {
       componentPromises.push(
         fabManager.init().then(() => {
           this.components.set('fab', fabManager);
-          console.log('✅ UIManager: FAB manager ready');
+          this.logger.info('FAB manager ready');
         }).catch(error => {
           console.error('❌ UIManager: FAB manager failed:', error);
         })
@@ -112,7 +112,7 @@ export class UIManager {
     // Wait for all components to initialize
     await Promise.allSettled(componentPromises);
     
-    console.log('✅ UIManager: All UI components initialized');
+    this.logger.info('All UI components initialized');
   }
   
   /**
@@ -357,12 +357,38 @@ export class UIManager {
   isReady() {
     return this.initialized;
   }
+
+  /**
+   * Cleanup UI manager resources
+   */
+  async cleanup() {
+    this.logger.info('Cleaning up UIManager resources');
+    
+    try {
+      // Clear resize timeout
+      if (this.resizeTimeout) {
+        clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = null;
+      }
+      
+      // Clear components
+      this.components.clear();
+      
+      // Reset state
+      this.initialized = false;
+      this.responsiveBreakpoints.clear();
+      
+      this.logger.info('UIManager cleanup completed');
+    } catch (error) {
+      this.logger.error('UIManager cleanup failed', { error: error.message });
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance
 export const uiManager = new UIManager();
 
 // Export for legacy compatibility
-if (typeof window !== 'undefined') {
-  window.UIManager = uiManager;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

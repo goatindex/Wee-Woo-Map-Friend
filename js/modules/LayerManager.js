@@ -449,8 +449,5 @@ export class LayerManager {
 // Export singleton instance
 export const layerManager = new LayerManager();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.LayerManager = LayerManager;
-  window.layerManager = layerManager;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

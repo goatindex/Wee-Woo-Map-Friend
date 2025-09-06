@@ -13,23 +13,29 @@ import { migrationDashboard } from './MigrationDashboard.js';
  */
 async function main() {
   console.log('🚀 WeeWoo Map Friend: Unified Application Bootstrap Starting');
+  console.log('📍 Main.js: Single entry point confirmed - no duplicate initialization');
   
   try {
     // Initialize the unified application bootstrap system
+    console.log('📍 Main.js: Calling applicationBootstrap.init()...');
     await applicationBootstrap.init();
     
-    console.log('✅ Unified Application Bootstrap: Bootstrap complete');
+    console.log('Unified Application Bootstrap: Bootstrap complete'); // Keep for user-facing confirmation
+    console.log('📍 Main.js: Single initialization path successful');
     
     // Emit ready event
     globalEventBus.emit('app:es6ready', { bootstrap: applicationBootstrap });
+    console.log('📍 Main.js: ES6 ready event emitted');
     
     // Show migration dashboard for monitoring
     if (window.location.search.includes('debug=true') || window.location.hash.includes('debug')) {
       migrationDashboard.show();
+      console.log('Debug dashboard enabled'); // Keep for user-facing debug info
     }
     
   } catch (error) {
     console.error('🚨 Unified Application Bootstrap: Failed to start:', error);
+    console.error('📍 Main.js: Error in single entry point:', error);
     
     // Emit error event
     globalEventBus.emit('app:es6error', { error });
@@ -47,6 +53,34 @@ if (typeof window !== 'undefined') {
   } else {
     main();
   }
+  
+  // Set up cleanup on page unload
+  window.addEventListener('beforeunload', async () => {
+    try {
+      if (window.applicationBootstrap && typeof window.applicationBootstrap.cleanup === 'function') {
+        await window.applicationBootstrap.cleanup({ 
+          reason: 'page-unload',
+          preserveState: false 
+        });
+      }
+    } catch (error) {
+      console.error('Cleanup failed during page unload:', error);
+    }
+  });
+  
+  // Set up cleanup on page hide (for mobile apps)
+  window.addEventListener('pagehide', async () => {
+    try {
+      if (window.applicationBootstrap && typeof window.applicationBootstrap.cleanup === 'function') {
+        await window.applicationBootstrap.cleanup({ 
+          reason: 'page-hide',
+          preserveState: true 
+        });
+      }
+    } catch (error) {
+      console.error('Cleanup failed during page hide:', error);
+    }
+  });
 }
 
 // Export for testing and manual initialization

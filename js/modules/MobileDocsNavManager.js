@@ -46,14 +46,18 @@ export class MobileDocsNavManager {
     
     try {
       console.log('🚀 MobileDocsNavManager: Initializing mobile documentation navigation');
-      console.log('🔍 MobileDocsNavManager: Window width:', window.innerWidth);
-      console.log('🔍 MobileDocsNavManager: Is mobile:', window.innerWidth <= this.mobileBreakpoint);
+      this.logger.debug('Window width check', { 
+        width: window.innerWidth, 
+        isMobile: window.innerWidth <= this.mobileBreakpoint 
+      });
       
       // Immediate test - try to find docs elements
       const toc = document.querySelector('.docs-toc');
       const drawer = document.querySelector('.docs-drawer');
-      console.log('🔍 MobileDocsNavManager: TOC found:', !!toc);
-      console.log('🔍 MobileDocsNavManager: Drawer found:', !!drawer);
+      this.logger.debug('Documentation elements check', { 
+        tocFound: !!toc, 
+        drawerFound: !!drawer 
+      });
       
       // Set up navigation when docs are opened
       this.setupDocsNavigation();
@@ -90,13 +94,13 @@ export class MobileDocsNavManager {
    */
   setupDocsNavigation() {
     console.log('📱 MobileDocsNavManager: Setting up navigation');
-    console.log('🔍 MobileDocsNavManager: Window width:', window.innerWidth);
+    this.logger.debug('Window resize check', { width: window.innerWidth });
     
     // Create immediate test element
     this.createTestElement();
     
     const toc = document.querySelector('.docs-toc');
-    console.log('🔍 MobileDocsNavManager: Found TOC:', !!toc);
+    this.logger.debug('TOC element check', { tocFound: !!toc });
     
     if (!toc) {
       console.log('❌ MobileDocsNavManager: No TOC found, cannot proceed');
@@ -104,7 +108,10 @@ export class MobileDocsNavManager {
     }
     
     const isMobile = window.innerWidth <= this.mobileBreakpoint;
-    console.log('🔍 MobileDocsNavManager: Is mobile:', isMobile, 'Width:', window.innerWidth);
+    this.logger.debug('Mobile detection check', { 
+      isMobile, 
+      width: window.innerWidth 
+    });
     
     if (!isMobile) {
       console.log('❌ MobileDocsNavManager: Not mobile, removing mobile elements');
@@ -473,39 +480,5 @@ export class MobileDocsNavManager {
 // Export singleton instance
 export const mobileDocsNavManager = new MobileDocsNavManager();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.MobileDocsNavManager = MobileDocsNavManager;
-  window.mobileDocsNavManager = mobileDocsNavManager;
-  
-  // Legacy compatibility layer
-  window.MobileDocsNav = {
-    init: () => mobileDocsNavManager.init(),
-    setupDocsNavigation: () => mobileDocsNavManager.setupDocsNavigation(),
-    createTestElement: () => mobileDocsNavManager.createTestElement(),
-    addMobileNavigation: (toc) => mobileDocsNavManager.addMobileNavigation(toc),
-    setupHamburgerHandlers: (btn, menu) => mobileDocsNavManager.setupHamburgerHandlers(btn, menu),
-    toggleDropdownMenu: (btn, menu) => mobileDocsNavManager.toggleDropdownMenu(btn, menu),
-    openDropdownMenu: (btn, menu) => mobileDocsNavManager.openDropdownMenu(btn, menu),
-    closeDropdownMenu: (btn, menu) => mobileDocsNavManager.closeDropdownMenu(btn, menu),
-    removeMobileElements: () => mobileDocsNavManager.removeMobileElements(),
-    addMobileHint: () => mobileDocsNavManager.addMobileHint(),
-    setupLinkHandlers: (toc, btn) => mobileDocsNavManager.setupLinkHandlers(toc, btn),
-    highlightCurrentPage: () => mobileDocsNavManager.highlightCurrentPage(),
-    onDocsOpen: () => mobileDocsNavManager.onDocsOpen()
-  };
-  
-  // Auto-initialize when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      mobileDocsNavManager.init();
-    });
-  } else {
-    mobileDocsNavManager.init();
-  }
-  
-  // Listen for docs opening events
-  window.addEventListener('docs-opened', () => {
-    mobileDocsNavManager.onDocsOpen();
-  });
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

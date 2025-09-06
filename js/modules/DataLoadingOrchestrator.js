@@ -7,6 +7,7 @@
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
 import { configurationManager } from './ConfigurationManager.js';
+import { logger } from './StructuredLogger.js';
 
 /**
  * @class DataLoadingOrchestrator
@@ -21,6 +22,9 @@ export class DataLoadingOrchestrator {
     this.performanceMetrics = new Map();
     this.errorRecovery = new Map();
     this.polygonLoader = null;
+    
+    // Create module-specific logger
+    this.logger = logger.createChild({ module: 'DataLoadingOrchestrator' });
     
     // Data loading configuration
     this.loadingConfig = {
@@ -60,7 +64,7 @@ export class DataLoadingOrchestrator {
     this.getLoadingStatus = this.getLoadingStatus.bind(this);
     this.getPerformanceMetrics = this.getPerformanceMetrics.bind(this);
     
-    console.log('🎼 DataLoadingOrchestrator: Orchestration system initialized');
+    this.logger.info('Orchestration system initialized');
   }
   
   /**
@@ -68,12 +72,12 @@ export class DataLoadingOrchestrator {
    */
   async init() {
     if (this.initialized) {
-      console.warn('DataLoadingOrchestrator: Already initialized');
+      this.logger.warn('Already initialized');
       return;
     }
     
     try {
-      console.log('🔧 DataLoadingOrchestrator: Starting initialization...');
+      this.logger.info('Starting initialization...');
       
       // Wait for dependencies
       await this.waitForDependencies();
@@ -85,13 +89,16 @@ export class DataLoadingOrchestrator {
       this.setupDataManagement();
       
       this.initialized = true;
-      console.log('✅ DataLoadingOrchestrator: Initialization complete');
+      this.logger.info('Initialization complete');
       
       // Emit ready event
       globalEventBus.emit('dataOrchestrator:ready', { orchestrator: this });
       
     } catch (error) {
-      console.error('🚨 DataLoadingOrchestrator: Initialization failed:', error);
+      this.logger.error('Initialization failed', { 
+        error: error.message,
+        stack: error.stack 
+      });
       this.handleLoadingError('initialization', error);
       throw error;
     }
@@ -101,7 +108,7 @@ export class DataLoadingOrchestrator {
    * Wait for required dependencies to be ready
    */
   async waitForDependencies() {
-    console.log('⏳ DataLoadingOrchestrator: Waiting for dependencies...');
+    this.logger.debug('Waiting for dependencies...');
     
     // Wait for polygon loader to be available
     let attempts = 0;
@@ -112,10 +119,7 @@ export class DataLoadingOrchestrator {
       const polygonLoaderModule = stateManager.get('polygonLoader');
       if (polygonLoaderModule) {
         this.polygonLoader = polygonLoaderModule;
-        console.log('✅ DataLoadingOrchestrator: PolygonLoader found in state manager');
-        console.log('🔍 DataLoadingOrchestrator: PolygonLoader type:', typeof this.polygonLoader);
-        console.log('🔍 DataLoadingOrchestrator: PolygonLoader has loadCategory:', typeof this.polygonLoader.loadCategory);
-        console.log('🔍 DataLoadingOrchestrator: PolygonLoader keys:', Object.keys(this.polygonLoader));
+        this.logger.info('PolygonLoader found in state manager');
         break;
       }
       
@@ -127,28 +131,31 @@ export class DataLoadingOrchestrator {
     if (!this.polygonLoader) {
       // Try to import PolygonLoader directly as fallback
       try {
-        console.log('🔄 DataLoadingOrchestrator: Trying direct import of PolygonLoader...');
+        this.logger.debug('Trying direct import of PolygonLoader...');
         const { polygonLoader } = await import('./PolygonLoader.js');
         if (polygonLoader) {
           this.polygonLoader = polygonLoader;
-          console.log('✅ DataLoadingOrchestrator: PolygonLoader imported directly');
+          this.logger.info('PolygonLoader imported directly');
         } else {
           throw new Error('PolygonLoader not found in module');
         }
       } catch (error) {
-        console.error('❌ DataLoadingOrchestrator: Failed to import PolygonLoader directly:', error);
+        this.logger.error('Failed to import PolygonLoader directly', { 
+          error: error.message,
+          stack: error.stack 
+        });
         throw new Error('DataLoadingOrchestrator: PolygonLoader not available after timeout and direct import failed');
       }
     }
     
-    console.log('✅ DataLoadingOrchestrator: Dependencies ready');
+    this.logger.info('Dependencies ready');
   }
   
   /**
    * Load initial data with priority-based orchestration
    */
   async loadInitialData() {
-    console.log('🎼 DataLoadingOrchestrator: Starting initial data loading...');
+    this.logger.info('Starting initial data loading...');
     
     this.loadingPhase = 'initial';
     
@@ -157,26 +164,32 @@ export class DataLoadingOrchestrator {
     
     // Load high priority first (blocking)
     if (categoriesByPriority.high.length > 0) {
-      console.log('🚀 DataLoadingOrchestrator: Loading high-priority data...');
+      this.logger.info('Loading high-priority data...', { 
+        categories: categoriesByPriority.high 
+      });
       await this.loadCategoriesInParallel(categoriesByPriority.high, 'high');
     }
     
     // Load medium priority (non-blocking)
     if (categoriesByPriority.medium.length > 0) {
-      console.log('⚡ DataLoadingOrchestrator: Loading medium-priority data...');
+      this.logger.info('Loading medium-priority data...', { 
+        categories: categoriesByPriority.medium 
+      });
       this.loadCategoriesInParallel(categoriesByPriority.medium, 'medium');
     }
     
     // Load low priority (background)
     if (categoriesByPriority.low.length > 0) {
-      console.log('🐌 DataLoadingOrchestrator: Loading low-priority data...');
+      this.logger.info('Loading low-priority data...', { 
+        categories: categoriesByPriority.low 
+      });
       setTimeout(() => {
         this.loadCategoriesInParallel(categoriesByPriority.low, 'low');
       }, 500); // Delay low priority loading
     }
     
     this.loadingPhase = 'complete';
-    console.log('✅ DataLoadingOrchestrator: Initial data loading orchestrated');
+    this.logger.info('Initial data loading orchestrated');
   }
   
   /**
@@ -205,7 +218,7 @@ export class DataLoadingOrchestrator {
     for (let i = 0; i < categories.length; i += batchSize) {
       const batch = categories.slice(i, i + batchSize);
       
-      console.log(`📦 DataLoadingOrchestrator: Loading ${priority} priority batch:`, batch);
+      this.logger.debug(`Loading ${priority} priority batch`, { batch });
       
       // Load batch in parallel
       const batchPromises = batch.map(category => this.loadCategory(category));
@@ -217,10 +230,13 @@ export class DataLoadingOrchestrator {
         results.forEach((result, index) => {
           const category = batch[index];
           if (result.status === 'fulfilled') {
-            console.log(`✅ DataLoadingOrchestrator: ${category} loaded successfully`);
+            this.logger.info(`${category} loaded successfully`);
             this.loadedCategories.add(category);
           } else {
-            console.error(`❌ DataLoadingOrchestrator: ${category} failed to load:`, result.reason);
+            this.logger.error(`${category} failed to load`, { 
+              error: result.reason.message,
+              stack: result.reason.stack 
+            });
             this.handleLoadingError(category, result.reason);
           }
         });
@@ -231,7 +247,11 @@ export class DataLoadingOrchestrator {
         }
         
       } catch (error) {
-        console.error(`🚨 DataLoadingOrchestrator: Batch loading failed:`, error);
+        this.logger.error('Batch loading failed', { 
+          error: error.message,
+          stack: error.stack,
+          batch 
+        });
         batch.forEach(category => this.handleLoadingError(category, error));
       }
     }
@@ -242,12 +262,12 @@ export class DataLoadingOrchestrator {
    */
   async loadCategory(category) {
     if (this.loadedCategories.has(category)) {
-      console.warn(`DataLoadingOrchestrator: ${category} already loaded`);
+      this.logger.warn(`${category} already loaded`);
       return;
     }
     
     if (this.loadingPromises.has(category)) {
-      console.warn(`DataLoadingOrchestrator: ${category} already loading`);
+      this.logger.warn(`${category} already loading`);
       return this.loadingPromises.get(category);
     }
     
@@ -256,7 +276,7 @@ export class DataLoadingOrchestrator {
       throw new Error(`DataLoadingOrchestrator: No URL configured for category ${category}`);
     }
     
-    console.log(`🔧 DataLoadingOrchestrator: Loading ${category} from ${url}`);
+    this.logger.debug(`Loading ${category} from ${url}`);
     
     // Start performance tracking
     const startTime = performance.now();
@@ -288,7 +308,9 @@ export class DataLoadingOrchestrator {
         orchestrator: this 
       });
       
-      console.log(`✅ DataLoadingOrchestrator: ${category} loaded in ${duration.toFixed(2)}ms`);
+      this.logger.info(`${category} loaded successfully`, { 
+        duration: `${duration.toFixed(2)}ms` 
+      });
       return result;
       
     } catch (error) {
@@ -323,7 +345,10 @@ export class DataLoadingOrchestrator {
       // Try fallback URL if available
       const fallbackUrl = this.loadingConfig.fallbackUrls[category];
       if (fallbackUrl) {
-        console.warn(`DataLoadingOrchestrator: Primary URL failed for ${category}, trying fallback`);
+        this.logger.warn(`Primary URL failed for ${category}, trying fallback`, { 
+          category,
+          fallbackUrl 
+        });
         return await this.polygonLoader.loadCategory(category, fallbackUrl);
       }
       throw error;
@@ -334,7 +359,11 @@ export class DataLoadingOrchestrator {
    * Handle loading errors with recovery strategies
    */
   handleLoadingError(category, error) {
-    console.error(`🚨 DataLoadingOrchestrator: Error loading ${category}:`, error);
+    this.logger.error(`Error loading ${category}`, { 
+      category,
+      error: error.message,
+      stack: error.stack 
+    });
     
     // Record error for recovery
     this.errorRecovery.set(category, {
@@ -354,11 +383,11 @@ export class DataLoadingOrchestrator {
     const priority = this.loadingConfig.priorities[category];
     if (priority === 'high') {
       // High priority: retry immediately
-      console.log(`🔄 DataLoadingOrchestrator: Retrying high-priority ${category}...`);
+      this.logger.info(`Retrying high-priority ${category}...`);
       setTimeout(() => this.retryFailedLoad(category), 1000);
     } else if (priority === 'medium') {
       // Medium priority: retry with delay
-      console.log(`🔄 DataLoadingOrchestrator: Retrying medium-priority ${category} in 5s...`);
+      this.logger.info(`Retrying medium-priority ${category} in 5s...`);
       setTimeout(() => this.retryFailedLoad(category), 5000);
     }
     // Low priority: no automatic retry
@@ -373,16 +402,24 @@ export class DataLoadingOrchestrator {
     
     const maxRetries = 3;
     if (errorInfo.retryCount > maxRetries) {
-      console.error(`❌ DataLoadingOrchestrator: Max retries exceeded for ${category}`);
+      this.logger.error(`Max retries exceeded for ${category}`, { 
+        category,
+        retryCount: errorInfo.retryCount,
+        maxRetries 
+      });
       return;
     }
     
-    console.log(`🔄 DataLoadingOrchestrator: Retry ${errorInfo.retryCount}/${maxRetries} for ${category}`);
+    this.logger.info(`Retry ${errorInfo.retryCount}/${maxRetries} for ${category}`);
     
     try {
       await this.loadCategory(category);
     } catch (error) {
-      console.error(`❌ DataLoadingOrchestrator: Retry failed for ${category}:`, error);
+      this.logger.error(`Retry failed for ${category}`, { 
+        category,
+        error: error.message,
+        stack: error.stack 
+      });
     }
   }
   
@@ -400,7 +437,7 @@ export class DataLoadingOrchestrator {
       this.retryFailedLoad(category);
     });
     
-    console.log('✅ DataLoadingOrchestrator: Data management setup complete');
+    this.logger.info('Data management setup complete');
   }
   
   /**
@@ -435,7 +472,7 @@ export class DataLoadingOrchestrator {
    * Legacy preloader functionality - maintains backward compatibility
    */
   async startPreloading() {
-    console.log('🔄 DataLoadingOrchestrator: Starting legacy preloading sequence...');
+    this.logger.info('Starting legacy preloading sequence...');
     
     // Show loading spinner
     this.showLoadingSpinner();
@@ -468,7 +505,7 @@ export class DataLoadingOrchestrator {
           await this.loadCategory(category);
         }
         
-        console.log(`✅ DataLoadingOrchestrator: ${name} loaded successfully`);
+        this.logger.info(`${name} loaded successfully`);
         
         // Small delay between items (matching legacy behavior)
         if (i < preloadOrder.length - 1) {
@@ -476,7 +513,12 @@ export class DataLoadingOrchestrator {
         }
         
       } catch (error) {
-        console.error(`❌ DataLoadingOrchestrator: Failed to load ${name}:`, error);
+        this.logger.error(`Failed to load ${name}`, { 
+          name,
+          category,
+          error: error.message,
+          stack: error.stack 
+        });
         // Continue with next item even if one fails
       }
     }
@@ -484,7 +526,7 @@ export class DataLoadingOrchestrator {
     // Hide loading spinner
     this.hideLoadingSpinner();
     
-    console.log('✅ DataLoadingOrchestrator: Legacy preloading sequence complete');
+    this.logger.info('Legacy preloading sequence complete');
   }
   
   /**
@@ -546,29 +588,6 @@ export class DataLoadingOrchestrator {
 // Export singleton instance
 export const dataLoadingOrchestrator = new DataLoadingOrchestrator();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.DataLoadingOrchestrator = DataLoadingOrchestrator;
-  window.dataLoadingOrchestrator = dataLoadingOrchestrator;
-  
-  // Legacy compatibility layer - proxy old preloader functions to new ES6 system
-  console.log('🔧 DataLoadingOrchestrator: Setting up legacy compatibility layer');
-  
-  // Legacy preloader functions
-  window.startPreloading = () => {
-    console.log('🔄 Legacy startPreloading() called - delegating to DataLoadingOrchestrator');
-    return dataLoadingOrchestrator.startPreloading();
-  };
-  
-  // Legacy loading functions (if they exist)
-  if (typeof window.loadPolygonCategory === 'function') {
-    const originalLoadPolygonCategory = window.loadPolygonCategory;
-    window.loadPolygonCategory = (category, url) => {
-      console.log(`🔄 Legacy loadPolygonCategory(${category}, ${url}) called - delegating to DataLoadingOrchestrator`);
-      return dataLoadingOrchestrator.loadCategory(category);
-    };
-  }
-  
-  console.log('✅ DataLoadingOrchestrator: Legacy compatibility layer active');
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details
 

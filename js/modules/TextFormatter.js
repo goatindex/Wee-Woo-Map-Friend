@@ -465,10 +465,5 @@ export class TextFormatter {
 // Export singleton instance
 export const textFormatter = new TextFormatter();
 
-// Export for global access and legacy compatibility
-if (typeof window !== 'undefined') {
-  window.textFormatter = textFormatter;
-  window.toTitleCase = (str) => textFormatter.toTitleCase(str);
-  window.formatLgaName = (name) => textFormatter.formatLgaName(name);
-  window.formatFrvName = (name) => textFormatter.formatFrvName(name);
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

@@ -27,10 +27,13 @@ The project has successfully completed its migration to modern ES6 modules with 
 ### **Development** (`development/`)
 
 - **[Setup](development/setup.md)** - Developer environment setup
+- **[Testing](development/testing.md)** - Testing framework & procedures
+- **[Logging Architecture](development/logging-architecture.md)** - Structured logging system & integration
+- **[Legacy Compatibility System](development/legacy-compatibility-system.md)** - Consolidated legacy compatibility management
+- **[Error Recovery & Resilience](development/error-recovery-resilience.md)** - Error handling & system resilience
 - **[Migration Progress](development/migration-progress.md)** - Legacy to ES6 migration tracking
 - **[Contributing](development/contributing.md)** - Contribution guidelines
 - **[Code Style](development/code-style.md)** - Coding standards & patterns
-- **[Testing](development/testing.md)** - Testing framework & procedures
 
 ### **API Reference** (`api/`)
 
@@ -75,6 +78,8 @@ The project has successfully completed its migration to modern ES6 modules with 
 1. Review **[Development Setup](development/setup.md)**
 2. Understand **[Code Style](development/code-style.md)**
 3. Learn **[Testing Framework](development/testing.md)**
+4. Study **[Error Recovery & Resilience](development/error-recovery-resilience.md)**
+5. Integrate with **[Logging Architecture](development/logging-architecture.md)**
 
 ### **For Contributors**
 

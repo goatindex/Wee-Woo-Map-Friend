@@ -458,52 +458,5 @@ export class ConfigurationManager {
 // Export singleton instance
 export const configurationManager = new ConfigurationManager();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.configurationManager = configurationManager;
-  
-  // Legacy compatibility layer - proxy old window globals to new ES6 system
-  console.log('🔧 ConfigurationManager: Setting up legacy compatibility layer');
-  
-  // Proxy legacy configuration variables
-  Object.defineProperty(window, 'outlineColors', {
-    get: () => configurationManager.get('outlineColors'),
-    set: (value) => configurationManager.set('outlineColors', value),
-    configurable: true
-  });
-  
-  Object.defineProperty(window, 'baseOpacities', {
-    get: () => configurationManager.get('baseOpacities'),
-    set: (value) => configurationManager.set('baseOpacities', value),
-    configurable: true
-  });
-  
-  Object.defineProperty(window, 'labelColorAdjust', {
-    get: () => configurationManager.get('labelColorAdjust'),
-    set: (value) => configurationManager.set('labelColorAdjust', value),
-    configurable: true
-  });
-  
-  Object.defineProperty(window, 'headerColorAdjust', {
-    get: () => configurationManager.get('headerColorAdjust'),
-    set: (value) => configurationManager.set('headerColorAdjust', value),
-    configurable: true
-  });
-  
-  Object.defineProperty(window, 'categoryMeta', {
-    get: () => configurationManager.get('categoryMeta'),
-    set: (value) => configurationManager.set('categoryMeta', value),
-    configurable: true
-  });
-  
-  // Proxy legacy utility functions
-  window.adjustHexColor = configurationManager.getColorAdjuster();
-  
-  // Proxy legacy style functions
-  window.sesStyle = () => configurationManager.getStyle('ses')();
-  window.lgaStyle = () => configurationManager.getStyle('lga')();
-  window.cfaStyle = () => configurationManager.getStyle('cfa')();
-  window.frvStyle = () => configurationManager.getStyle('frv')();
-  
-  console.log('✅ ConfigurationManager: Legacy compatibility layer active');
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

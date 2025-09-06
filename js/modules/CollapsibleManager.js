@@ -379,6 +379,5 @@ export class CollapsibleManager {
 export const collapsibleManager = new CollapsibleManager();
 
 // Export for global access (ES6 module system)
-if (typeof window !== 'undefined') {
-  window.CollapsibleManager = collapsibleManager;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

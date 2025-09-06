@@ -334,9 +334,5 @@ export class SesUnitsLoader {
 // Export singleton instance
 export const sesUnitsLoader = new SesUnitsLoader();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.sesUnitsLoader = sesUnitsLoader;
-  // Legacy compatibility
-  window.loadSesUnits = () => sesUnitsLoader.load();
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

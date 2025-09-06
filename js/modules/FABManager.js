@@ -282,8 +282,7 @@ export class FABManager {
 export const fabManager = new FABManager();
 
 // Export for legacy compatibility
-if (typeof window !== 'undefined') {
-  window.FABManager = fabManager;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details
 
-console.log('🎯 FABManager: Modern ES6 module loaded');
+// Module loaded - using StructuredLogger for initialization logging

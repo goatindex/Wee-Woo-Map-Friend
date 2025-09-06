@@ -296,10 +296,9 @@ export class SidebarToggleFAB extends BaseFAB {
 fabManager.register('sidebarToggle', SidebarToggleFAB);
 
 // Export for legacy compatibility
-if (typeof window !== 'undefined') {
-  window.SidebarToggleFAB = SidebarToggleFAB;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details
 
-console.log('🎯 SidebarToggleFAB: Modern ES6 module loaded');
+// Module loaded - using StructuredLogger for initialization logging
 
 

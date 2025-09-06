@@ -455,3 +455,6 @@ export const formatAmbulanceName = (name) => labelManager.formatAmbulanceName(na
 export const formatPoliceName = (name) => labelManager.formatPoliceName(name);
 export const formatLgaName = (name) => labelManager.formatLgaName(name);
 export const getPolygonLabelAnchor = (layer) => labelManager.getPolygonLabelAnchor(layer);
+
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

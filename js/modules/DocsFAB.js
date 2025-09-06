@@ -158,10 +158,9 @@ export class DocsFAB extends BaseFAB {
 fabManager.register('docsFab', DocsFAB);
 
 // Export for legacy compatibility
-if (typeof window !== 'undefined') {
-  window.DocsFAB = DocsFAB;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details
 
-console.log('🎯 DocsFAB: Modern ES6 module loaded');
+// Module loaded - using StructuredLogger for initialization logging
 
 

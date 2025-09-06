@@ -288,7 +288,5 @@ export class DependencyRegistry {
 // Create singleton instance
 export const dependencyRegistry = new DependencyRegistry();
 
-// Export for global access
-if (typeof window !== 'undefined') {
-  window.DependencyRegistry = dependencyRegistry;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

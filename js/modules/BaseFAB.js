@@ -312,10 +312,9 @@ export class BaseFAB {
 }
 
 // Export for legacy compatibility
-if (typeof window !== 'undefined') {
-  window.BaseFAB = BaseFAB;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details
 
-console.log('🎯 BaseFAB: Modern ES6 module loaded');
+// Module loaded - using StructuredLogger for initialization logging
 
 

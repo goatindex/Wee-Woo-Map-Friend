@@ -47,6 +47,8 @@ An interactive emergency services mapping application for Victoria, Australia, f
 - **Smart Caching**: Service Worker with multiple caching strategies
 - **Web Workers**: Background processing for geometry calculations
 - **Offline Support**: Core functionality available without internet connection
+- **Structured Logging**: Centralized logging system with performance tracking and environment-aware filtering
+- **Error Recovery**: Comprehensive error recovery with graceful degradation and user feedback
 
 ## Quick Start
 
@@ -126,6 +128,36 @@ Project documentation reflects the completed ES6 migration, providing guidance f
 - **Architecture**: [System Overview](project_docs/architecture/overview.md)
 - **Development**: [Developer Setup](project_docs/development/setup.md)
 - **Testing**: [Testing Framework](project_docs/development/testing.md)
+- **Logging**: [Logging Architecture](project_docs/development/logging-architecture.md)
+- **Legacy Compatibility**: [Legacy Compatibility System](project_docs/development/legacy-compatibility-system.md)
+- **Error Recovery**: [Error Recovery & Resilience](project_docs/development/error-recovery-resilience.md)
+
+## Recent Improvements
+
+### **Legacy Compatibility System (January 2025)**
+- **Centralized management**: All legacy compatibility handled in one place
+- **19 core modules**: Automatically exposed globally with error handling
+- **No duplicate exposures**: All individual module global exposures removed and consolidated
+- **Legacy utility functions**: getMap(), BulkOperationManager, device functions
+- **Event system compatibility**: Legacy events automatically mapped and forwarded
+- **Performance optimized**: Zero impact on application performance
+
+### **Error Recovery & Resilience System (January 2025)**
+- **Comprehensive error recovery**: Automatic recovery with phase-specific strategies
+- **Graceful degradation**: Continue with reduced functionality when recovery fails
+- **User feedback**: Clear notifications about system status and limitations
+- **Network error handling**: Offline detection and retry logic with exponential backoff
+- **Resource cleanup**: Comprehensive cleanup system prevents memory leaks
+- **Enhanced testing**: Full test coverage for error recovery mechanisms
+
+### **Logging Architecture Migration (January 2025)**
+- **100% StructuredLogger compliance**: All modules now use centralized logging system
+- **Performance benefits**: Log level filtering in production (WARN/ERROR only)
+- **Better debugging**: Structured metadata and context inheritance
+- **ESLint integration**: Prevents future console.log usage
+- **Enhanced testing**: Log assertions and validation capabilities
+
+See [Error Recovery & Resilience Guide](project_docs/development/error-recovery-resilience.md) and [Logging Migration Report](project_docs/development/logging-migration-report.md) for detailed information.
 
 ## Native Mobile Apps
 

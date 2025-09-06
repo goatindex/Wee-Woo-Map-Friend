@@ -1065,7 +1065,5 @@ export class ActiveListManager {
 export const activeListManager = new ActiveListManager();
 
 // Export for global access (ES6 module system)
-if (typeof window !== 'undefined') {
-  window.ActiveListManager = ActiveListManager;
-  window.activeListManager = activeListManager;
-}
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details

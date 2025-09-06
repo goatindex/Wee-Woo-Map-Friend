@@ -67,6 +67,18 @@ WeeWoo Map Friend is built on a modern, responsive architecture that prioritizes
 - **`js/modules/SearchManager.js`** — Advanced search functionality with debouncing and indexing
 - **`js/modules/ActiveListManager.js`** — Modern active list management
 - **`js/modules/FABManager.js`** — Modern floating action button management system
+
+### Legacy Compatibility System
+
+- **`ApplicationBootstrap.setupLegacyCompatibility()`** — Centralized legacy compatibility management
+- **Legacy Bootstrap Functions** — `window.AppBootstrap`, `window.ApplicationBootstrap` for backward compatibility
+- **Core Module Global Exposures** — Automatic global exposure of 19 core modules with error handling
+- **No Duplicate Exposures** — All individual module global exposures removed and consolidated
+- **Legacy Utility Functions** — `window.getMap()`, `window.BulkOperationManager`, device functions
+- **Event System Compatibility** — Legacy event mapping and forwarding to modern event system
+
+### Floating Action Buttons
+
 - **`js/modules/BaseFAB.js`** — Base floating action button component
 - **`js/modules/DocsFAB.js`** — Documentation floating action button
 - **`js/modules/SidebarToggleFAB.js`** — Sidebar toggle floating action button
@@ -163,6 +175,15 @@ WeeWoo Map Friend is built on a modern, responsive architecture that prioritizes
 - **Data Preservation**: User work is preserved during error recovery
 - **Performance Monitoring**: Track error rates and recovery times
 
+### **Resource Management & Cleanup**
+
+- **Comprehensive Cleanup**: All resources tracked and cleaned up automatically
+- **Memory Management**: Prevents memory leaks from untracked resources
+- **Event Listener Management**: Automatic removal of all tracked event listeners
+- **Module Lifecycle**: Each module implements its own cleanup logic
+- **Graceful Shutdown**: Complete application destruction when needed
+- **Automatic Triggers**: Page unload/hide events trigger cleanup automatically
+
 ## Security Architecture
 
 ### **Data Validation & Integrity**
@@ -224,11 +245,22 @@ The project has successfully completed a comprehensive migration to ES6 modules:
 - ⚠️ **Legacy Event Handlers**: Some DOM event handlers still use legacy patterns
 - ⚠️ **Configuration**: Some configuration still uses global `window` variables
 
+**Consolidated Legacy Compatibility System (January 2025)**:
+- ✅ **Centralized Management**: All legacy compatibility handled through `ApplicationBootstrap.setupLegacyCompatibility()`
+- ✅ **Modular Design**: Organized into focused sub-methods for different compatibility aspects
+- ✅ **Error Resilience**: Graceful handling of missing modules with comprehensive logging
+- ✅ **Performance Optimized**: Only loads modules when needed, no impact on application performance
+- ✅ **19 Core Modules**: Automatically exposed globally with both classes and instances
+- ✅ **No Duplicate Exposures**: All individual module global exposures removed and consolidated
+- ✅ **Legacy Utility Functions**: getMap(), BulkOperationManager, device functions
+- ✅ **Event System Compatibility**: Legacy events automatically mapped and forwarded
+
 **Recent Critical Fixes (2025)**:
 - ✅ **Map Initialization**: Fixed duplicate initialization and circular reference issues
 - ✅ **State Serialization**: Implemented proper map state serialization strategy
-- ✅ **Legacy Compatibility**: Unified map access through single initialization path
-- ✅ **Error Handling**: Enhanced error recovery and graceful degradation
+- ✅ **Legacy Compatibility**: Consolidated, centralized legacy compatibility system
+- ✅ **Duplicate Global Exposures**: Removed all individual module global exposures
+- ✅ **Error Handling**: Enhanced error recovery with graceful degradation
 - ✅ **Performance**: Optimized map loading and state management
 
 **Migration Benefits**
@@ -239,9 +271,11 @@ The project has successfully completed a comprehensive migration to ES6 modules:
 - **Development Experience**: Better debugging and development tools
 
 **Legacy Compatibility Strategy**:
+- **Centralized Management**: All legacy compatibility handled in one place for easy maintenance
 - **Gradual Migration**: Legacy code is gradually being replaced with ES6 modules
 - **Backward Compatibility**: Legacy functions remain available during transition
 - **No Breaking Changes**: Existing functionality continues to work during migration
+- **Error Resilience**: Graceful handling of missing modules prevents failures
 - **Future Cleanup**: Legacy code will be removed once migration is 100% complete
 
 ## Architecture Guidelines

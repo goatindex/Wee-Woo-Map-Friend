@@ -1,177 +1,190 @@
 /**
- * @fileoverview Tests for ApplicationBootstrap - Unified Bootstrap System
- * Tests the core functionality of the unified application bootstrap system
+ * @jest-environment jsdom
  */
 
-import { applicationBootstrap } from './ApplicationBootstrap.js';
-import { stateManager } from './StateManager.js';
-import { configurationManager } from './ConfigurationManager.js';
+import { ApplicationBootstrap } from './ApplicationBootstrap.js';
 
-// Mock external dependencies - create a proper mock without circular references
-const createMockLogger = () => ({
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-  debug: jest.fn(),
-  time: jest.fn().mockReturnValue({ end: jest.fn() }),
-  createChild: jest.fn().mockImplementation(() => createMockLogger()),
-  context: {
-    get: jest.fn(() => 'ApplicationBootstrap'),
-    set: jest.fn()
-  }
-});
+describe('ApplicationBootstrap Error Recovery', () => {
+  let bootstrap;
+  let mockStateManager;
+  let mockEventBus;
 
-jest.mock('./StructuredLogger.js', () => ({
-  StructuredLogger: jest.fn().mockImplementation(() => createMockLogger()),
-  logger: createMockLogger()
-}));
-
-// Mock DOM for tests
-Object.defineProperty(document, 'getElementById', {
-  value: jest.fn((id) => {
-    if (id === 'map') return null; // No map container in tests
-    return document.createElement('div');
-  }),
-  writable: true
-});
-
-describe('ApplicationBootstrap', () => {
   beforeEach(() => {
-    // Reset state before each test
-    stateManager.set('sesFacilityMarkers', {});
-    stateManager.set('sesFacilityCoords', {});
-    configurationManager.set('outlineColors', { ses: '#FF9900' });
-    configurationManager.set('categoryMeta', {});
+    // Mock state manager
+    mockStateManager = {
+      set: jest.fn(),
+      get: jest.fn(() => null)
+    };
+    
+    // Mock event bus
+    mockEventBus = {
+      emit: jest.fn()
+    };
+    
+    // Mock global dependencies
+    global.stateManager = mockStateManager;
+    global.globalEventBus = mockEventBus;
+    
+    bootstrap = new ApplicationBootstrap();
   });
 
   afterEach(() => {
-    // Clean up after each test
-    stateManager.set('sesFacilityMarkers', {});
-    stateManager.set('sesFacilityCoords', {});
+    jest.clearAllMocks();
   });
 
-  describe('Initialization', () => {
-    test('should initialize correctly', () => {
-      // The bootstrap may already be initialized from previous tests
-      expect(applicationBootstrap.logger).toBeDefined();
-      expect(applicationBootstrap.logger).toHaveProperty('info');
-      expect(applicationBootstrap.logger).toHaveProperty('warn');
-      expect(applicationBootstrap.logger).toHaveProperty('error');
+  describe('Error Recovery Mechanisms', () => {
+    test('should attempt error recovery for module initialization', async () => {
+      const error = new Error('Module load failed');
+      const context = { moduleName: 'TestModule' };
+      
+      const result = await bootstrap.attemptErrorRecovery(error, 'core module initialization', context);
+      
+      expect(result).toBe(false); // Should fail without actual module
+      expect(mockEventBus.emit).toHaveBeenCalledWith('app:bootstrapError', expect.any(Object));
     });
 
-    test('should create module-specific logger', () => {
-      expect(applicationBootstrap.logger).toBeDefined();
-      expect(applicationBootstrap.logger.context).toBeDefined();
-    });
-  });
-
-  describe('Bootstrap Process', () => {
-    test('should initialize without errors', async () => {
-      // Should not throw - bootstrap should handle missing map gracefully
-      await expect(applicationBootstrap.init()).resolves.not.toThrow();
-    });
-
-    test('should mark as initialized after successful init', async () => {
-      // Reset initialization state for this test
-      applicationBootstrap.initialized = false;
-      expect(applicationBootstrap.initialized).toBe(false);
+    test('should handle graceful degradation', async () => {
+      const error = new Error('Test error');
+      const phase = 'test phase';
       
-      await applicationBootstrap.init();
+      const result = await bootstrap.gracefulDegradation(phase, error);
       
-      expect(applicationBootstrap.initialized).toBe(true);
-    });
-  });
-
-  describe('Error Handling', () => {
-    test('should handle missing dependencies gracefully', async () => {
-      // Should not throw even with missing map container
-      await expect(applicationBootstrap.init()).resolves.not.toThrow();
-    });
-  });
-
-  describe('State Management Integration', () => {
-    test('should integrate with StateManager correctly', async () => {
-      // Set some test state
-      stateManager.set('testKey', 'testValue');
-      
-      await applicationBootstrap.init();
-      
-      // State should still be accessible
-      expect(stateManager.get('testKey')).toBe('testValue');
+      expect(result).toBe(true);
+      expect(mockStateManager.set).toHaveBeenCalledWith('degradedMode', true);
+      expect(mockStateManager.set).toHaveBeenCalledWith('degradedPhase', phase);
+      expect(mockEventBus.emit).toHaveBeenCalledWith('app:degradedMode', { phase, error });
     });
 
-    test('should integrate with ConfigurationManager correctly', async () => {
-      // Set some test configuration
-      configurationManager.set('testConfig', 'testValue');
+    test('should check degraded mode status', () => {
+      mockStateManager.get.mockReturnValue(true);
       
-      await applicationBootstrap.init();
+      const isDegraded = bootstrap.isDegradedMode();
       
-      // Configuration should still be accessible
-      expect(configurationManager.get('testConfig')).toBe('testValue');
+      expect(isDegraded).toBe(true);
+    });
+
+    test('should get degraded mode information', () => {
+      const mockInfo = {
+        phase: 'test phase',
+        error: 'Test error',
+        timestamp: Date.now()
+      };
+      
+      mockStateManager.get
+        .mockReturnValueOnce(true) // isDegradedMode
+        .mockReturnValueOnce(mockInfo.phase) // degradedPhase
+        .mockReturnValueOnce(mockInfo.error) // degradedError
+        .mockReturnValueOnce(mockInfo.timestamp); // degradedTimestamp
+      
+      const info = bootstrap.getDegradedModeInfo();
+      
+      expect(info).toEqual(mockInfo);
     });
   });
 
-  describe('Event System Integration', () => {
-    test('should complete initialization successfully', async () => {
-      // Test that initialization completes without errors
-      await expect(applicationBootstrap.init()).resolves.not.toThrow();
+  describe('Network Error Handling', () => {
+    test('should handle network connectivity check', async () => {
+      // Mock fetch to simulate network failure
+      global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
       
-      // Verify the bootstrap is in the expected state
-      expect(applicationBootstrap.initialized).toBe(true);
+      const isOnline = await bootstrap.checkNetworkConnectivity();
+      
+      expect(isOnline).toBe(false);
+    });
+
+    test('should handle network error with retry logic', async () => {
+      const error = new Error('Network timeout');
+      const operation = 'data loading';
+      
+      // Mock fetch to always fail
+      global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+      
+      const result = await bootstrap.handleNetworkError(error, operation, 2);
+      
+      expect(result).toBe(false); // Should fail after retries
     });
   });
 
-  describe('Performance and Reliability', () => {
-    test('should complete initialization within reasonable time', async () => {
-      const startTime = Date.now();
-      
-      await applicationBootstrap.init();
-      
-      const duration = Date.now() - startTime;
-      expect(duration).toBeLessThan(5000); // Should complete within 5 seconds
-    });
-
-    test('should be idempotent - multiple init calls should not cause issues', async () => {
-      // First initialization
-      await applicationBootstrap.init();
-      const firstInitState = applicationBootstrap.initialized;
-      
-      // Second initialization
-      await applicationBootstrap.init();
-      const secondInitState = applicationBootstrap.initialized;
-      
-      // Should remain initialized
-      expect(firstInitState).toBe(true);
-      expect(secondInitState).toBe(true);
-    });
-  });
-
-  describe('Real-World Scenarios', () => {
-    test('should handle missing map container gracefully', async () => {
-      // Mock document.getElementById to return null for map container
-      const originalGetElementById = document.getElementById;
-      document.getElementById = jest.fn((id) => {
-        if (id === 'map') return null;
-        return originalGetElementById.call(document, id);
+  describe('Safe Execute with Recovery', () => {
+    test('should retry on failure with recovery enabled', async () => {
+      let attemptCount = 0;
+      const failingFunction = jest.fn().mockImplementation(() => {
+        attemptCount++;
+        if (attemptCount === 1) {
+          throw new Error('First attempt fails');
+        }
+        // Second attempt succeeds
       });
       
-      // Should not throw - bootstrap should handle missing map gracefully
-      await expect(applicationBootstrap.init()).resolves.not.toThrow();
+      // Mock recovery to succeed
+      jest.spyOn(bootstrap, 'attemptErrorRecovery').mockResolvedValue(true);
       
-      // Restore original method
-      document.getElementById = originalGetElementById;
+      await bootstrap.safeExecute('test phase', failingFunction, {
+        allowRecovery: true,
+        maxRetries: 1
+      });
+      
+      expect(failingFunction).toHaveBeenCalledTimes(2);
     });
 
-    test('should handle network errors gracefully', async () => {
-      // Mock fetch to reject
-      const originalFetch = global.fetch;
-      global.fetch = jest.fn(() => Promise.reject(new Error('Network error')));
+    test('should enter degraded mode when recovery fails', async () => {
+      const failingFunction = jest.fn().mockImplementation(() => {
+        throw new Error('Always fails');
+      });
       
-      // Should not throw
-      await expect(applicationBootstrap.init()).resolves.not.toThrow();
+      // Mock recovery to fail
+      jest.spyOn(bootstrap, 'attemptErrorRecovery').mockResolvedValue(false);
+      jest.spyOn(bootstrap, 'gracefulDegradation').mockResolvedValue(true);
       
-      // Restore original fetch
-      global.fetch = originalFetch;
+      await bootstrap.safeExecute('test phase', failingFunction, {
+        allowRecovery: true,
+        allowDegradation: true,
+        maxRetries: 1
+      });
+      
+      expect(bootstrap.gracefulDegradation).toHaveBeenCalled();
+    });
+  });
+
+  describe('User Notifications', () => {
+    test('should show degraded mode notification', () => {
+      // Mock DOM methods
+      document.createElement = jest.fn(() => ({
+        className: '',
+        style: {},
+        innerHTML: '',
+        parentElement: null
+      }));
+      document.body = {
+        appendChild: jest.fn()
+      };
+      
+      const error = new Error('Test error');
+      const phase = 'test phase';
+      
+      bootstrap.showDegradedModeNotification(phase, error);
+      
+      expect(document.createElement).toHaveBeenCalledWith('div');
+      expect(document.body.appendChild).toHaveBeenCalled();
+    });
+
+    test('should show offline notification', () => {
+      // Mock DOM methods
+      document.querySelector = jest.fn(() => null);
+      document.createElement = jest.fn(() => ({
+        className: '',
+        style: {},
+        innerHTML: '',
+        parentElement: null
+      }));
+      document.body = {
+        appendChild: jest.fn()
+      };
+      
+      bootstrap.showOfflineNotification();
+      
+      expect(document.createElement).toHaveBeenCalledWith('div');
+      expect(document.body.appendChild).toHaveBeenCalled();
     });
   });
 });

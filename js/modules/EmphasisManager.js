@@ -17,6 +17,38 @@ export class EmphasisManager {
   }
 
   /**
+   * Initialize the EmphasisManager
+   * @param {Object} dependencies - Dependencies object
+   */
+  async init(dependencies) {
+    const timer = this.logger.time('init-emphasis-manager');
+    
+    try {
+      this.logger.info('Initializing EmphasisManager...');
+      
+      // Initialize any required state or setup
+      // (Currently no specific initialization needed, but this provides consistency)
+      
+      timer.end({ success: true });
+      
+      this.logger.info('EmphasisManager initialization complete');
+      
+    } catch (error) {
+      timer.end({ 
+        error: error.message,
+        success: false 
+      });
+      
+      this.logger.error('Failed to initialize EmphasisManager', {
+        error: error.message,
+        stack: error.stack
+      });
+      
+      throw error;
+    }
+  }
+
+  /**
    * Set emphasis visual state for a given category/key.
    * Polygons: adjust fillOpacity; Points: toggle CSS class.
    * @param {'ses'|'lga'|'cfa'|'ambulance'} category
@@ -384,4 +416,6 @@ export const emphasisManager = new EmphasisManager();
 export const setEmphasis = (category, key, on, isPoint, dependencies) => 
   emphasisManager.setEmphasis(category, key, on, isPoint, dependencies);
 
+// Global exposure handled by consolidated legacy compatibility system
+// See ApplicationBootstrap.setupLegacyCompatibility() for details
 
