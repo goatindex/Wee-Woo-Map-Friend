@@ -88,6 +88,9 @@ export class ApplicationBootstrap {
       const { mapManager } = await import('./MapManager.js');
       await mapManager.init();
       
+      const { layerManager } = await import('./LayerManager.js');
+      await layerManager.init();
+      
       const { polygonLoader } = await import('./PolygonLoader.js');
       await polygonLoader.init();
       
@@ -145,7 +148,7 @@ export class ApplicationBootstrap {
    */
   async waitForNativeFeatures() {
     try {
-      const { nativeFeatures } = await import('./native/features.js');
+      const { nativeFeatures } = await import('../native/features.js');
       if (nativeFeatures && typeof nativeFeatures.waitForReady === 'function') {
         return await nativeFeatures.waitForReady();
       }
@@ -241,15 +244,15 @@ export class ApplicationBootstrap {
 
   /**
    * Initialize ES6 map system
+   * Note: MapManager is already initialized in initializeCoreModules() phase
    */
   async initES6MapSystem() {
     try {
-      const { mapManager } = await import('./MapManager.js');
-      if (mapManager && typeof mapManager.init === 'function') {
-        await mapManager.init();
-      }
+      // MapManager is already initialized in Phase 2 (initializeCoreModules)
+      // This phase is kept for future map-specific setup if needed
+      this.logger.info('Map system already initialized in core modules phase');
     } catch (error) {
-      this.logger.warn('Map system initialization failed', { error: error.message });
+      this.logger.warn('Map system setup failed', { error: error.message });
       // Don't throw - allow bootstrap to continue without map
     }
   }
@@ -259,9 +262,8 @@ export class ApplicationBootstrap {
    */
   async setupUI() {
     const { collapsibleManager } = await import('./CollapsibleManager.js');
-    if (collapsibleManager && typeof collapsibleManager.setupCollapsible === 'function') {
-      collapsibleManager.setupCollapsible();
-    }
+    // CollapsibleManager auto-initializes via initializeExistingSections()
+    // No manual setupCollapsible() call needed
   }
 
   /**

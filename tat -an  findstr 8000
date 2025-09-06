@@ -1,0 +1,10 @@
+[33m2b80b27[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge pull request #4 from goatindex/feature/controlled-aggressive-elimination
+[33mcd779af[m[33m ([m[1;31morigin/feature/controlled-aggressive-elimination[m[33m, [m[1;32mfeature/controlled-aggressive-elimination[m[33m)[m Controlled, aggressive elimination of legacy coverage artifacts and reports
+[33m0038275[m Controlled, aggressive elimination of legacy modules and migration artifacts; introduce ApplicationBootstrap, DependencyRegistry, and new test coverage for core managers. Remove obsolete files (AppBootstrap, ES6Bootstrap, app.js, migration logs, legacy docs). Update coverage and test reports to reflect new architecture. Establish performance and diagnostic baselines. Refactor test battery for real-code validation and ES6 modularity. See project_docs/testing-reflection-2025.md for rationale and next steps.
+[33m87dd3f2[m Week 4: Final Cleanup & Validation Complete
+[33m021168c[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-week-4-start[m[33m)[m Week 3: Legacy Dependency Elimination Complete
+[33m35183d6[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-week-3-start[m[33m, [m[1;32mbackup-week-3-start[m[33m)[m Week 2: Bridge System Removal Complete
+[33m147f8cc[m[33m ([m[1;33mtag: [m[1;33mcheckpoint-week-2-start[m[33m, [m[1;32mbackup-week-2-start[m[33m)[m Week 1: Preparation and Testing Complete
+[33m9f3f830[m[33m ([m[1;31morigin/feature/es6-migration-phase2[m[33m, [m[1;32mfeature/es6-migration-phase2[m[33m)[m Refactor logging system: introduce StructuredLogger and modular transports
+[33m47e65bb[m  PHASE 2 COMPLETE: Legacy Inventory Updated
+[33m8e97118[m  PHASE 2.4 COMPLETE: js/ui/mobileDocsNav.js  MobileDocsNavManager.js

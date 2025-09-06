@@ -113,6 +113,11 @@ export class ActiveListManager {
       this.scheduleUpdate();
     });
     
+    // Listen for state events from StateManager
+    globalEventBus.on('state:updateActiveList', () => {
+      this.scheduleUpdate();
+    });
+    
     console.log('✅ ActiveListManager: Event listeners setup complete');
   }
   

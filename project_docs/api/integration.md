@@ -2,17 +2,112 @@
 
 Comprehensive guide to third-party services, data sources, and external API integrations for WeeWoo Map Friend.
 
+> **Note**: This documentation describes planned future integrations. The current application is frontend-only with no backend API. These integrations are designed for future backend implementation.
+
 ## 📋 **Table of Contents**
 
-- [Weather Providers](#weather-providers)
+- [Current Integrations](#current-integrations)
+- [Planned Weather Providers](#planned-weather-providers)
 - [Data Sources](#data-sources)
 - [External Services](#external-services)
+- [Future Backend Architecture](#future-backend-architecture)
 - [Authentication & Security](#authentication--security)
 - [Rate Limits & Quotas](#rate-limits--quotas)
 - [Error Handling](#error-handling)
 - [Best Practices](#best-practices)
 
-## 🌦️ **Weather Providers**
+## 🔌 **Current Integrations**
+
+### **Frontend-Only Architecture**
+
+The current WeeWoo Map Friend application is a frontend-only web application with the following integrations:
+
+#### **Leaflet.js Mapping**
+- **Purpose**: Interactive map rendering and GeoJSON visualization
+- **Integration**: Direct CDN integration via `unpkg.com`
+- **Features**: Tile layers, GeoJSON rendering, user interactions
+
+#### **Turf.js Spatial Analysis**
+- **Purpose**: Geometric calculations and spatial analysis
+- **Integration**: Direct CDN integration via `jsdelivr.net`
+- **Features**: Distance calculations, polygon operations, spatial queries
+
+#### **Proj4.js Coordinate Conversion**
+- **Purpose**: Coordinate system transformations
+- **Integration**: Direct CDN integration via `jsdelivr.net`
+- **Features**: MGA94 to WGS84 conversion, projection management
+
+#### **OpenStreetMap Tiles**
+- **Purpose**: Base map tiles
+- **Integration**: Direct tile server requests
+- **Features**: Multiple tile servers for redundancy
+
+#### **Nominatim Geocoding**
+- **Purpose**: Address search and geocoding
+- **Integration**: Direct API calls to OpenStreetMap Nominatim
+- **Features**: Address search, coordinate lookup
+
+### **Native Mobile Integration**
+
+#### **Capacitor Framework**
+- **Purpose**: Native mobile app capabilities
+- **Integration**: Via `js/native/features.js`
+- **Features**: Geolocation, haptics, status bar, device info
+- **Fallbacks**: Web API fallbacks when native features unavailable
+
+## 🏗️ **Future Backend Architecture**
+
+### **Planned Backend Services**
+
+The following backend services are planned for future implementation:
+
+#### **Weather Service API**
+- **Purpose**: Centralized weather data aggregation
+- **Technology**: Python Flask/FastAPI backend
+- **Features**: Multiple weather provider integration, caching, rate limiting
+- **Endpoints**: `/api/weather`, `/api/weather/forecast`, `/api/weather/alerts`
+
+#### **Data Management API**
+- **Purpose**: GeoJSON data management and updates
+- **Technology**: Python backend with GeoJSON processing
+- **Features**: Data validation, coordinate conversion, caching
+- **Endpoints**: `/api/data/ses`, `/api/data/lga`, `/api/data/cfa`
+
+#### **Search & Geocoding API**
+- **Purpose**: Enhanced search capabilities
+- **Technology**: Elasticsearch or similar search engine
+- **Features**: Full-text search, geospatial queries, autocomplete
+- **Endpoints**: `/api/search`, `/api/geocode`, `/api/autocomplete`
+
+#### **Analytics & Monitoring API**
+- **Purpose**: Usage analytics and performance monitoring
+- **Technology**: Python backend with analytics database
+- **Features**: Usage tracking, performance metrics, error reporting
+- **Endpoints**: `/api/analytics`, `/api/health`, `/api/metrics`
+
+### **Backend Integration Strategy**
+
+#### **API-First Design**
+- All backend services expose RESTful APIs
+- Frontend communicates via HTTP/HTTPS
+- JSON data format for all communications
+- Consistent error handling and response formats
+
+#### **Security Architecture**
+- API key authentication for external services
+- CORS configuration for web security
+- Rate limiting and request throttling
+- Input validation and sanitization
+
+#### **Performance Optimization**
+- Redis caching for frequently accessed data
+- CDN integration for static assets
+- Database connection pooling
+- Async processing for heavy operations
+
+## 🌦️ **Planned Weather Providers**
+
+> **Status**: These weather integrations are planned for future backend implementation.
 
 ### **WillyWeather API**
 

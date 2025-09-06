@@ -162,7 +162,7 @@ window.endBulkOperation(); // Processes deferred labels
 
 ### **2. Modern State Management (StateManager)**
 
-#### **Reactive State**
+#### **Reactive State with Map State Serialization**
 
 ```javascript
 import { StateManager } from './modules/StateManager.js';
@@ -176,6 +176,10 @@ const currentLayers = stateManager.state.featureLayers;
 // Update state (triggers reactivity)
 stateManager.state.activeListFilter = 'new filter';
 stateManager.state.featureLayers.ses = newSesLayers;
+
+// Map state is stored as serializable data (no circular references)
+const mapState = stateManager.state.map;
+// Returns: { id, center: {lat, lng}, zoom, bounds: {north, south, east, west}, ready }
 ```
 
 #### **State Watchers**
@@ -207,6 +211,35 @@ stateManager.computed('activeFeatureCount', () => {
 
 // Use computed property
 const totalFeatures = stateManager.state.activeFeatureCount;
+```
+
+#### **Map State Serialization Strategy**
+
+```javascript
+// Map state is stored as serializable data to avoid circular references
+function serializeMapState(map) {
+  const center = map.getCenter();
+  const bounds = map.getBounds();
+  
+  return {
+    id: map._leaflet_id,
+    center: {
+      lat: center.lat,
+      lng: center.lng
+    },
+    zoom: map.getZoom(),
+    bounds: {
+      north: bounds.getNorth(),
+      south: bounds.getSouth(),
+      east: bounds.getEast(),
+      west: bounds.getWest()
+    },
+    ready: true
+  };
+}
+
+// StateManager skips circular reference checks for map state
+stateManager.set('map', serializeMapState(this.map));
 ```
 
 #### **Middleware**

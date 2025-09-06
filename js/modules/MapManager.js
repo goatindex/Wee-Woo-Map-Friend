@@ -52,8 +52,15 @@ export class MapManager {
    */
   async init() {
     if (this.initialized) {
-      console.warn('MapManager: Already initialized');
+      console.warn('MapManager: Already initialized - skipping duplicate initialization');
       return;
+    }
+    
+    // Additional guard: check if map container already has a map
+    const mapContainer = document.getElementById('map');
+    if (mapContainer && mapContainer._leaflet_id) {
+      console.warn('MapManager: Map container already has a Leaflet map - cleaning up first');
+      this.cleanup();
     }
     
     try {
@@ -77,8 +84,26 @@ export class MapManager {
       // Set up map events
       this.setupMapEvents();
       
-      // Store map reference in state manager
-      stateManager.set('map', this.map);
+      // Store only serializable map state in state manager
+      // Store map instance separately to avoid circular references
+      const center = this.map.getCenter();
+      const bounds = this.map.getBounds();
+      
+      stateManager.set('map', {
+        id: this.map._leaflet_id,
+        center: {
+          lat: center.lat,
+          lng: center.lng
+        },
+        zoom: this.map.getZoom(),
+        bounds: {
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest()
+        },
+        ready: true
+      });
       
       // Store default view
       this.defaultView = {
@@ -148,11 +173,8 @@ export class MapManager {
       // Create map instance with optimized settings
       this.map = L.map('map', this.config);
       
-      // Store map reference for legacy compatibility
-      if (typeof window !== 'undefined') {
-        window.map = this.map;
-        window.getMap = () => this.map;
-      }
+      // Legacy compatibility handled through StateManager
+      // No direct window.map assignment to avoid fragmented state
       
       console.log('✅ MapManager: Map instance created');
       
@@ -297,10 +319,39 @@ export class MapManager {
   }
   
   /**
+   * Get map instance from state manager (for legacy compatibility)
+   * Returns the actual map instance, not the serialized state
+   */
+  static getMapFromState() {
+    return mapManager.getMap();
+  }
+  
+  /**
    * Check if map is ready
    */
   isReady() {
     return this.initialized && this.map !== null;
+  }
+  
+  /**
+   * Clean up existing map instance
+   */
+  cleanup() {
+    if (this.map) {
+      try {
+        this.map.remove();
+        console.log('✅ MapManager: Existing map cleaned up');
+      } catch (error) {
+        console.warn('MapManager: Error cleaning up map:', error);
+      }
+      this.map = null;
+    }
+    
+    // Reset state
+    this.initialized = false;
+    this.defaultView = null;
+    this.baseTileLayer = null;
+    this.zoomControl = null;
   }
   
   /**

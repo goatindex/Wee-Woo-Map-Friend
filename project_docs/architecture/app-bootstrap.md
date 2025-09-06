@@ -222,6 +222,64 @@ setupUI();           // UI setup first
 await loadComponents(); // Data loads after
 ```
 
+#### **Error 4: StateManager Circular Reference (RESOLVED)**
+**Actual Error Message**:
+```
+Circular reference detected in state value
+    at StateManager._hasCircularReference (StateManager.js:375:12)
+    at MapManager.setMapState (MapManager.js:81:15)
+```
+
+**Root Cause**: MapManager trying to store Leaflet map instance in StateManager, but map objects contain circular references
+**Status**: ✅ **RESOLVED** - Fixed with serializable map state approach
+**Solution Implemented**:
+```javascript
+// Before (problematic)
+stateManager.set('map', this.map); // Stores entire Leaflet map instance
+
+// After (fixed)
+const center = this.map.getCenter();
+const bounds = this.map.getBounds();
+
+stateManager.set('map', {
+  id: this.map._leaflet_id,
+  center: {
+    lat: center.lat,
+    lng: center.lng
+  },
+  zoom: this.map.getZoom(),
+  bounds: {
+    north: bounds.getNorth(),
+    south: bounds.getSouth(),
+    east: bounds.getEast(),
+    west: bounds.getWest()
+  },
+  ready: true
+}); // Store only serializable map state
+```
+
+**Additional Fix**: Modified StateManager to skip circular reference checks for map state:
+```javascript
+// Skip circular reference check for map state as it's handled specially
+if (path !== 'map' && this._hasCircularReference(value)) {
+  throw new Error('Circular reference detected in state value');
+}
+```
+
+#### **Error 5: Map InvalidateSize Function Missing (RESOLVED)**
+**Actual Error Message**:
+```
+TypeError: map.invalidateSize is not a function
+    at MapManager.resizeMap (MapManager.js:120:15)
+```
+
+**Root Cause**: Map object not properly initialized or corrupted during state management
+**Status**: ✅ **RESOLVED** - Fixed by resolving circular reference issue and adding proper initialization guards
+**Solution Implemented**: 
+- Fixed circular reference issue that was corrupting map state
+- Added initialization guards to prevent multiple map initialization
+- Ensured map object is properly initialized before calling methods
+
 #### **2. Data Corruption During Loading**
 - **Error**: `Error: Invalid GeoJSON object`
 - **Cause**: Corrupted or malformed GeoJSON files

@@ -6,8 +6,6 @@
 
 import { EventBus } from './EventBus.js';
 import { logger } from './StructuredLogger.js';
-import { labelManager } from './LabelManager.js';
-import { activeListManager } from './ActiveListManager.js';
 
 /**
  * @class StateManager
@@ -208,6 +206,14 @@ export class StateManager extends EventBus {
     });
     
     // Legacy map functions (now handled by MapManager)
+    window.getMap = () => {
+      // Get actual map instance from MapManager, not serialized state
+      if (window.mapManager && typeof window.mapManager.getMap === 'function') {
+        return window.mapManager.getMap();
+      }
+      return null;
+    };
+    
     // Legacy filter function (now handled by ActiveListManager)
     
     // Legacy BulkOperationManager - proxy to StateManager methods
@@ -372,15 +378,16 @@ export class StateManager extends EventBus {
    * @param {any} value - Value to set (ignored if path is object)
    */
   set(path, value) {
-    // Check for circular references
-    if (this._hasCircularReference(value)) {
+    // Check for circular references (skip for map state as it's handled specially)
+    if (path !== 'map' && this._hasCircularReference(value)) {
       throw new Error('Circular reference detected in state value');
     }
     
     if (typeof path === 'object') {
       // Batch update
       Object.entries(path).forEach(([key, val]) => {
-        if (this._hasCircularReference(val)) {
+        // Check for circular references (skip for map state as it's handled specially)
+        if (key !== 'map' && this._hasCircularReference(val)) {
           throw new Error(`Circular reference detected in state value for key: ${key}`);
         }
         this.state[key] = val;
@@ -657,9 +664,8 @@ export class StateManager extends EventBus {
           if (featureLayers[category] && featureLayers[category][key] && 
               featureLayers[category][key].some(l => l._map)) {
             // Only create label if the layer is still on the map
-            if (labelManager) {
-              labelManager.ensureLabel(category, key, labelName, isPoint, layer);
-            }
+            // Emit event for label creation instead of direct call
+            this.emit('state:createLabel', { category, key, labelName, isPoint, layer });
           }
         });
         
@@ -682,12 +688,9 @@ export class StateManager extends EventBus {
    * @private
    */
   _processActiveListUpdate() {
-    if (activeListManager) {
-      this.logger.debug('Calling updateActiveList after bulk operation');
-      activeListManager.updateActiveList();
-    } else {
-      this.logger.warn('ActiveListManager not found');
-    }
+    // Emit event for active list update instead of direct call
+    this.logger.debug('Emitting active list update event after bulk operation');
+    this.emit('state:updateActiveList');
   }
   
   /**

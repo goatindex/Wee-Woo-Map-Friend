@@ -81,7 +81,25 @@ WeeWoo Map Friend is built on a modern, responsive architecture that prioritizes
 - **`js/modules/LabelManager.js`** — Label management and positioning
 - **`js/modules/UtilityManager.js`** — General utility functions
 - **`js/modules/DeviceManager.js`** — Device detection and platform optimization
-- **`js/native/*.js`** — Native platform integration and feature detection
+
+### Native Platform Integration
+
+- **`js/native/features.js`** — Native app features integration with graceful web fallbacks
+- **Capacitor Integration** — Native mobile app capabilities (geolocation, haptics, status bar)
+- **Platform Detection** — Automatic detection of native vs. web environment
+- **Feature Fallbacks** — Web API fallbacks when native features unavailable
+
+### Testing & Development
+
+- **`js/testing/PerformanceTestSuite.js`** — Performance testing and benchmarking framework
+- **`js/testing/Phase1TestFramework.js`** — Phase 1 testing framework for migration validation
+- **`js/testing/run-phase1-tests.js`** — Test execution and reporting system
+
+### Web Workers
+
+- **`js/workers/geometryWorker.js`** — Background geometry processing for performance optimization
+- **Async Processing** — Heavy spatial calculations without blocking main thread
+- **Performance Enhancement** — Improved responsiveness during complex operations
 
 ## Event Flow
 
@@ -187,15 +205,44 @@ The project has successfully completed a comprehensive migration to ES6 modules:
 - **ES6Bootstrap**: Central coordination of all modern modules
 - **Modular Design**: 15+ ES6 modules with clear separation of concerns
 - **Event-Driven**: globalEventBus for loose coupling between modules
-- **Legacy Compatibility**: Backward compatibility maintained for existing functionality
 - **Performance Optimized**: Modern JavaScript features and optimizations
 
-#### **Migration Benefits**
+#### **Legacy Compatibility Status**
+
+**What's Been Migrated (Modern ES6)**:
+- ✅ **All Core Modules**: StateManager, UIManager, MapManager, etc.
+- ✅ **Data Loading**: PolygonLoader, AmbulanceLoader, PoliceLoader, etc.
+- ✅ **UI Components**: CollapsibleManager, SearchManager, FABManager, etc.
+- ✅ **Utilities**: CoordinateConverter, ErrorUI, TextFormatter, etc.
+- ✅ **Event System**: globalEventBus for module communication
+- ✅ **State Management**: Modern reactive state with StateManager
+- ✅ **Map State Management**: Serializable map state with circular reference handling
+
+**What Remains Legacy (Window Globals)**:
+- ⚠️ **Global State Objects**: `window.featureLayers`, `window.emphasised`, `window.namesByCategory`
+- ⚠️ **Global Functions**: Some utility functions still attached to `window` object
+- ⚠️ **Legacy Event Handlers**: Some DOM event handlers still use legacy patterns
+- ⚠️ **Configuration**: Some configuration still uses global `window` variables
+
+**Recent Critical Fixes (2025)**:
+- ✅ **Map Initialization**: Fixed duplicate initialization and circular reference issues
+- ✅ **State Serialization**: Implemented proper map state serialization strategy
+- ✅ **Legacy Compatibility**: Unified map access through single initialization path
+- ✅ **Error Handling**: Enhanced error recovery and graceful degradation
+- ✅ **Performance**: Optimized map loading and state management
+
+**Migration Benefits**
 - **Maintainability**: Clear module boundaries and responsibilities
 - **Performance**: Modern JavaScript engine optimizations
 - **Scalability**: Easy to add new features and modules
 - **Testing**: Improved testability with modular architecture
 - **Development Experience**: Better debugging and development tools
+
+**Legacy Compatibility Strategy**:
+- **Gradual Migration**: Legacy code is gradually being replaced with ES6 modules
+- **Backward Compatibility**: Legacy functions remain available during transition
+- **No Breaking Changes**: Existing functionality continues to work during migration
+- **Future Cleanup**: Legacy code will be removed once migration is 100% complete
 
 ## Architecture Guidelines
 

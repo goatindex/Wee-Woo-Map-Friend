@@ -5,6 +5,7 @@
  */
 
 import { logger } from './StructuredLogger.js';
+import { globalEventBus } from './EventBus.js';
 
 /**
  * LabelManager - Handles creation and management of map name labels
@@ -13,6 +14,20 @@ export class LabelManager {
   constructor() {
     this.logger = logger.createChild({ module: 'LabelManager' });
     this.logger.info('LabelManager initialized');
+  }
+
+  /**
+   * Initialize the LabelManager and set up event listeners
+   */
+  async init() {
+    this.logger.info('Initializing LabelManager...');
+    
+    // Listen for state events
+    globalEventBus.on('state:createLabel', (data) => {
+      this.ensureLabel(data.category, data.key, data.labelName, data.isPoint, data.layer);
+    });
+    
+    this.logger.info('LabelManager initialization complete');
   }
 
   /**

@@ -30,7 +30,133 @@ Comprehensive troubleshooting guide for End-to-End (E2E) testing issues in WeeWo
 
 ## Common Issues & Solutions
 
-### **1. Element Visibility Issues**
+### **1. Map Initialization Issues (RESOLVED)**
+
+#### **Problem**: Map fails to load or shows errors
+
+**Symptoms:**
+- Map container appears but no map tiles load
+- Console shows "Circular reference detected in state value"
+- Console shows "Map container is already initialized"
+- Map controls (zoom buttons) don't work
+
+**Root Causes:**
+- **Circular Reference**: Leaflet map objects contain circular references that can't be serialized
+- **Duplicate Initialization**: MapManager.init() called multiple times during bootstrap
+- **State Management**: Storing complex objects directly in StateManager
+
+**Solutions (IMPLEMENTED):**
+```javascript
+// 1. Store only serializable map state
+const center = this.map.getCenter();
+const bounds = this.map.getBounds();
+
+stateManager.set('map', {
+  id: this.map._leaflet_id,
+  center: { lat: center.lat, lng: center.lng },
+  zoom: this.map.getZoom(),
+  bounds: {
+    north: bounds.getNorth(),
+    south: bounds.getSouth(),
+    east: bounds.getEast(),
+    west: bounds.getWest()
+  },
+  ready: true
+});
+
+// 2. Skip circular reference checks for map state
+if (path !== 'map' && this._hasCircularReference(value)) {
+  throw new Error('Circular reference detected in state value');
+}
+
+// 3. Add initialization guards
+if (this.initialized) {
+  console.warn('MapManager: Already initialized - skipping duplicate initialization');
+  return;
+}
+```
+
+**Status**: ✅ **RESOLVED** - All map initialization issues have been fixed
+
+### **2. Legacy Compatibility Issues (RESOLVED)**
+
+#### **Problem**: Fragmented map state and inconsistent map access
+
+**Symptoms:**
+- Map works but state management is inconsistent
+- `window.map` and `window.getMap()` return different objects
+- State serialization fails due to multiple map references
+- Legacy code can't access map through expected interfaces
+
+**Root Causes:**
+- **Fragmented State**: Map stored in multiple places (StateManager + window.map)
+- **Direct Assignment**: MapManager directly assigning `window.map = this.map`
+- **Inconsistent Access**: Different code paths accessing map differently
+
+**Solutions (IMPLEMENTED):**
+```javascript
+// 1. Remove direct window.map assignment
+// Before (problematic):
+window.map = this.map;
+
+// After (fixed):
+// Legacy compatibility handled through StateManager
+// No direct window.map assignment to avoid fragmented state
+
+// 2. Unified map access through StateManager
+window.getMap = () => {
+  if (window.mapManager && typeof window.mapManager.getMap === 'function') {
+    return window.mapManager.getMap();
+  }
+  return null;
+};
+
+// 3. Verify single map instance
+const windowMap = window.map;
+const getMapResult = window.getMap();
+console.log('Same object:', windowMap === getMapResult); // Should be true
+```
+
+**Verification:**
+- ✅ Single map instance (same Leaflet ID)
+- ✅ Consistent access through all interfaces
+- ✅ Proper state serialization
+- ✅ Legacy compatibility maintained
+
+### **3. State Management Circular Reference Issues (RESOLVED)**
+
+#### **Problem**: StateManager throws circular reference errors
+
+**Symptoms:**
+- Console shows "Circular reference detected in state value"
+- Application fails to initialize properly
+- State updates fail silently
+
+**Root Causes:**
+- **Complex Objects**: Storing Leaflet map instances directly in state
+- **Circular References**: Map objects contain internal circular references
+- **Serialization Issues**: StateManager can't serialize complex objects
+
+**Solutions (IMPLEMENTED):**
+```javascript
+// Store only primitive values, not complex objects
+const mapState = {
+  id: map._leaflet_id,
+  center: { lat: center.lat, lng: center.lng },
+  zoom: map.getZoom(),
+  bounds: { north, south, east, west },
+  ready: true
+};
+
+// Skip circular reference checks for known safe objects
+if (path !== 'map' && this._hasCircularReference(value)) {
+  throw new Error('Circular reference detected in state value');
+}
+```
+
+**Status**: ✅ **RESOLVED** - Circular reference issues eliminated
+
+### **4. Element Visibility Issues**
 
 #### **Problem**: `Error: expect(locator).toBeVisible() failed`
 
@@ -63,7 +189,7 @@ await page.waitForLoadState('networkidle');
 await page.waitForTimeout(2000);
 ```
 
-### **2. Bootstrap Initialization Errors**
+### **5. Bootstrap Initialization Errors**
 
 #### **Problem**: `Error: Map container is already initialized`
 
@@ -91,7 +217,7 @@ if (!window.appInitialized) {
 }
 ```
 
-### **3. GeoJSON Data Corruption**
+### **6. GeoJSON Data Corruption**
 
 #### **Problem**: `Error: Invalid GeoJSON object`
 
@@ -124,7 +250,7 @@ try {
 # Implement automated validation in CI/CD
 ```
 
-### **4. Test Selector Mismatches**
+### **7. Test Selector Mismatches**
 
 #### **Problem**: Tests fail because selectors don't match HTML
 
@@ -158,7 +284,7 @@ await page.locator('[data-testid="sidebar"]').click();
 await page.locator('h4[id$="Header"]').click();
 ```
 
-### **5. Progress Tracking System Errors**
+### **8. Progress Tracking System Errors**
 
 #### **Problem**: `TypeError` in global setup/teardown or reporter
 

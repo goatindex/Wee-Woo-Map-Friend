@@ -11,6 +11,30 @@
 7. **Documentation Standards**: Use clear code comments, JSDoc for functions, and update the README for major changes to improve maintainability and onboarding.
 8. **Performance Considerations**: Optimize for speed and responsiveness, especially for map rendering and data loading. Discuss tradeoffs between code clarity and performance when relevant.
 9. **Learning Mode**: In preflights, include a brief teaching note (what/why, key concepts, trade‑offs). Prefer concrete, project‑specific examples over abstract theory.
+10. **Tool Selection Strategy**: ALWAYS use GitHub MCP for git operations and appropriate testing tools for validation. Avoid terminal git commands and use proper testing tools when available.
+
+---
+
+## Tool Usage Guidelines
+
+### **Git Operations: Use GitHub MCP ONLY**
+- ✅ Use `mcp_GitHub_*` tools for all git operations
+- ❌ NEVER use `run_terminal_cmd` for git commands
+- ✅ Create branches, PRs, merges via GitHub MCP
+- ✅ Get file contents, search code via GitHub MCP
+
+### **Testing & Validation: Use Appropriate Tools**
+- ✅ Use browser testing tools when properly configured
+- ✅ Use terminal commands for basic server testing
+- ✅ Use GitHub MCP for code analysis and file inspection
+- ❌ NEVER use `curl` or terminal commands for browser testing
+
+### **Terminal Commands: Use Sparingly**
+- ✅ Development server: `npm run dev`, `python -m http.server`
+- ✅ File operations: `ls`, `cat`, `mkdir` (when MCP unavailable)
+- ✅ Package management: `npm install`, `npm test` (when MCP unavailable)
+- ❌ Git operations: Use GitHub MCP instead
+- ❌ Testing: Use appropriate testing tools instead
 
 ---
 
