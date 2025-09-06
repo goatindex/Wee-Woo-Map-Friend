@@ -1002,3 +1002,19 @@ backend/requirements.txt
 js/ui/activeList.js
 backend/app.py
 .venv/pyvenv.cfg
+
+# Generated test artifacts
+coverage/
+playwright-report/
+coverage-quality/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Performance data
+performance-baseline.json
+
+# Generated files cleanup - added by cleanup script
