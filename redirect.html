@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeeWoo Map Friend - Redirecting...</title>
+    <meta http-equiv="refresh" content="3;url=https://goatindex.github.io/Wee-Woo-Map-Friend/">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .emoji {
+            font-size: 1.2em;
+            margin-right: 10px;
+        }
+        p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .redirect-link {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        .redirect-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .countdown {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #ffeb3b;
+        }
+        .info {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">🚨🗺️🫶</span> WeeWoo Map Friend</h1>
+        
+        <p>We've moved to a new location!</p>
+        
+        <div class="countdown" id="countdown">Redirecting in 3 seconds...</div>
+        
+        <a href="https://goatindex.github.io/Wee-Woo-Map-Friend/" class="redirect-link">
+            Go to New Location →
+        </a>
+        
+        <div class="info">
+            <p><strong>What happened?</strong></p>
+            <p>The WeeWoo Map Friend repository has been renamed to better reflect its purpose. 
+            You're being automatically redirected to the new location.</p>
+            
+            <p><strong>New URL:</strong><br>
+            <code>https://goatindex.github.io/Wee-Woo-Map-Friend/</code></p>
+            
+            <p><strong>Bookmark the new URL</strong> to access the map directly in the future.</p>
+        </div>
+    </div>
+
+    <script>
+        // Countdown timer
+        let seconds = 3;
+        const countdownElement = document.getElementById('countdown');
+        
+        const timer = setInterval(() => {
+            seconds--;
+            if (seconds > 0) {
+                countdownElement.textContent = `Redirecting in ${seconds} second${seconds !== 1 ? 's' : ''}...`;
+            } else {
+                countdownElement.textContent = 'Redirecting now...';
+                clearInterval(timer);
+            }
+        }, 1000);
+        
+        // Immediate redirect if user clicks anywhere
+        document.addEventListener('click', () => {
+            window.location.href = 'https://goatindex.github.io/Wee-Woo-Map-Friend/';
+        });
+        
+        // Fallback redirect after 5 seconds
+        setTimeout(() => {
+            window.location.href = 'https://goatindex.github.io/Wee-Woo-Map-Friend/';
+        }, 5000);
+    </script>
+</body>
+</html>
