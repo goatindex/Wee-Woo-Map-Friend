@@ -42,12 +42,19 @@ export class SearchManager {
    */
   async init() {
     if (this.initialized) {
-      console.warn('SearchManager: Already initialized');
+      this.logger.warn('Already initialized', {
+        operation: 'init',
+        currentState: 'initialized'
+      });
       return;
     }
     
+    const timer = this.logger.time('search-manager-initialization');
     try {
-      console.log('🔧 SearchManager: Starting initialization...');
+      this.logger.info('Starting initialization', {
+        operation: 'init',
+        searchIndexSize: this.searchIndex.size
+      });
       
       // Set up global event listeners
       this.setupEventListeners();
@@ -60,10 +67,23 @@ export class SearchManager {
       }
       
       this.initialized = true;
+      timer.end({
+        success: true,
+        searchIndexSize: this.searchIndex.size
+      });
       this.logger.info('Search management system ready');
       
     } catch (error) {
-      console.error('🚨 SearchManager: Failed to initialize:', error);
+      timer.end({
+        success: false,
+        error: error.message,
+        searchIndexSize: this.searchIndex.size
+      });
+      this.logger.error('Failed to initialize', {
+        operation: 'init',
+        error: error.message,
+        stack: error.stack
+      });
       throw error;
     }
   }
@@ -95,14 +115,20 @@ export class SearchManager {
     const dropdown = document.getElementById('sidebarSearchDropdown');
     
     if (!box || !dropdown) {
-      console.warn('SearchManager: Search elements not found');
+      this.logger.warn('Search elements not found', {
+        operation: 'initSearch',
+        hasBox: !!box,
+        hasDropdown: !!dropdown
+      });
       return;
     }
     
     this.searchBox = box;
     this.dropdown = dropdown;
     
-    console.log('SearchManager: Initializing search functionality');
+    this.logger.debug('Initializing search functionality', {
+      operation: 'initSearch'
+    });
     
     // Set up search input event listener with exact legacy behavior
     box.addEventListener('input', e => {
@@ -115,11 +141,17 @@ export class SearchManager {
         return;
       }
       this.searchTimeout = setTimeout(() => {
-        console.log('Search input:', val);
+        this.logger.debug('Search input processed', {
+          operation: 'handleSearchInput',
+          query: val
+        });
         const namesByCategory = stateManager.get('namesByCategory', {});
         const nameToKey = stateManager.get('nameToKey', {});
-        console.log('namesByCategory:', JSON.stringify(namesByCategory));
-        console.log('nameToKey:', JSON.stringify(nameToKey));
+        this.logger.debug('Search data retrieved', {
+          operation: 'handleSearchInput',
+          hasNamesByCategory: !!namesByCategory,
+          hasNameToKey: !!nameToKey
+        });
         this.performSearch(val);
       }, 120);
     });
@@ -136,7 +168,11 @@ export class SearchManager {
     // Build initial search index
     this.buildSearchIndex();
     
-    console.log('SearchManager: Search functionality initialized');
+    this.logger.info('Search functionality initialized', {
+      operation: 'initSearch',
+      hasSearchBox: !!this.searchBox,
+      hasDropdown: !!this.dropdown
+    });
   }
   
   /**
@@ -166,7 +202,11 @@ export class SearchManager {
    * Perform search and display results
    */
   performSearch(query, category = null) {
-    console.log('SearchManager: Performing search for:', { query, category });
+    this.logger.debug('Performing search', {
+      operation: 'performSearch',
+      query,
+      category
+    });
     
     if (!query) {
       this.hideDropdown();
@@ -180,8 +220,22 @@ export class SearchManager {
     const labelColorAdjust = configurationManager.get('labelColorAdjust', {});
     const adjustHexColor = configurationManager.get('adjustHexColor', ((color, factor) => color));
     
-    console.log('SearchManager: Search data available:', {
-      categories: Object.keys(namesByCategory).length,
+    // Check if search data is available
+    if (!namesByCategory || !nameToKey || typeof namesByCategory !== 'object' || typeof nameToKey !== 'object') {
+      this.logger.debug('Search data not available yet', {
+        operation: 'performSearch',
+        hasNamesByCategory: !!namesByCategory,
+        hasNameToKey: !!nameToKey,
+        namesByCategoryType: typeof namesByCategory,
+        nameToKeyType: typeof nameToKey
+      });
+      this.hideDropdown();
+      return;
+    }
+    
+    this.logger.debug('Search data available', {
+      operation: 'performSearch',
+      categoriesCount: Object.keys(namesByCategory).length,
       hasNameToKey: !!nameToKey,
       hasColors: !!outlineColors
     });
@@ -209,7 +263,10 @@ export class SearchManager {
       });
     });
     
-    console.log('Dropdown results:', results);
+    this.logger.debug('Dropdown results generated', {
+      operation: 'performSearch',
+      resultCount: results.length
+    });
     
     // Display results with exact legacy behavior
     if (results.length === 0) {
@@ -320,12 +377,22 @@ export class SearchManager {
     const key = item.getAttribute('data-key');
     const sidebarId = `${cat}_${key}`;
     
-    console.log('SearchManager: Result clicked:', { cat, key, sidebarId });
+    this.logger.info('Result clicked', {
+      operation: 'handleResultClick',
+      category: cat,
+      key,
+      sidebarId
+    });
     
     // Find the target element
     const targetElement = document.getElementById(sidebarId);
     if (!targetElement) {
-      console.warn('SearchManager: Target element not found:', sidebarId);
+      this.logger.warn('Target element not found', {
+        operation: 'handleResultClick',
+        sidebarId,
+        category: cat,
+        key
+      });
       return;
     }
     
@@ -393,22 +460,38 @@ export class SearchManager {
     const namesByCategory = stateManager.get('namesByCategory', {});
     const nameToKey = stateManager.get('nameToKey', {});
     
+    // Check if data is available
+    if (!namesByCategory || !nameToKey || typeof namesByCategory !== 'object' || typeof nameToKey !== 'object') {
+      this.logger.debug('Search index build skipped - data not available yet', {
+        namesByCategory: !!namesByCategory,
+        nameToKey: !!nameToKey,
+        namesByCategoryType: typeof namesByCategory,
+        nameToKeyType: typeof nameToKey
+      });
+      return;
+    }
+    
     this.searchIndex.clear();
     
     Object.entries(namesByCategory).forEach(([category, names]) => {
-      names.forEach(name => {
-        const key = nameToKey[category]?.[name];
-        if (key) {
-          this.searchIndex.set(name.toLowerCase(), {
-            category,
-            name,
-            key
-          });
-        }
-      });
+      if (Array.isArray(names)) {
+        names.forEach(name => {
+          const key = nameToKey[category]?.[name];
+          if (key) {
+            this.searchIndex.set(name.toLowerCase(), {
+              category,
+              name,
+              key
+            });
+          }
+        });
+      }
     });
     
-    console.log('SearchManager: Search index built with', this.searchIndex.size, 'entries');
+    this.logger.info('Search index built', {
+      entryCount: this.searchIndex.size,
+      categories: Object.keys(namesByCategory).length
+    });
   }
   
   /**

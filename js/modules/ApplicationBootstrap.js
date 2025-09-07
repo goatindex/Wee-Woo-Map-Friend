@@ -118,7 +118,7 @@ export class ApplicationBootstrap {
     const moduleInitializers = [
       { name: 'DeviceManager', path: './DeviceManager.js', required: true },
       { name: 'CollapsibleManager', path: './CollapsibleManager.js', required: true },
-      { name: 'SearchManager', path: './SearchManager.js', required: true },
+      { name: 'SearchManager', path: './SearchManager.js', required: false },
       { name: 'ActiveListManager', path: './ActiveListManager.js', required: true },
       { name: 'MapManager', path: './MapManager.js', required: true },
       { name: 'LayerManager', path: './LayerManager.js', required: true },
