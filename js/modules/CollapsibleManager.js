@@ -139,6 +139,9 @@ export class CollapsibleManager {
     
     console.log('setupCollapsible: Setting up collapsible for', headerId);
     
+    // Set up ARIA attributes for accessibility
+    this.setupARIA(header, list, expanded);
+    
     // Store section info
     this.collapsibleSections.set(headerId, {
       header,
@@ -158,11 +161,17 @@ export class CollapsibleManager {
     
     // Remove existing event listeners to prevent duplicates
     header.removeEventListener('click', this.toggleSection);
+    header.removeEventListener('keydown', this.handleKeydown);
     
     // Add click event listener
     header.addEventListener('click', () => {
       console.log('setupCollapsible: Header clicked:', headerId);
       this.toggleSection(headerId);
+    });
+    
+    // Add keyboard event listener for accessibility
+    header.addEventListener('keydown', (event) => {
+      this.handleKeydown(event, headerId);
     });
     
     console.log('setupCollapsible: Event listener attached to', headerId);
@@ -182,6 +191,106 @@ export class CollapsibleManager {
     console.log('CollapsibleManager: Collapsible setup complete for', headerId);
   }
   
+  /**
+   * Set up ARIA attributes for accessibility
+   */
+  setupARIA(header, list, expanded) {
+    // Set up header ARIA attributes
+    header.setAttribute('role', 'button');
+    header.setAttribute('tabindex', '0');
+    header.setAttribute('aria-expanded', expanded.toString());
+    header.setAttribute('aria-controls', list.id);
+    
+    // Set up list ARIA attributes
+    list.setAttribute('role', 'region');
+    list.setAttribute('aria-labelledby', header.id);
+    
+    // Add aria-hidden to decorative elements
+    const collapseArrow = header.querySelector('.collapse-arrow');
+    if (collapseArrow) {
+      collapseArrow.setAttribute('aria-hidden', 'true');
+    }
+    
+    // Add aria-hidden to emojis
+    const emojis = header.querySelectorAll('span[aria-hidden="true"]');
+    emojis.forEach(emoji => {
+      if (!emoji.hasAttribute('aria-hidden')) {
+        emoji.setAttribute('aria-hidden', 'true');
+      }
+    });
+  }
+  
+  /**
+   * Handle keyboard navigation for collapsible headers
+   */
+  handleKeydown(event, headerId) {
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        this.toggleSection(headerId);
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        this.focusNextSection(headerId);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.focusPreviousSection(headerId);
+        break;
+      case 'Home':
+        event.preventDefault();
+        this.focusFirstSection();
+        break;
+      case 'End':
+        event.preventDefault();
+        this.focusLastSection();
+        break;
+    }
+  }
+  
+  /**
+   * Focus next collapsible section
+   */
+  focusNextSection(currentHeaderId) {
+    const headers = Array.from(document.querySelectorAll('.layer-menu h4[role="button"]'));
+    const currentIndex = headers.findIndex(h => h.id === currentHeaderId);
+    if (currentIndex < headers.length - 1) {
+      headers[currentIndex + 1].focus();
+    }
+  }
+  
+  /**
+   * Focus previous collapsible section
+   */
+  focusPreviousSection(currentHeaderId) {
+    const headers = Array.from(document.querySelectorAll('.layer-menu h4[role="button"]'));
+    const currentIndex = headers.findIndex(h => h.id === currentHeaderId);
+    if (currentIndex > 0) {
+      headers[currentIndex - 1].focus();
+    }
+  }
+  
+  /**
+   * Focus first collapsible section
+   */
+  focusFirstSection() {
+    const firstHeader = document.querySelector('.layer-menu h4[role="button"]');
+    if (firstHeader) {
+      firstHeader.focus();
+    }
+  }
+  
+  /**
+   * Focus last collapsible section
+   */
+  focusLastSection() {
+    const headers = document.querySelectorAll('.layer-menu h4[role="button"]');
+    if (headers.length > 0) {
+      headers[headers.length - 1].focus();
+    }
+  }
+
   /**
    * Toggle a collapsible section
    */
@@ -233,9 +342,13 @@ export class CollapsibleManager {
     // Update section state
     section.expanded = !header.classList.contains('collapsed');
     
+    // Update ARIA attributes
+    header.setAttribute('aria-expanded', section.expanded.toString());
+    
     console.log('setupCollapsible: After toggle:', {
       headerClasses: header.className,
-      listDisplay: list.style.display
+      listDisplay: list.style.display,
+      ariaExpanded: header.getAttribute('aria-expanded')
     });
     
     // Update sticky classes

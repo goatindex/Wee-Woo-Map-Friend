@@ -126,6 +126,9 @@ export class SearchManager {
     this.searchBox = box;
     this.dropdown = dropdown;
     
+    // Set up ARIA attributes for accessibility
+    this.setupARIA();
+    
     this.logger.debug('Initializing search functionality', {
       operation: 'initSearch'
     });
@@ -165,6 +168,11 @@ export class SearchManager {
       }, 200);
     });
     
+    // Set up keyboard navigation
+    box.addEventListener('keydown', (e) => {
+      this.handleKeydown(e);
+    });
+    
     // Build initial search index
     this.buildSearchIndex();
     
@@ -175,6 +183,108 @@ export class SearchManager {
     });
   }
   
+  /**
+   * Set up ARIA attributes for accessibility
+   */
+  setupARIA() {
+    if (!this.searchBox || !this.dropdown) return;
+    
+    // Set up search box ARIA attributes
+    this.searchBox.setAttribute('role', 'searchbox');
+    this.searchBox.setAttribute('aria-autocomplete', 'list');
+    this.searchBox.setAttribute('aria-controls', this.dropdown.id);
+    this.searchBox.setAttribute('aria-expanded', 'false');
+    this.searchBox.setAttribute('aria-activedescendant', '');
+    
+    // Set up dropdown ARIA attributes
+    this.dropdown.setAttribute('role', 'listbox');
+    this.dropdown.setAttribute('aria-label', 'Search results');
+    this.dropdown.setAttribute('aria-hidden', 'true');
+    
+    this.logger.debug('ARIA attributes set up for search', {
+      operation: 'setupARIA',
+      searchBoxId: this.searchBox.id,
+      dropdownId: this.dropdown.id
+    });
+  }
+  
+  /**
+   * Handle keyboard navigation for search
+   */
+  handleKeydown(event) {
+    if (!this.dropdown || this.dropdown.style.display === 'none') return;
+    
+    const items = this.dropdown.querySelectorAll('.dropdown-item');
+    const currentActive = this.dropdown.querySelector('.dropdown-item.active');
+    let currentIndex = -1;
+    
+    if (currentActive) {
+      currentIndex = Array.from(items).indexOf(currentActive);
+    }
+    
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        currentIndex = Math.min(currentIndex + 1, items.length - 1);
+        this.setActiveItem(items[currentIndex]);
+        break;
+        
+      case 'ArrowUp':
+        event.preventDefault();
+        currentIndex = Math.max(currentIndex - 1, 0);
+        this.setActiveItem(items[currentIndex]);
+        break;
+        
+      case 'Enter':
+        event.preventDefault();
+        if (currentActive) {
+          currentActive.click();
+        }
+        break;
+        
+      case 'Escape':
+        event.preventDefault();
+        this.hideDropdown();
+        this.searchBox.value = '';
+        break;
+        
+      case 'Home':
+        event.preventDefault();
+        if (items.length > 0) {
+          this.setActiveItem(items[0]);
+        }
+        break;
+        
+      case 'End':
+        event.preventDefault();
+        if (items.length > 0) {
+          this.setActiveItem(items[items.length - 1]);
+        }
+        break;
+    }
+  }
+  
+  /**
+   * Set active item in dropdown
+   */
+  setActiveItem(item) {
+    if (!item) return;
+    
+    // Remove active class from all items
+    this.dropdown.querySelectorAll('.dropdown-item').forEach(i => {
+      i.classList.remove('active');
+    });
+    
+    // Add active class to selected item
+    item.classList.add('active');
+    
+    // Update ARIA attributes
+    this.searchBox.setAttribute('aria-activedescendant', item.id || '');
+    
+    // Scroll item into view
+    item.scrollIntoView({ block: 'nearest' });
+  }
+
   /**
    * Handle search input with debouncing
    */
@@ -270,21 +380,29 @@ export class SearchManager {
     
     // Display results with exact legacy behavior
     if (results.length === 0) {
-      this.dropdown.innerHTML = '<div class="dropdown-item">No matches</div>';
+      this.dropdown.innerHTML = '<div class="dropdown-item" role="option" aria-selected="false">No matches</div>';
       this.dropdown.classList.add('active');
       this.dropdown.style.display = 'block';
+      this.dropdown.setAttribute('aria-hidden', 'false');
+      if (this.searchBox) {
+        this.searchBox.setAttribute('aria-expanded', 'true');
+      }
       return;
     }
     
-    this.dropdown.innerHTML = results.map(r => {
+    this.dropdown.innerHTML = results.map((r, index) => {
       const base = outlineColors[r.cat] || '#333';
       const factor = (labelColorAdjust[r.cat] ?? 1.0);
       const color = adjustHexColor(base, factor);
-      return `<div class="dropdown-item" data-cat="${r.cat}" data-key="${r.key}"><span class="name" style="color:${color}">${r.name}</span> <span style="color:#888;font-size:0.9em;">(${r.cat.toUpperCase()})</span></div>`;
+      return `<div class="dropdown-item" role="option" aria-selected="false" id="search-result-${index}" data-cat="${r.cat}" data-key="${r.key}"><span class="name" style="color:${color}">${r.name}</span> <span style="color:#888;font-size:0.9em;">(${r.cat.toUpperCase()})</span></div>`;
     }).join('');
     
     this.dropdown.classList.add('active');
     this.dropdown.style.display = 'block';
+    this.dropdown.setAttribute('aria-hidden', 'false');
+    if (this.searchBox) {
+      this.searchBox.setAttribute('aria-expanded', 'true');
+    }
     
     // Handle click on dropdown item with exact legacy behavior
     this.dropdown.querySelectorAll('.dropdown-item').forEach(item => {
@@ -450,6 +568,16 @@ export class SearchManager {
       this.dropdown.innerHTML = '';
       this.dropdown.classList.remove('active');
       this.dropdown.style.display = 'none';
+      this.dropdown.setAttribute('aria-hidden', 'true');
+      
+      if (this.searchBox) {
+        this.searchBox.setAttribute('aria-expanded', 'false');
+        this.searchBox.setAttribute('aria-activedescendant', '');
+      }
+      
+      this.logger.debug('Search dropdown hidden', {
+        operation: 'hideDropdown'
+      });
     }
   }
   

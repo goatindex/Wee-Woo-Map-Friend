@@ -9,6 +9,7 @@
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
 import { logger } from './StructuredLogger.js';
+import { dependencyContainer } from './DependencyContainer.js';
 // DependencyRegistry removed - using direct module initialization
 
 /**
@@ -1046,6 +1047,25 @@ export class ApplicationBootstrap {
       // Phase 1: Wait for DOM
       await this.safeExecute('DOM ready', async () => {
         await this.waitForDOM();
+      });
+      
+      // Phase 1.5: Initialize dependency container and ARIA service
+      await this.safeExecute('dependency container initialization', async () => {
+        await dependencyContainer.initialize();
+        
+        // Initialize ARIA service
+        const ariaService = dependencyContainer.get('ARIAService');
+        if (ariaService && typeof ariaService.init === 'function') {
+          await ariaService.init();
+          this.logger.info('ARIAService initialized successfully');
+        }
+        
+        // Initialize Platform service
+        const platformService = dependencyContainer.get('PlatformService');
+        if (platformService && typeof platformService.initialize === 'function') {
+          await platformService.initialize();
+          this.logger.info('PlatformService initialized successfully');
+        }
       });
       
       // Phase 2: Initialize core modules directly

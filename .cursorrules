@@ -36,6 +36,13 @@
 - ❌ Git operations: Use GitHub MCP instead
 - ❌ Testing: Use appropriate testing tools instead
 
+### **Context7 MCP: External Library Documentation**
+- ✅ Use `mcp_Context7_resolve-library-id` to get library IDs
+- ✅ Use `mcp_Context7_get-library-docs` for external library documentation
+- ✅ Research Redux Toolkit, InversifyJS, Leaflet.js, Turf.js patterns
+- ✅ Get up-to-date API documentation and best practices
+- ❌ Don't rely on outdated knowledge for external libraries
+
 ---
 
 ## Approval & Change Control

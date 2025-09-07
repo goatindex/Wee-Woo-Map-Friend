@@ -55,7 +55,6 @@
     "budget:check": "node scripts/check-performance-budget.js",
     "prepare:appstore": "npm run build && npm run icons && npm run cap:sync"
   },
-
   "devDependencies": {
     "@babel/preset-env": "^7.22.0",
     "@capacitor/android": "^5.4.0",
@@ -96,5 +95,11 @@
   },
   "bugs": {
     "url": "https://github.com/goatindex/mapexp.github.io/issues"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.9.0",
+    "inversify": "^7.9.1",
+    "react-redux": "^9.2.0",
+    "reflect-metadata": "^0.2.2"
   }
 }

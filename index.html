@@ -43,22 +43,27 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <div id="map"></div>
-  <div class="layer-menu" id="layerMenu">
+  <!-- Skip links for keyboard navigation -->
+  <a href="#layerMenu" class="skip-link">Skip to navigation</a>
+  <a href="#map" class="skip-link">Skip to map</a>
+  
+  <div id="map" role="application" aria-label="Interactive map showing emergency services boundaries and facilities"></div>
+  <div class="layer-menu" id="layerMenu" role="navigation" aria-label="Map layer navigation">
   <div class="search-sticky">
-  <div id="sidebarTitle" class="sidebar-title"><span class="title-emojis">🚨🗺️🫶</span> | WeeWoo Map Friend </div>
-    <div class="sidebar-tools" aria-label="Quick tools">
-  <button id="sidebarBtn3" class="sidebar-tool-btn" type="button" title="Information" aria-label="Information">ℹ️</button>
-  <button id="sidebarBtn2" class="sidebar-tool-btn" type="button" title="Documentation" aria-label="Documentation">📚</button>
-  <button id="sidebarBtn1" class="sidebar-tool-btn" type="button" title="Reset to default" aria-label="Reset to default">♻️</button>
+  <div id="sidebarTitle" class="sidebar-title" role="banner" aria-label="Application title"><span class="title-emojis" aria-hidden="true">🚨🗺️🫶</span> | WeeWoo Map Friend </div>
+    <div class="sidebar-tools" role="toolbar" aria-label="Quick tools">
+  <button id="sidebarBtn3" class="sidebar-tool-btn" type="button" title="Information" aria-label="Show application information" role="button">ℹ️</button>
+  <button id="sidebarBtn2" class="sidebar-tool-btn" type="button" title="Documentation" aria-label="Open documentation" role="button">📚</button>
+  <button id="sidebarBtn1" class="sidebar-tool-btn" type="button" title="Reset to default" aria-label="Reset map to default state" role="button">♻️</button>
     </div>
-    <div class="search-box-wrap">
-      <input type="text" class="search-box" id="globalSidebarSearch" placeholder="Search all layers..." autocomplete="off" />
-      <div id="sidebarSearchDropdown" class="sidebar-search-dropdown"></div>
+    <div class="search-box-wrap" role="search" aria-label="Search map layers">
+      <input type="text" class="search-box" id="globalSidebarSearch" placeholder="Search all layers..." autocomplete="off" role="searchbox" aria-label="Search all map layers" aria-describedby="search-help" />
+      <div id="sidebarSearchDropdown" class="sidebar-search-dropdown" role="listbox" aria-label="Search results" aria-expanded="false" aria-hidden="true"></div>
     </div>
+    <div id="search-help" class="sr-only">Search for SES, LGA, CFA, Ambulance, Police, and FRV locations</div>
   </div>
-  <h4 id="activeHeader"><span class="collapse-arrow">&#9660;</span>📌 All Active</h4>
-  <div class="collapsible-list" id="activeList" style="display: none;"></div>
+  <h4 id="activeHeader" role="button" tabindex="0" aria-expanded="false" aria-controls="activeList" aria-label="All Active layers section"><span class="collapse-arrow" aria-hidden="true">&#9660;</span><span aria-hidden="true">📌</span> All Active</h4>
+  <div class="collapsible-list" id="activeList" role="region" aria-labelledby="activeHeader" style="display: none;"></div>
     
     <div class="divider"></div>
   <h4 id="showAllHeader" class="collapsed"><span class="collapse-arrow">&#9660;</span>🧾 Show All</h4>
