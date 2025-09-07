@@ -29,14 +29,14 @@
   <meta property="og:title" content="WeeWoo Map Friend">
   <meta property="og:description" content="Interactive emergency services mapping for Victoria, Australia">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://goatindex.github.io/mapexp.github.io/">
-  <meta property="og:image" content="https://goatindex.github.io/mapexp.github.io/in_app_docs/assets/sidebar-all-active.svg">
+  <meta property="og:url" content="">
+  <meta property="og:image" content="">
   
   <!-- Twitter Card Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="WeeWoo Map Friend">
   <meta name="twitter:description" content="Interactive emergency services mapping for Victoria, Australia">
-  <meta name="twitter:image" content="https://goatindex.github.io/mapexp.github.io/in_app_docs/assets/sidebar-all-active.svg">
+  <meta name="twitter:image" content="">
   
   <!-- Stylesheets -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -115,11 +115,32 @@
   </script>
   
   <!-- Service Worker Registration -->
-  <script>
+  <script type="module">
+    // Import environment configuration
+    import { environmentConfig } from './js/modules/EnvironmentConfig.js';
+    
+    // Set dynamic meta tags
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentUrl = window.location.href;
+      const manifestPath = environmentConfig.getManifestPath();
+      const serviceWorkerPath = environmentConfig.getServiceWorkerPath();
+      
+      // Update meta tags
+      document.querySelector('meta[property="og:url"]').setAttribute('content', currentUrl);
+      document.querySelector('meta[property="og:image"]').setAttribute('content', currentUrl + 'in_app_docs/assets/sidebar-all-active.svg');
+      document.querySelector('meta[name="twitter:image"]').setAttribute('content', currentUrl + 'in_app_docs/assets/sidebar-all-active.svg');
+      
+      // Update manifest link
+      document.querySelector('link[rel="manifest"]').setAttribute('href', manifestPath);
+    });
+    
     // Register service worker for PWA functionality
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
+      window.addEventListener('load', async () => {
+        const { environmentConfig } = await import('./js/modules/EnvironmentConfig.js');
+        const serviceWorkerPath = environmentConfig.getServiceWorkerPath();
+        
+        navigator.serviceWorker.register(serviceWorkerPath)
           .then(registration => {
             console.log('PWA: Service Worker registered successfully:', registration.scope);
             

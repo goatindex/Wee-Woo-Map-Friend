@@ -7,26 +7,40 @@ const CACHE_NAME = 'weewoo-map-v1.0';
 const STATIC_CACHE = 'weewoo-static-v1.0';
 const RUNTIME_CACHE = 'weewoo-runtime-v1.0';
 
+// Get base path dynamically
+const getBasePath = () => {
+  const pathname = self.location.pathname;
+  if (pathname.includes('Wee-Woo-Map-Friend')) {
+    return '/Wee-Woo-Map-Friend/';
+  } else if (pathname.includes('mapexp.github.io')) {
+    return '/mapexp.github.io/';
+  } else {
+    return '/';
+  }
+};
+
+const BASE_PATH = getBasePath();
+
 // Assets to cache immediately on install
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/css/styles.css',
-  '/js/bootstrap.js',
-  '/js/state.js',
-  '/js/config.js',
-  '/js/utils.js',
-  '/js/device.js',
-  '/js/utils/coordConvert.js',
-  '/js/utils/errorUI.js',
-  '/js/labels.js',
-  '/js/emphasise.js',
-  '/js/polygonPlus.js',
-  '/js/ui/collapsible.js',
-  '/js/ui/search.js',
-  '/js/ui/activeList.js',
-  '/js/preloader.js',
-  '/manifest.json'
+  BASE_PATH,
+  `${BASE_PATH}index.html`,
+  `${BASE_PATH}css/styles.css`,
+  `${BASE_PATH}js/bootstrap.js`,
+  `${BASE_PATH}js/state.js`,
+  `${BASE_PATH}js/config.js`,
+  `${BASE_PATH}js/utils.js`,
+  `${BASE_PATH}js/device.js`,
+  `${BASE_PATH}js/utils/coordConvert.js`,
+  `${BASE_PATH}js/utils/errorUI.js`,
+  `${BASE_PATH}js/labels.js`,
+  `${BASE_PATH}js/emphasise.js`,
+  `${BASE_PATH}js/polygonPlus.js`,
+  `${BASE_PATH}js/ui/collapsible.js`,
+  `${BASE_PATH}js/ui/search.js`,
+  `${BASE_PATH}js/ui/activeList.js`,
+  `${BASE_PATH}js/preloader.js`,
+  `${BASE_PATH}manifest.json`
 ];
 
 // External resources (cache but don't fail if unavailable)
@@ -39,15 +53,15 @@ const EXTERNAL_RESOURCES = [
 
 // Data files that change less frequently
 const DATA_ASSETS = [
-  '/geojson/ambulance.geojson',
-  '/geojson/cfa.geojson',
-  '/geojson/frv.geojson',
-  '/geojson/LGAs.geojson',
-  '/geojson/police.geojson',
-  '/geojson/ses.geojson',
-  '/geojson/sesbld.geojson',
-  '/cfabld.json',
-  '/cfabld_with_coords.json'
+  `${BASE_PATH}geojson/ambulance.geojson`,
+  `${BASE_PATH}geojson/cfa.geojson`,
+  `${BASE_PATH}geojson/frv.geojson`,
+  `${BASE_PATH}geojson/LGAs.geojson`,
+  `${BASE_PATH}geojson/police.geojson`,
+  `${BASE_PATH}geojson/ses.geojson`,
+  `${BASE_PATH}geojson/sesbld.geojson`,
+  `${BASE_PATH}cfabld.json`,
+  `${BASE_PATH}cfabld_with_coords.json`
 ];
 
 // Install event - cache static assets

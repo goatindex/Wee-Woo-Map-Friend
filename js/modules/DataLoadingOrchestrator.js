@@ -37,12 +37,13 @@ export class DataLoadingOrchestrator {
         'police': 'low'
       },
       urls: {
-        'ses': 'geojson/ses.geojson',
-        'lga': 'geojson/LGAs.geojson',
-        'cfa': 'geojson/cfa.geojson',
-        'frv': 'geojson/frv.geojson',
-        'ambulance': 'geojson/ambulance.geojson',
-        'police': 'geojson/police.geojson'
+        // URLs will be set dynamically based on environment
+        'ses': '',
+        'lga': '',
+        'cfa': '',
+        'frv': '',
+        'ambulance': '',
+        'police': ''
       },
       fallbackUrls: {
         // Future: Add fallback URLs for critical data
@@ -68,6 +69,39 @@ export class DataLoadingOrchestrator {
   }
   
   /**
+   * Initialize data URLs based on environment configuration
+   */
+  async initializeDataUrls() {
+    try {
+      const { environmentConfig } = await import('./EnvironmentConfig.js');
+      const dataPaths = environmentConfig.getDataPaths();
+      
+      // Update URLs with environment-specific paths
+      this.loadingConfig.urls = {
+        'ses': dataPaths.ses,
+        'lga': dataPaths.lga,
+        'cfa': dataPaths.cfa,
+        'frv': dataPaths.frv,
+        'ambulance': dataPaths.ambulance,
+        'police': dataPaths.police
+      };
+      
+      this.logger.info('Data URLs initialized', {
+        operation: 'initializeDataUrls',
+        urls: this.loadingConfig.urls,
+        environment: environmentConfig.getEnvironment()
+      });
+    } catch (error) {
+      this.logger.error('Failed to initialize data URLs', {
+        operation: 'initializeDataUrls',
+        error: error.message,
+        stack: error.stack
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Initialize the data loading orchestrator
    */
   async init() {
@@ -81,6 +115,9 @@ export class DataLoadingOrchestrator {
     
     const timer = this.logger.time('orchestrator-initialization');
     try {
+      // Initialize data URLs based on environment
+      await this.initializeDataUrls();
+      
       this.logger.info('Starting initialization', {
         operation: 'init',
         config: this.loadingConfig,
@@ -588,14 +625,14 @@ export class DataLoadingOrchestrator {
     
     // Define preload order (matching legacy preloader.js)
     const preloadOrder = [
-      { name: 'SES Areas', category: 'ses', url: 'geojson/ses.geojson' },
+      { name: 'SES Areas', category: 'ses', url: this.loadingConfig.urls.ses },
       { name: 'SES Facilities', category: 'sesFacilities', loader: () => window.loadSesFacilities() },
       { name: 'SES Units', category: 'sesUnits', loader: () => window.loadSesUnits() },
-      { name: 'LGA Areas', category: 'lga', url: 'geojson/LGAs.geojson' },
-      { name: 'CFA Areas', category: 'cfa', url: 'geojson/cfa.geojson' },
+      { name: 'LGA Areas', category: 'lga', url: this.loadingConfig.urls.lga },
+      { name: 'CFA Areas', category: 'cfa', url: this.loadingConfig.urls.cfa },
       { name: 'CFA Facilities', category: 'cfaFacilities', loader: () => window.loadCfaFacilities() },
-      { name: 'Ambulance Stations', category: 'ambulance', url: 'geojson/ambulance.geojson' },
-      { name: 'FRV Boundaries', category: 'frv', url: 'geojson/frv.geojson' }
+      { name: 'Ambulance Stations', category: 'ambulance', url: this.loadingConfig.urls.ambulance },
+      { name: 'FRV Boundaries', category: 'frv', url: this.loadingConfig.urls.frv }
     ];
     
     // Load each item in sequence with progress updates

@@ -905,7 +905,9 @@ export class ApplicationBootstrap {
   async checkNetworkConnectivity() {
     try {
       // Simple connectivity check
-      const response = await fetch('/favicon.ico', { 
+      const { environmentConfig } = await import('./EnvironmentConfig.js');
+      const faviconPath = environmentConfig.getFaviconPath();
+      const response = await fetch(faviconPath, { 
         method: 'HEAD',
         cache: 'no-cache',
         signal: AbortSignal.timeout(5000) // 5 second timeout
