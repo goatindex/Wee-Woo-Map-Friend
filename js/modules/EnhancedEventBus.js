@@ -9,6 +9,7 @@
 
 import { logger } from './StructuredLogger.js';
 import { errorBoundary } from './ErrorBoundary.js';
+import { UnifiedErrorHandler } from './UnifiedErrorHandler.js';
 
 /**
  * Event types for type safety
@@ -237,22 +238,29 @@ export class ErrorHandlingMiddleware extends EventMiddleware {
   constructor() {
     super();
     this.logger = logger.createChild({ module: 'EventBusErrorHandling' });
+    this.unifiedErrorHandler = new UnifiedErrorHandler();
   }
 
   beforeListener(event, listener) {
     return event;
   }
 
-  afterListener(event, listener, result, error) {
+  async afterListener(event, listener, result, error) {
     if (error) {
-      this.logger.error('Event listener error', {
-        eventType: event.type,
-        listenerName: listener.name || 'anonymous',
-        error: error.message,
-        stack: error.stack
+      // Use UnifiedErrorHandler for error processing
+      await this.unifiedErrorHandler.handleError(error, {
+        component: 'EventBus',
+        operation: 'event_listener',
+        userId: null,
+        sessionId: null,
+        metadata: {
+          eventType: event.type,
+          listenerName: listener.name || 'anonymous',
+          originalEvent: event.type
+        }
       });
 
-      // Emit error event
+      // Emit error event for backward compatibility
       const errorEvent = new Event(EventTypes.ERROR_OCCURRED, {
         originalEvent: event.type,
         listener: listener.name || 'anonymous',

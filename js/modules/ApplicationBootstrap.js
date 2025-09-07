@@ -10,6 +10,9 @@ import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
 import { logger } from './StructuredLogger.js';
 import { dependencyContainer } from './DependencyContainer.js';
+import { UnifiedErrorHandler } from './UnifiedErrorHandler.js';
+import { CircuitBreakerManager } from './CircuitBreakerStrategy.js';
+import { HealthCheckService } from './HealthCheckService.js';
 // DependencyRegistry removed - using direct module initialization
 
 /**
@@ -34,6 +37,29 @@ export class ApplicationBootstrap {
     // Create module-specific logger
     this.logger = logger.createChild({ module: 'ApplicationBootstrap' });
     
+    // Initialize UnifiedErrorHandler
+    this.unifiedErrorHandler = new UnifiedErrorHandler({
+      maxRetries: 3,
+      retryDelay: 1000,
+      circuitBreakerThreshold: 5,
+      circuitBreakerTimeout: 30000,
+      enableLogging: true,
+      enableMetrics: true
+    });
+
+    // Initialize CircuitBreakerManager
+    this.circuitBreakerManager = new CircuitBreakerManager();
+
+    // Initialize HealthCheckService
+    this.healthCheckService = new HealthCheckService({
+      checkInterval: 30000,
+      timeout: 5000,
+      retryAttempts: 3,
+      retryDelay: 1000,
+      enableMetrics: true,
+      enableLogging: true
+    });
+    
     // Bind methods
     this.init = this.init.bind(this);
     this.handleError = this.handleError.bind(this);
@@ -46,68 +72,13 @@ export class ApplicationBootstrap {
 
   /**
    * Execute a function with error handling, recovery, and logging
+   * Delegates to UnifiedErrorHandler.safeExecute()
    * @param {string} phase - Name of the initialization phase
    * @param {Function} fn - Function to execute
    * @param {Object} options - Execution options
    */
   async safeExecute(phase, fn, options = {}) {
-    const { 
-      allowRecovery = true, 
-      allowDegradation = true, 
-      maxRetries = 1,
-      context = {} 
-    } = options;
-
-    let retryCount = 0;
-    
-    while (retryCount <= maxRetries) {
-      try {
-        this.logger.info(`Starting phase: ${phase}${retryCount > 0 ? ` (retry ${retryCount})` : ''}`);
-        const startTime = performance.now();
-        
-        await fn();
-        
-        const duration = performance.now() - startTime;
-        this.logger.info(`Completed phase: ${phase}`, { duration });
-        return; // Success, exit retry loop
-        
-      } catch (error) {
-        this.logger.error(`Failed phase: ${phase}`, { 
-          error: error.message, 
-          stack: error.stack,
-          retryCount,
-          maxRetries
-        });
-        
-        // Emit error event for monitoring
-        globalEventBus.emit('app:bootstrapError', { 
-          error, 
-          context: { phase, retryCount, ...context } 
-        });
-        
-        // Attempt recovery if enabled and we haven't exceeded max retries
-        if (allowRecovery && retryCount < maxRetries) {
-          const recoverySuccessful = await this.attemptErrorRecovery(error, phase, context);
-          if (recoverySuccessful) {
-            this.logger.info(`Recovery successful for phase: ${phase}`);
-            retryCount++;
-            continue; // Retry the phase
-          }
-        }
-        
-        // If recovery failed or not allowed, try graceful degradation
-        if (allowDegradation) {
-          const degradationSuccessful = await this.gracefulDegradation(phase, error);
-          if (degradationSuccessful) {
-            this.logger.warn(`Phase ${phase} continuing in degraded mode`);
-            return; // Continue with degraded functionality
-          }
-        }
-        
-        // If all recovery attempts failed, throw the error
-        throw error;
-      }
-    }
+    return await this.unifiedErrorHandler.safeExecute(phase, fn, options);
   }
 
   /**
@@ -643,240 +614,29 @@ export class ApplicationBootstrap {
   }
 
   /**
-   * Handle errors with recovery strategies
+   * Handle errors with recovery strategies (delegated to UnifiedErrorHandler)
    */
   handleError(error, context = {}) {
-    this.logger.error('Bootstrap error', {
-      error: error.message,
-      stack: error.stack,
-      context
-    });
-    
-    // Emit error event for global handling
-    globalEventBus.emit('app:bootstrapError', { error, context });
-    
-    throw error;
+    return this.unifiedErrorHandler.handleError(error, context);
+  }
+
+
+  /**
+   * Circuit breaker to prevent cascade failures
+   * Delegates to CircuitBreakerManager.executeWithCircuitBreaker()
+   */
+  async executeWithCircuitBreaker(operation, options = {}) {
+    return await this.circuitBreakerManager.executeWithCircuitBreaker(operation, options);
   }
 
   /**
-   * Attempt error recovery with fallback strategies
-   * @param {Error} error - The error that occurred
-   * @param {string} phase - The phase where the error occurred
-   * @param {Object} context - Additional context about the error
-   * @returns {boolean} - Whether recovery was successful
+   * Health check system to monitor application state (delegated to HealthCheckService)
+   * @returns {Promise<Object>} Health status
    */
-  async attemptErrorRecovery(error, phase, context = {}) {
-    this.logger.warn(`Attempting error recovery for phase: ${phase}`, {
-      error: error.message,
-      context
-    });
-
-    try {
-      switch (phase) {
-        case 'core module initialization':
-          return await this.recoverFromModuleInitError(error, context);
-        
-        case 'data loading':
-          return await this.recoverFromDataLoadingError(error, context);
-        
-        case 'map system':
-          return await this.recoverFromMapSystemError(error, context);
-        
-        case 'UI components':
-          return await this.recoverFromUIError(error, context);
-        
-        default:
-          this.logger.warn(`No specific recovery strategy for phase: ${phase}`);
-          return false;
-      }
-    } catch (recoveryError) {
-      this.logger.error('Error recovery failed', {
-        originalError: error.message,
-        recoveryError: recoveryError.message,
-        phase
-      });
-      return false;
-    }
+  async performHealthCheck() {
+    return await this.healthCheckService.performComprehensiveHealthCheck();
   }
 
-  /**
-   * Recover from module initialization errors
-   */
-  async recoverFromModuleInitError(error, context) {
-    this.logger.info('Attempting module initialization recovery...');
-    
-    // Try to reinitialize failed modules with fallback strategies
-    const failedModule = context.moduleName;
-    if (failedModule) {
-      try {
-        // Wait a bit before retry
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Try to reimport the module
-        const module = await import(`./${failedModule}.js`);
-        const singletonName = failedModule.charAt(0).toLowerCase() + failedModule.slice(1);
-        const moduleInstance = module[singletonName] || module.default;
-        
-        if (moduleInstance && typeof moduleInstance.init === 'function') {
-          await moduleInstance.init();
-          this.logger.info(`Successfully recovered module: ${failedModule}`);
-          return true;
-        }
-      } catch (retryError) {
-        this.logger.warn(`Module recovery failed for ${failedModule}`, {
-          retryError: retryError.message
-        });
-      }
-    }
-    
-    return false;
-  }
-
-  /**
-   * Recover from data loading errors
-   */
-  async recoverFromDataLoadingError(error, context) {
-    this.logger.info('Attempting data loading recovery...');
-    
-    try {
-      // Try to load data with reduced functionality
-      const { DataLoadingOrchestrator } = await import('./DataLoadingOrchestrator.js');
-      const orchestrator = new DataLoadingOrchestrator();
-      
-      if (typeof orchestrator.init === 'function') {
-        await orchestrator.init();
-        this.logger.info('Data loading recovery successful');
-        return true;
-      }
-    } catch (recoveryError) {
-      this.logger.warn('Data loading recovery failed', {
-        recoveryError: recoveryError.message
-      });
-    }
-    
-    return false;
-  }
-
-  /**
-   * Recover from map system errors
-   */
-  async recoverFromMapSystemError(error, context) {
-    this.logger.info('Attempting map system recovery...');
-    
-    try {
-      // Try to reinitialize map with fallback configuration
-      const { mapManager } = await import('./MapManager.js');
-      if (mapManager && typeof mapManager.recover === 'function') {
-        await mapManager.recover();
-        this.logger.info('Map system recovery successful');
-        return true;
-      }
-    } catch (recoveryError) {
-      this.logger.warn('Map system recovery failed', {
-        recoveryError: recoveryError.message
-      });
-    }
-    
-    return false;
-  }
-
-  /**
-   * Recover from UI component errors
-   */
-  async recoverFromUIError(error, context) {
-    this.logger.info('Attempting UI recovery...');
-    
-    try {
-      // Try to reinitialize UI components
-      const { collapsibleManager } = await import('./CollapsibleManager.js');
-      if (collapsibleManager && typeof collapsibleManager.recover === 'function') {
-        await collapsibleManager.recover();
-        this.logger.info('UI recovery successful');
-        return true;
-      }
-    } catch (recoveryError) {
-      this.logger.warn('UI recovery failed', {
-        recoveryError: recoveryError.message
-      });
-    }
-    
-    return false;
-  }
-
-  /**
-   * Graceful degradation - continue with reduced functionality
-   */
-  async gracefulDegradation(phase, error) {
-    this.logger.warn(`Entering graceful degradation mode for phase: ${phase}`, {
-      error: error.message
-    });
-
-    // Set a flag to indicate degraded mode
-    stateManager.set('degradedMode', true);
-    stateManager.set('degradedPhase', phase);
-    stateManager.set('degradedError', error.message);
-    
-    // Emit event for other components to handle degraded mode
-    globalEventBus.emit('app:degradedMode', { phase, error });
-    
-    // Show user notification about degraded mode
-    this.showDegradedModeNotification(phase, error);
-    
-    // Continue with basic functionality
-    this.logger.info('Application continuing in degraded mode');
-    return true;
-  }
-
-  /**
-   * Show user notification about degraded mode
-   */
-  showDegradedModeNotification(phase, error) {
-    try {
-      // Create a user-friendly notification
-      const notification = document.createElement('div');
-      notification.className = 'degraded-mode-notification';
-      notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #ff6b35;
-        color: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        z-index: 10000;
-        max-width: 300px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 14px;
-        line-height: 1.4;
-      `;
-      
-      notification.innerHTML = `
-        <div style="font-weight: bold; margin-bottom: 8px;">⚠️ Limited Functionality</div>
-        <div>Some features may not be available due to a technical issue.</div>
-        <div style="margin-top: 8px; font-size: 12px; opacity: 0.9;">
-          <button onclick="this.parentElement.parentElement.remove()" 
-                  style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
-            Dismiss
-          </button>
-        </div>
-      `;
-      
-      document.body.appendChild(notification);
-      
-      // Auto-remove after 10 seconds
-      setTimeout(() => {
-        if (notification.parentElement) {
-          notification.remove();
-        }
-      }, 10000);
-      
-    } catch (notificationError) {
-      this.logger.warn('Failed to show degraded mode notification', {
-        notificationError: notificationError.message
-      });
-    }
-  }
 
   /**
    * Check if application is in degraded mode
@@ -901,62 +661,17 @@ export class ApplicationBootstrap {
   }
 
   /**
-   * Check network connectivity and handle offline scenarios
+   * Check network connectivity and handle offline scenarios (delegated to UnifiedErrorHandler)
    */
   async checkNetworkConnectivity() {
-    try {
-      // Simple connectivity check
-      const { environmentConfig } = await import('./EnvironmentConfig.js');
-      const faviconPath = environmentConfig.getFaviconPath();
-      const response = await fetch(faviconPath, { 
-        method: 'HEAD',
-        cache: 'no-cache',
-        signal: AbortSignal.timeout(5000) // 5 second timeout
-      });
-      return response.ok;
-    } catch (error) {
-      this.logger.warn('Network connectivity check failed', {
-        error: error.message
-      });
-      return false;
-    }
+    return await this.unifiedErrorHandler.checkNetworkConnectivity();
   }
 
   /**
-   * Handle network-related errors with retry logic
+   * Handle network-related errors with retry logic (delegated to UnifiedErrorHandler)
    */
   async handleNetworkError(error, operation, maxRetries = 3) {
-    this.logger.warn(`Network error in ${operation}`, {
-      error: error.message,
-      maxRetries
-    });
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        // Wait with exponential backoff
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        
-        // Check connectivity before retry
-        const isOnline = await this.checkNetworkConnectivity();
-        if (!isOnline) {
-          this.logger.warn(`Still offline, attempt ${attempt}/${maxRetries}`);
-          continue;
-        }
-        
-        this.logger.info(`Retrying ${operation}, attempt ${attempt}/${maxRetries}`);
-        return true; // Indicate retry should be attempted
-        
-      } catch (retryError) {
-        this.logger.warn(`Retry attempt ${attempt} failed for ${operation}`, {
-          retryError: retryError.message
-        });
-      }
-    }
-    
-    // All retries failed
-    this.logger.error(`All retry attempts failed for ${operation}`);
-    return false;
+    return await this.unifiedErrorHandler.handleNetworkError(error, operation, maxRetries);
   }
 
   /**
@@ -988,47 +703,10 @@ export class ApplicationBootstrap {
   }
 
   /**
-   * Show offline notification to user
+   * Show offline notification to user (delegated to UnifiedErrorHandler)
    */
   showOfflineNotification() {
-    try {
-      // Remove existing offline notification
-      const existing = document.querySelector('.offline-notification');
-      if (existing) {
-        existing.remove();
-      }
-      
-      const notification = document.createElement('div');
-      notification.className = 'offline-notification';
-      notification.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        background: #ff6b35;
-        color: white;
-        padding: 12px 16px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        z-index: 10000;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      `;
-      
-      notification.innerHTML = `
-        <span>📡</span>
-        <span>You're offline. Some features may not be available.</span>
-      `;
-      
-      document.body.appendChild(notification);
-      
-    } catch (notificationError) {
-      this.logger.warn('Failed to show offline notification', {
-        notificationError: notificationError.message
-      });
-    }
+    return this.unifiedErrorHandler.showOfflineNotification();
   }
 
   /**
@@ -1065,6 +743,20 @@ export class ApplicationBootstrap {
         if (platformService && typeof platformService.initialize === 'function') {
           await platformService.initialize();
           this.logger.info('PlatformService initialized successfully');
+        }
+        
+        // Initialize Mobile Component Adapter
+        const mobileComponentAdapter = dependencyContainer.get('MobileComponentAdapter');
+        if (mobileComponentAdapter && typeof mobileComponentAdapter.initialize === 'function') {
+          await mobileComponentAdapter.initialize();
+          this.logger.info('MobileComponentAdapter initialized successfully');
+        }
+        
+        // Initialize Mobile UI Optimizer
+        const mobileUIOptimizer = dependencyContainer.get('MobileUIOptimizer');
+        if (mobileUIOptimizer && typeof mobileUIOptimizer.initialize === 'function') {
+          await mobileUIOptimizer.initialize();
+          this.logger.info('MobileUIOptimizer initialized successfully');
         }
       });
       

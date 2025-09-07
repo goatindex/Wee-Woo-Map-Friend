@@ -19,13 +19,20 @@ import { ProgressiveDataLoader } from './ProgressiveDataLoader.js';
 import { ComponentCommunication } from './ComponentCommunication.js';
 import { ComponentLifecycleManager } from './ComponentLifecycleManager.js';
 import { ComponentErrorBoundary } from './ComponentErrorBoundary.js';
-import { ComponentErrorRecoveryService } from './ComponentErrorRecoveryService.js';
 import { ComponentMemoryManager } from './ComponentMemoryManager.js';
 import { ARIAService } from './ARIAService.js';
 import { RefactoredMapManager } from './RefactoredMapManager.js';
 import { RefactoredSidebarManager } from './RefactoredSidebarManager.js';
 import { RefactoredSearchManager } from './RefactoredSearchManager.js';
 import { PlatformService } from './PlatformService.js';
+import { MobileComponentAdapter } from './MobileComponentAdapter.js';
+import { MobileUIOptimizer } from './MobileUIOptimizer.js';
+import { UnifiedErrorHandler } from './UnifiedErrorHandler.js';
+import { CircuitBreakerStrategy } from './CircuitBreakerStrategy.js';
+import { RetryStrategy } from './RetryStrategy.js';
+import { FallbackStrategy } from './FallbackStrategy.js';
+import { HealthCheckService } from './HealthCheckService.js';
+import { ErrorContext } from './ErrorContext.js';
 
 /**
  * Service identifiers for dependency injection
@@ -63,7 +70,6 @@ export const TYPES = {
   ComponentCommunication: Symbol.for('ComponentCommunication'),
   ComponentLifecycleManager: Symbol.for('ComponentLifecycleManager'),
   ComponentErrorBoundary: Symbol.for('ComponentErrorBoundary'),
-  ComponentErrorRecoveryService: Symbol.for('ComponentErrorRecoveryService'),
   ComponentMemoryManager: Symbol.for('ComponentMemoryManager'),
   
   // Accessibility services
@@ -72,11 +78,21 @@ export const TYPES = {
   // Platform services
   PlatformService: Symbol.for('PlatformService'),
   DeviceService: Symbol.for('DeviceService'),
+  MobileComponentAdapter: Symbol.for('MobileComponentAdapter'),
+  MobileUIOptimizer: Symbol.for('MobileUIOptimizer'),
   
   // Utility services
   ValidationService: Symbol.for('ValidationService'),
   PerformanceService: Symbol.for('PerformanceService'),
-  SecurityService: Symbol.for('SecurityService')
+  SecurityService: Symbol.for('SecurityService'),
+  
+  // Error handling services
+  UnifiedErrorHandler: Symbol.for('UnifiedErrorHandler'),
+  CircuitBreakerStrategy: Symbol.for('CircuitBreakerStrategy'),
+  RetryStrategy: Symbol.for('RetryStrategy'),
+  FallbackStrategy: Symbol.for('FallbackStrategy'),
+  HealthCheckService: Symbol.for('HealthCheckService'),
+  ErrorContext: Symbol.for('ErrorContext')
 };
 
 /**
@@ -396,7 +412,6 @@ export class DependencyContainer {
     this.container.bind(TYPES.ComponentCommunication).to(ComponentCommunication).inSingletonScope();
     this.container.bind(TYPES.ComponentLifecycleManager).to(ComponentLifecycleManager).inSingletonScope();
     this.container.bind(TYPES.ComponentErrorBoundary).to(ComponentErrorBoundary).inSingletonScope();
-    this.container.bind(TYPES.ComponentErrorRecoveryService).to(ComponentErrorRecoveryService).inSingletonScope();
     this.container.bind(TYPES.ComponentMemoryManager).to(ComponentMemoryManager).inSingletonScope();
     
     // Accessibility services
@@ -409,6 +424,16 @@ export class DependencyContainer {
     
     // Platform services
     this.container.bind(TYPES.PlatformService).to(PlatformService).inSingletonScope();
+    this.container.bind(TYPES.MobileComponentAdapter).to(MobileComponentAdapter).inSingletonScope();
+    this.container.bind(TYPES.MobileUIOptimizer).to(MobileUIOptimizer).inSingletonScope();
+    
+    // Error handling services
+    this.container.bind(TYPES.UnifiedErrorHandler).to(UnifiedErrorHandler).inSingletonScope();
+    this.container.bind(TYPES.CircuitBreakerStrategy).to(CircuitBreakerStrategy).inSingletonScope();
+    this.container.bind(TYPES.RetryStrategy).to(RetryStrategy).inSingletonScope();
+    this.container.bind(TYPES.FallbackStrategy).to(FallbackStrategy).inSingletonScope();
+    this.container.bind(TYPES.HealthCheckService).to(HealthCheckService).inSingletonScope();
+    this.container.bind(TYPES.ErrorContext).to(ErrorContext).inSingletonScope();
 
     this.logger.info('Dependency container bindings configured');
   }
@@ -458,6 +483,13 @@ export class DependencyContainer {
     const platformService = this.get(TYPES.PlatformService);
     await platformService.initialize();
 
+    // Initialize mobile services
+    const mobileComponentAdapter = this.get(TYPES.MobileComponentAdapter);
+    await mobileComponentAdapter.initialize();
+
+    const mobileUIOptimizer = this.get(TYPES.MobileUIOptimizer);
+    await mobileUIOptimizer.initialize();
+
     this.initialized = true;
     this.logger.info('Dependency container initialized successfully');
   }
@@ -475,7 +507,9 @@ export class DependencyContainer {
       this.get(TYPES.EnvironmentService),
       this.get<IDataService>(TYPES.DataService),
       this.get<IStateManager>(TYPES.StateManager),
-      this.get(TYPES.PlatformService)
+      this.get(TYPES.PlatformService),
+      this.get(TYPES.MobileComponentAdapter),
+      this.get(TYPES.MobileUIOptimizer)
     ];
 
     for (const service of services) {

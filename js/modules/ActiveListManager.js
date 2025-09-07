@@ -7,7 +7,8 @@
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
 import { configurationManager } from './ConfigurationManager.js';
-import { logger } from './StructuredLogger.js';
+// Import logger with fallback handling
+import { logger as structuredLogger } from './StructuredLogger.js';
 import { emphasisManager } from './EmphasisManager.js';
 import { labelManager } from './LabelManager.js';
 
@@ -23,8 +24,15 @@ export class ActiveListManager {
     this.bulkOperationActive = false;
     this.pendingUpdates = new Set();
     
-    // Create module-specific logger
-    this.logger = logger.createChild({ module: 'ActiveListManager' });
+    // Create module-specific logger with null check
+    try {
+      this.logger = structuredLogger && typeof structuredLogger.createChild === 'function' 
+        ? structuredLogger.createChild({ module: 'ActiveListManager' })
+        : console; // Fallback to console if logger not available
+    } catch (error) {
+      console.warn('ActiveListManager: Logger not available, using console fallback', error);
+      this.logger = console;
+    }
     
     // Bind methods
     this.init = this.init.bind(this);
@@ -85,67 +93,77 @@ export class ActiveListManager {
    * Set up event listeners for the active list system
    */
   setupEventListeners() {
-    // Listen for state changes that should trigger active list updates
-    globalEventBus.on('stateChange', ({ property, value }) => {
-      if (this.shouldUpdateActiveList(property)) {
+    try {
+      // Listen for state changes that should trigger active list updates
+      globalEventBus.on('stateChange', ({ property, value }) => {
+        if (this.shouldUpdateActiveList(property)) {
+          this.scheduleUpdate();
+        }
+      });
+      
+      // Listen for configuration changes
+      globalEventBus.on('config:change', ({ path, value }) => {
+        if (path.startsWith('categoryMeta')) {
+          this.scheduleUpdate();
+        }
+      });
+      
+      // Listen for bulk operation events
+      globalEventBus.on('bulk:begin', () => {
+        this.beginBulkOperation();
+      });
+      
+      globalEventBus.on('bulk:end', () => {
+        this.endBulkOperation();
+      });
+      
+      // Listen for legacy events for backward compatibility
+      globalEventBus.on('legacy:activeListUpdate', () => {
         this.scheduleUpdate();
-      }
-    });
-    
-    // Listen for configuration changes
-    globalEventBus.on('config:change', ({ path, value }) => {
-      if (path.startsWith('categoryMeta')) {
+      });
+      
+      // Listen for state events from StateManager
+      globalEventBus.on('state:updateActiveList', () => {
         this.scheduleUpdate();
-      }
-    });
-    
-    // Listen for bulk operation events
-    globalEventBus.on('bulk:begin', () => {
-      this.beginBulkOperation();
-    });
-    
-    globalEventBus.on('bulk:end', () => {
-      this.endBulkOperation();
-    });
-    
-    // Listen for legacy events for backward compatibility
-    globalEventBus.on('legacy:activeListUpdate', () => {
-      this.scheduleUpdate();
-    });
-    
-    // Listen for state events from StateManager
-    globalEventBus.on('state:updateActiveList', () => {
-      this.scheduleUpdate();
-    });
-    
-    console.log('✅ ActiveListManager: Event listeners setup complete');
+      });
+      
+      console.log('✅ ActiveListManager: Event listeners setup complete');
+    } catch (error) {
+      console.error('🚨 ActiveListManager: Failed to setup event listeners:', error);
+      // Don't throw - allow initialization to continue with degraded functionality
+    }
   }
   
   /**
    * Set up state watchers for reactive updates
    */
   setupStateWatchers() {
-    // Watch for changes in feature layers
-    stateManager.watch('featureLayers', () => {
-      this.scheduleUpdate();
-    });
-    
-    // Watch for changes in names by category
-    stateManager.watch('namesByCategory', () => {
-      this.scheduleUpdate();
-    });
-    
-    // Watch for changes in emphasised state
-    stateManager.watch('emphasised', () => {
-      this.scheduleUpdate();
-    });
-    
-    // Watch for changes in name label markers
-    stateManager.watch('nameLabelMarkers', () => {
-      this.scheduleUpdate();
-    });
-    
-    console.log('✅ ActiveListManager: State watchers setup complete');
+    try {
+      // Watch for changes in feature layers
+      stateManager.watch('featureLayers', () => {
+        this.scheduleUpdate();
+      });
+      
+      // Watch for changes in names by category
+      stateManager.watch('namesByCategory', () => {
+        this.scheduleUpdate();
+      });
+      
+      // Watch for changes in emphasised state
+      stateManager.watch('emphasised', () => {
+        this.scheduleUpdate();
+      });
+      
+      // Watch for changes in name label markers
+      stateManager.watch('nameLabelMarkers', () => {
+        this.scheduleUpdate();
+      });
+      
+      console.log('✅ ActiveListManager: State watchers setup complete');
+    } catch (error) {
+      console.error('🚨 ActiveListManager: Failed to setup state watchers:', error);
+      // Don't throw - allow initialization to continue with degraded functionality
+    }
   }
   
   /**
@@ -860,26 +878,32 @@ export class ActiveListManager {
    * Initialize the weather box
    */
   initWeatherBox() {
-    this.weatherBox = document.getElementById('weatherBox');
-    if (!this.weatherBox) {
-      this.weatherBox = document.createElement('div');
-      this.weatherBox.id = 'weatherBox';
-      this.weatherBox.style.cssText = `
-        position: fixed;
-        left: 20px;
-        bottom: 20px;
-        width: 320px;
-        max-height: 60vh;
-        overflow-y: auto;
-        background: rgba(255,255,255,0.95);
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        z-index: 9999;
-        padding: 16px;
-        display: none;
-      `;
-      document.body.appendChild(this.weatherBox);
+    try {
+      this.weatherBox = document.getElementById('weatherBox');
+      if (!this.weatherBox) {
+        this.weatherBox = document.createElement('div');
+        this.weatherBox.id = 'weatherBox';
+        this.weatherBox.style.cssText = `
+          position: fixed;
+          left: 20px;
+          bottom: 20px;
+          width: 320px;
+          max-height: 60vh;
+          overflow-y: auto;
+          background: rgba(255,255,255,0.95);
+          border: 1px solid #ccc;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+          z-index: 9999;
+          padding: 16px;
+          display: none;
+        `;
+        document.body.appendChild(this.weatherBox);
+      }
+    } catch (error) {
+      console.error('🚨 ActiveListManager: Failed to initialize weather box:', error);
+      // Don't throw - allow initialization to continue without weather box
+      this.weatherBox = null;
     }
   }
   

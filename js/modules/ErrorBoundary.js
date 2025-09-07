@@ -8,6 +8,7 @@
  */
 
 import { logger } from './StructuredLogger.js';
+import { UnifiedErrorHandler, ERROR_TYPES, ERROR_SEVERITY, RECOVERY_STRATEGIES } from './UnifiedErrorHandler.js';
 
 /**
  * Error classification types
@@ -485,12 +486,45 @@ export class ErrorClassifier {
 export class ErrorBoundary {
   constructor(options = {}) {
     this.logger = logger.createChild({ module: 'ErrorBoundary' });
+    
+    // Use UnifiedErrorHandler for all error processing
+    this.unifiedErrorHandler = new UnifiedErrorHandler({
+      maxRetries: options.maxRetries || 3,
+      retryDelay: options.retryDelay || 1000,
+      circuitBreakerThreshold: options.circuitBreakerThreshold || 5,
+      circuitBreakerTimeout: options.circuitBreakerTimeout || 30000,
+      enableLogging: true,
+      enableMetrics: true
+    });
+    
+    // Legacy compatibility - keep existing interfaces for backward compatibility
     this.classifier = new ErrorClassifier();
     this.circuitBreakers = new Map();
     this.retryStrategies = new Map();
     this.fallbackHandlers = new Map();
     this.errorHistory = [];
     this.maxHistorySize = options.maxHistorySize || 100;
+    
+    // Component-specific error handling (merged from ComponentErrorRecoveryService)
+    this.componentErrorBoundaries = new Map();
+    this.errorRecoveryStrategies = new Map();
+    this.errorStateManager = {
+      errorHistory: new Map(),
+      recoveryAttempts: new Map(),
+      circuitBreakers: new Map(),
+      retryStrategies: new Map()
+    };
+    
+    // Default recovery configuration
+    this.recoveryConfig = {
+      maxRetryAttempts: 3,
+      retryDelay: 1000,
+      exponentialBackoff: true,
+      circuitBreakerThreshold: 5,
+      circuitBreakerTimeout: 30000,
+      autoRecoveryEnabled: true,
+      recoveryTimeout: 10000
+    };
     
     this.setupGlobalErrorHandling();
   }
@@ -531,34 +565,14 @@ export class ErrorBoundary {
    * @returns {Promise<any>} Recovery result if applicable
    */
   async handleError(error, context) {
-    const classification = this.classifier.classify(error, context);
-    
-    this.logger.error('Error handled by ErrorBoundary', {
-      error: error.message,
-      stack: error.stack,
-      classification: {
-        type: classification.type,
-        severity: classification.severity,
-        strategy: classification.strategy,
-        retryable: classification.retryable
-      },
-      context: {
-        component: context.component,
-        operation: context.operation,
-        timestamp: context.timestamp
-      }
+    // Use UnifiedErrorHandler for all error processing
+    return await this.unifiedErrorHandler.handleError(error, {
+      component: context.component,
+      operation: context.operation,
+      userId: context.userId,
+      sessionId: context.sessionId,
+      metadata: context.metadata
     });
-
-    // Add to error history
-    this.addToHistory({
-      error,
-      context,
-      classification,
-      timestamp: Date.now()
-    });
-
-    // Execute recovery strategy
-    return this.executeRecoveryStrategy(error, context, classification);
   }
 
   /**
@@ -797,6 +811,300 @@ export class ErrorBoundary {
   clearErrorHistory() {
     this.errorHistory = [];
     this.logger.info('Error history cleared');
+  }
+
+  // ===== Component-Specific Error Handling Methods (merged from ComponentErrorRecoveryService) =====
+
+  /**
+   * Registers a custom error recovery strategy for a component.
+   * @param {string} componentId - Component ID
+   * @param {Function} strategy - Recovery strategy function
+   */
+  registerErrorRecoveryStrategy(componentId, strategy) {
+    if (typeof strategy !== 'function') {
+      this.logger.warn('Error recovery strategy must be a function', { componentId });
+      return;
+    }
+
+    this.errorRecoveryStrategies.set(componentId, strategy);
+    this.logger.debug('Error recovery strategy registered', { componentId });
+  }
+
+  /**
+   * Unregisters an error recovery strategy for a component.
+   * @param {string} componentId - Component ID
+   */
+  unregisterErrorRecoveryStrategy(componentId) {
+    this.errorRecoveryStrategies.delete(componentId);
+    this.logger.debug('Error recovery strategy unregistered', { componentId });
+  }
+
+  /**
+   * Creates a component-specific error boundary.
+   * @param {string} componentId - Component ID
+   * @param {Object} config - Error boundary configuration
+   * @returns {Object} Error boundary instance
+   */
+  createComponentErrorBoundary(componentId, config = {}) {
+    const errorBoundary = {
+      componentId,
+      errorCount: 0,
+      lastError: null,
+      isRecovering: false,
+      recoveryAttempts: 0,
+      maxRecoveryAttempts: config.maxRecoveryAttempts || this.recoveryConfig.maxRetryAttempts,
+      lastRecoveryTime: 0,
+      circuitBreakerState: 'CLOSED',
+      circuitBreakerFailures: 0,
+      circuitBreakerLastFailure: 0
+    };
+
+    this.componentErrorBoundaries.set(componentId, errorBoundary);
+    this.logger.debug('Component error boundary created', { componentId, config });
+    
+    return errorBoundary;
+  }
+
+  /**
+   * Handles a component error with recovery strategies.
+   * @param {string} componentId - Component ID
+   * @param {Error} error - The error that occurred
+   * @param {Object} context - Additional context
+   * @returns {Promise<Object>} Recovery result
+   */
+  async handleComponentError(componentId, error, context = {}) {
+    // Use UnifiedErrorHandler for component error processing
+    const result = await this.unifiedErrorHandler.handleError(error, {
+      component: componentId,
+      operation: context.operation || 'component_operation',
+      userId: context.userId,
+      sessionId: context.sessionId,
+      metadata: {
+        ...context,
+        componentId,
+        errorType: 'component_error'
+      }
+    });
+
+    // Update component-specific tracking for backward compatibility
+    this.updateComponentErrorStatus(componentId, error);
+    
+    return result;
+  }
+
+  /**
+   * Records an error in the component's error history.
+   * @param {string} componentId - Component ID
+   * @param {Error} error - The error that occurred
+   * @param {Object} context - Additional context
+   */
+  recordComponentErrorInHistory(componentId, error, context) {
+    const errorInfo = {
+      timestamp: Date.now(),
+      error: error.message,
+      stack: error.stack,
+      context
+    };
+
+    if (!this.errorStateManager.errorHistory.has(componentId)) {
+      this.errorStateManager.errorHistory.set(componentId, []);
+    }
+
+    const history = this.errorStateManager.errorHistory.get(componentId);
+    history.push(errorInfo);
+
+    // Keep only last 100 errors per component
+    if (history.length > 100) {
+      history.splice(0, history.length - 100);
+    }
+  }
+
+  /**
+   * Checks if a component's circuit breaker is open.
+   * @param {string} componentId - Component ID
+   * @returns {boolean} True if circuit breaker is open
+   */
+  isComponentCircuitBreakerOpen(componentId) {
+    const errorBoundary = this.componentErrorBoundaries.get(componentId);
+    if (!errorBoundary) return false;
+
+    if (errorBoundary.circuitBreakerState === 'OPEN') {
+      const timeSinceLastFailure = Date.now() - errorBoundary.circuitBreakerLastFailure;
+      if (timeSinceLastFailure > this.recoveryConfig.circuitBreakerTimeout) {
+        // Transition to HALF_OPEN
+        errorBoundary.circuitBreakerState = 'HALF_OPEN';
+        this.logger.info('Component circuit breaker transitioning to HALF_OPEN', { componentId });
+        return false;
+      }
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Attempts to recover a component from an error.
+   * @param {string} componentId - Component ID
+   * @param {Error} error - The error that occurred
+   * @param {Object} context - Additional context
+   * @returns {Promise<Object>} Recovery result
+   */
+  async attemptComponentRecovery(componentId, error, context) {
+    const errorBoundary = this.componentErrorBoundaries.get(componentId);
+    
+    // Check if we've exceeded max recovery attempts
+    if (errorBoundary && errorBoundary.recoveryAttempts >= errorBoundary.maxRecoveryAttempts) {
+      this.logger.warn('Component recovery attempts exceeded', { componentId, attempts: errorBoundary.recoveryAttempts });
+      return { success: false, reason: 'max_attempts_exceeded' };
+    }
+
+    try {
+      // Use custom recovery strategy if available
+      const customStrategy = this.errorRecoveryStrategies.get(componentId);
+      if (customStrategy) {
+        return await Promise.race([
+          customStrategy(error, context),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Recovery timeout')), this.recoveryConfig.recoveryTimeout)
+          )
+        ]);
+      }
+
+      // Use default recovery strategy
+      return await this.defaultComponentRecovery(componentId, error, context);
+    } catch (recoveryError) {
+      this.logger.error('Component recovery failed', { componentId, error: recoveryError.message });
+      
+      if (errorBoundary) {
+        errorBoundary.recoveryAttempts++;
+        errorBoundary.lastRecoveryTime = Date.now();
+      }
+      
+      return { success: false, reason: 'recovery_error', error: recoveryError.message };
+    }
+  }
+
+  /**
+   * Default component recovery strategy.
+   * @param {string} componentId - Component ID
+   * @param {Error} error - The error that occurred
+   * @param {Object} context - Additional context
+   * @returns {Promise<Object>} Recovery result
+   */
+  async defaultComponentRecovery(componentId, error, context) {
+    // Simple retry strategy with exponential backoff
+    const retryDelay = this.recoveryConfig.retryDelay * Math.pow(2, context.retryCount || 0);
+    
+    this.logger.info('Attempting default component recovery', { componentId, retryDelay });
+    
+    // Wait before retry
+    await new Promise(resolve => setTimeout(resolve, retryDelay));
+    
+    // For now, just return success - in a real implementation, this would
+    // attempt to recreate or restart the component
+    return { 
+      success: true, 
+      strategy: 'default_retry',
+      duration: retryDelay
+    };
+  }
+
+  /**
+   * Opens the circuit breaker for a component.
+   * @param {string} componentId - Component ID
+   */
+  openComponentCircuitBreaker(componentId) {
+    const errorBoundary = this.componentErrorBoundaries.get(componentId);
+    if (errorBoundary) {
+      errorBoundary.circuitBreakerState = 'OPEN';
+      errorBoundary.circuitBreakerLastFailure = Date.now();
+      this.logger.warn('Component circuit breaker opened', { componentId });
+    }
+  }
+
+  /**
+   * Resets the error state for a component.
+   * @param {string} componentId - Component ID
+   */
+  resetComponentErrorState(componentId) {
+    const errorBoundary = this.componentErrorBoundaries.get(componentId);
+    if (errorBoundary) {
+      errorBoundary.errorCount = 0;
+      errorBoundary.recoveryAttempts = 0;
+      errorBoundary.circuitBreakerState = 'CLOSED';
+      errorBoundary.circuitBreakerFailures = 0;
+      errorBoundary.isRecovering = false;
+      this.logger.info('Component error state reset', { componentId });
+    }
+  }
+
+  /**
+   * Updates the error status for a component.
+   * @param {string} componentId - Component ID
+   * @param {Error} error - The error that occurred
+   */
+  updateComponentErrorStatus(componentId, error) {
+    const errorBoundary = this.componentErrorBoundaries.get(componentId);
+    if (errorBoundary) {
+      errorBoundary.errorCount++;
+      errorBoundary.lastError = error;
+      errorBoundary.circuitBreakerFailures++;
+      errorBoundary.circuitBreakerLastFailure = Date.now();
+    }
+  }
+
+  /**
+   * Gets error statistics for a specific component.
+   * @param {string} componentId - Component ID
+   * @returns {Object} Component error statistics
+   */
+  getComponentErrorStats(componentId) {
+    const errorBoundary = this.componentErrorBoundaries.get(componentId);
+    const errorHistory = this.errorStateManager.errorHistory.get(componentId) || [];
+    
+    return {
+      componentId,
+      errorCount: errorBoundary ? errorBoundary.errorCount : 0,
+      recoveryAttempts: errorBoundary ? errorBoundary.recoveryAttempts : 0,
+      circuitBreakerState: errorBoundary ? errorBoundary.circuitBreakerState : 'CLOSED',
+      lastError: errorBoundary ? errorBoundary.lastError?.message : null,
+      errorHistoryCount: errorHistory.length,
+      isRecovering: errorBoundary ? errorBoundary.isRecovering : false
+    };
+  }
+
+  /**
+   * Gets system-wide error statistics.
+   * @returns {Object} System error statistics
+   */
+  getSystemErrorStats() {
+    const stats = {
+      totalComponents: this.componentErrorBoundaries.size,
+      componentsWithErrors: 0,
+      componentsWithOpenCircuitBreakers: 0,
+      totalErrors: 0
+    };
+
+    for (const [componentId, errorBoundary] of this.componentErrorBoundaries) {
+      if (errorBoundary.errorCount > 0) {
+        stats.componentsWithErrors++;
+        stats.totalErrors += errorBoundary.errorCount;
+      }
+      if (errorBoundary.circuitBreakerState === 'OPEN') {
+        stats.componentsWithOpenCircuitBreakers++;
+      }
+    }
+
+    return stats;
+  }
+
+  /**
+   * Sets the error recovery configuration.
+   * @param {Object} config - New configuration
+   */
+  setErrorRecoveryConfig(config) {
+    this.recoveryConfig = { ...this.recoveryConfig, ...config };
+    this.logger.info('Error recovery configuration updated', { config: this.recoveryConfig });
   }
 }
 

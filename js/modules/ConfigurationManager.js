@@ -175,7 +175,6 @@ export class ConfigurationManager {
       operation: '_initializeConfiguration',
       configSections: Object.keys(this._config),
       outlineColors: Object.keys(this._config.outlineColors),
-      fillColors: Object.keys(this._config.fillColors),
       styles: Object.keys(this._config.styles)
     });
   }

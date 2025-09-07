@@ -13,6 +13,7 @@ import { TYPES, BaseService, IEventBus } from './DependencyContainer.js';
 import { logger } from './StructuredLogger.js';
 import { errorBoundary } from './ErrorBoundary.js';
 import { Component, ComponentStatus } from './ComponentCommunication.js';
+import { UnifiedErrorHandler } from './UnifiedErrorHandler.js';
 
 /**
  * @interface IComponentErrorBoundary
@@ -22,7 +23,7 @@ export interface IComponentErrorBoundary {
   initialize(): Promise<void>;
   cleanup(): Promise<void>;
   wrapComponent(component: Component): Component;
-  handleComponentError(component: Component, error: Error, context?: string): void;
+  handleComponentError(component: Component, error: Error, context?: string): Promise<void>;
   recoverComponent(component: Component): Promise<boolean>;
   isolateComponent(component: Component): void;
   getComponentErrorHistory(componentId: string): ComponentError[];
@@ -96,7 +97,8 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
 
   constructor(
     @inject(TYPES.EventBus) private eventBus: IEventBus,
-    @inject(TYPES.ErrorBoundary) private globalErrorBoundary: typeof errorBoundary
+    @inject(TYPES.ErrorBoundary) private globalErrorBoundary: typeof errorBoundary,
+    @inject(TYPES.UnifiedErrorHandler) private unifiedErrorHandler: UnifiedErrorHandler
   ) {
     super();
     this.logger = logger.createChild({ module: 'ComponentErrorBoundary' });
@@ -123,11 +125,11 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
     const originalCleanup = component.cleanup.bind(component);
 
     // Wrap emit method
-    component.emit = (event: string, data?: any) => {
+    component.emit = async (event: string, data?: any) => {
       try {
         originalEmit(event, data);
       } catch (error) {
-        this.handleComponentError(component, error as Error, 'emit');
+        await this.handleComponentError(component, error as Error, 'emit');
       }
     };
 
@@ -136,7 +138,7 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
       try {
         await originalInitialize();
       } catch (error) {
-        this.handleComponentError(component, error as Error, 'initialize');
+        await this.handleComponentError(component, error as Error, 'initialize');
         throw error; // Re-throw to maintain error propagation
       }
     };
@@ -146,7 +148,7 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
       try {
         await originalCleanup();
       } catch (error) {
-        this.handleComponentError(component, error as Error, 'cleanup');
+        await this.handleComponentError(component, error as Error, 'cleanup');
         // Don't re-throw cleanup errors to prevent cascade failures
       }
     };
@@ -165,7 +167,22 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
    * @param {Error} error - The error that occurred.
    * @param {string} [context] - Additional context about where the error occurred.
    */
-  handleComponentError(component: Component, error: Error, context?: string): void {
+  async handleComponentError(component: Component, error: Error, context?: string): Promise<void> {
+    // Use UnifiedErrorHandler for error processing
+    const result = await this.unifiedErrorHandler.handleError(error, {
+      component: component.id,
+      operation: context || 'component_operation',
+      userId: null,
+      sessionId: null,
+      metadata: {
+        componentName: component.name,
+        componentType: component.type,
+        userAgent: navigator.userAgent,
+        url: window.location.href
+      }
+    });
+
+    // Create component error record for backward compatibility
     const componentError: ComponentError = {
       id: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       componentId: component.id,
@@ -174,16 +191,17 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
       context,
       timestamp: Date.now(),
       recoveryAttempts: 0,
-      isRecovered: false,
+      isRecovered: result.success || false,
       stackTrace: error.stack || '',
       metadata: {
         userAgent: navigator.userAgent,
         url: window.location.href,
-        componentType: component.type
+        componentType: component.type,
+        unifiedHandlerResult: result
       }
     };
 
-    // Store error
+    // Store error for backward compatibility
     if (!this.componentErrors.has(component.id)) {
       this.componentErrors.set(component.id, []);
     }
@@ -192,26 +210,14 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
     // Update statistics
     this.updateErrorStatistics(componentError);
 
-    // Log error
-    this.logger.error('Component error occurred', {
-      componentId: component.id,
-      componentName: component.name,
-      error: error.message,
-      context,
-      errorId: componentError.id,
-      totalErrors: this.componentErrors.get(component.id)!.length
-    });
-
     // Emit error event
     this.eventBus.emit('component:error:occurred', {
       componentId: component.id,
       component: component,
       error: componentError,
-      statistics: this.errorStatistics
+      statistics: this.errorStatistics,
+      unifiedHandlerResult: result
     });
-
-    // Attempt recovery
-    this.attemptRecovery(component, componentError);
 
     // Check if component should be isolated
     this.checkIsolationThreshold(component);

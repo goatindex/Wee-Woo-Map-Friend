@@ -1,6 +1,7 @@
 {
   "name": "weewoo-map-friend",
   "private": true,
+  "type": "module",
   "version": "2.0.0",
   "description": "Interactive emergency services mapping for Victoria, Australia - now with native app support",
   "license": "MIT",
