@@ -353,7 +353,10 @@ test.describe('Performance and Accessibility Tests', () => {
         await page.keyboard.press(' ');
         await expect(focusedElement).toBeChecked();
       }
-      
+    } catch (error) {
+      console.error(`❌ ${testName} failed:`, error);
+      throw error;
+    }
   });
 
   test('should have proper form labels and controls', async ({ page }) => {
@@ -378,7 +381,10 @@ test.describe('Performance and Accessibility Tests', () => {
       // Check search input has placeholder
       const searchInput = page.locator('#globalSidebarSearch');
       await expect(searchInput).toHaveAttribute('placeholder');
-      
+    } catch (error) {
+      console.error(`❌ ${testName} failed:`, error);
+      throw error;
+    }
   });
 
   test('should have semantic HTML structure', async ({ page }) => {
@@ -405,7 +411,10 @@ test.describe('Performance and Accessibility Tests', () => {
       
       // Should have section headers
       expect(sidebarHeaderCount).toBeGreaterThan(0);
-      
+    } catch (error) {
+      console.error(`❌ ${testName} failed:`, error);
+      throw error;
+    }
   });
 
   test('should handle memory usage efficiently', async ({ page }) => {
@@ -458,6 +467,9 @@ test.describe('Performance and Accessibility Tests', () => {
           expect(memoryIncrease).toBeLessThan(maxIncrease);
         }
       }
-      
+    } catch (error) {
+      console.error(`❌ ${testName} failed:`, error);
+      throw error;
+    }
   });
 });

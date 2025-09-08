@@ -836,3 +836,114 @@ const store = configureStore({
 | Phase 1 Implementation Patterns | Circuit Breaker + Event Bus + DI + Redux | Consistency, testability, debugging |
 
 These decisions work together to create a resilient, maintainable, and extensible system that addresses the current fragility issues while supporting long-term growth.
+
+## ADR-010: Build System: SWC vs Babel vs TypeScript Compiler
+
+**Status**: Accepted  
+**Date**: 2025-09-08  
+**Context**: The project requires a build system to compile TypeScript decorators and ES6 modules into browser-compatible JavaScript while preserving the sophisticated InversifyJS dependency injection architecture. The previous Babel-based system had performance issues and created nested directory problems.
+
+### Decision
+
+We will use **SWC (Speedy Web Compiler)** as the primary build system for compiling TypeScript decorators and ES6 modules.
+
+### Options Considered
+
+#### Option 1: Babel (Previous)
+- **Pros**: Mature ecosystem, extensive plugin support, well-documented
+- **Cons**: Slower compilation, complex configuration, nested directory issues
+- **Performance**: ~800ms for 75 files
+
+#### Option 2: SWC (Selected)
+- **Pros**: Rust-based, extremely fast, simple configuration, path stripping support
+- **Cons**: Newer ecosystem, fewer plugins than Babel
+- **Performance**: ~477ms for 75 files (40% faster)
+
+#### Option 3: TypeScript Compiler
+- **Pros**: Native TypeScript support, excellent type checking
+- **Cons**: Requires .js to .ts migration, larger build output, slower compilation
+- **Migration Effort**: High (convert all .js files to .ts)
+
+### Tradeoffs
+
+| Aspect | Babel | SWC | TypeScript Compiler |
+|--------|-------|-----|-------------------|
+| Compilation Speed | Slow | Fast | Medium |
+| Configuration | Complex | Simple | Medium |
+| TypeScript Support | Plugin-based | Native | Native |
+| Bundle Size | Medium | Small | Large |
+| Migration Effort | None | Low | High |
+| Path Control | Limited | Excellent | Good |
+| Source Maps | Good | Excellent | Excellent |
+
+### Rationale
+
+SWC was selected because:
+
+1. **Performance**: 40% faster compilation than Babel (477ms vs 800ms)
+2. **Path Control**: Native `--strip-leading-paths` support solves nested directory issues
+3. **Simplicity**: Minimal configuration required, easier to maintain
+4. **Modern**: Built for modern JavaScript, excellent ES6 module support
+5. **Source Maps**: Excellent debugging support with proper source paths
+6. **Migration Effort**: Low - only requires package.json script updates
+
+### Implementation
+
+```json
+{
+  "scripts": {
+    "build:js": "swc js/modules --out-dir dist --strip-leading-paths --source-maps",
+    "watch:js": "swc js/modules --out-dir dist --strip-leading-paths --watch --source-maps"
+  }
+}
+```
+
+**Configuration** (`.swcrc`):
+```json
+{
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "decorators": true
+    },
+    "transform": {
+      "decoratorMetadata": true,
+      "legacyDecorator": true
+    },
+    "target": "es2020",
+    "loose": false
+  },
+  "module": {
+    "type": "es6"
+  },
+  "sourceMaps": true
+}
+```
+
+### Consequences
+
+**Positive**:
+- ✅ 40% faster build times
+- ✅ Clean directory structure (`dist/modules/` not nested)
+- ✅ Excellent source map support
+- ✅ Simple configuration maintenance
+- ✅ Modern tooling alignment
+
+**Negative**:
+- ⚠️ Smaller plugin ecosystem than Babel
+- ⚠️ Newer tool, less community support
+- ⚠️ Requires team familiarity with SWC
+
+**Neutral**:
+- No change to source code structure
+- Same output format and functionality
+- Compatible with existing development workflow
+
+### Monitoring
+
+- **Build Performance**: Monitor compilation times (target: <500ms for 75 files)
+- **Source Maps**: Verify debugging functionality in browser dev tools
+- **Directory Structure**: Ensure clean output structure maintained
+- **GitHub Actions**: Verify CI/CD pipeline compatibility
+
+This decision enables faster development cycles while maintaining the sophisticated dependency injection architecture that makes the application maintainable and scalable.

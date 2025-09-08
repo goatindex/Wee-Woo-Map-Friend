@@ -101,8 +101,17 @@
   <!-- Proj4 for coordinate conversion (required by coordConvert.js) -->
   <script src="https://cdn.jsdelivr.net/npm/proj4@2.9.2/dist/proj4.min.js"></script>
   
-  <!-- ES6 Module System -->
-  <script type="module" src="js/modules/main.js"></script>
+  <!-- InversifyJS for dependency injection -->
+  <script type="importmap">
+    {
+      "imports": {
+        "inversify": "https://cdn.skypack.dev/inversify@6.0.2"
+      }
+    }
+  </script>
+  
+          <!-- ES6 Module System -->
+          <script type="module" src="dist/modules/main.js?v=2.1.0-no-dataservice&t=20240908&bust=999999"></script>
   
   <!-- ES6-ONLY MODE: Legacy fallback completely disabled -->
   <script>
@@ -169,6 +178,27 @@
           });
       });
     }
+    
+        // Handle service worker cache invalidation messages
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data && event.data.type === 'CACHE_INVALIDATED') {
+              console.log('Cache invalidated, reloading page...', event.data);
+              // Force reload to get fresh modules
+              window.location.reload(true);
+            }
+          });
+          
+          // Force cache invalidation on page load
+          navigator.serviceWorker.ready.then(registration => {
+            if (registration.active) {
+              registration.active.postMessage({
+                type: 'FORCE_CACHE_INVALIDATION',
+                reason: 'DataService removed - force fresh load'
+              });
+            }
+          });
+        }
     
     // Handle PWA install prompt
     let deferredPrompt;

@@ -9,7 +9,9 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { TYPES, BaseService, IEventBus, IStateManager } from './DependencyContainer.js';
+import { TYPES } from './Types.js';
+import { IEventBus, IStateManager } from './DependencyContainer.js';
+import { BaseService } from './BaseService.js';
 import { logger } from './StructuredLogger.js';
 import { errorBoundary } from './ErrorBoundary.js';
 import { Component, ComponentStatus } from './ComponentCommunication.js';

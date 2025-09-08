@@ -269,6 +269,18 @@
  * @property {Function} setStateSlice - Set specific state slice
  */
 
+/**
+ * @typedef {Object} IDataService
+ * @property {Function} loadData - Load data for a category
+ * @property {Function} getData - Get loaded data
+ * @property {Function} clearData - Clear data cache
+ * @property {Function} isDataLoaded - Check if data is loaded
+ * 
+ * NOTE: IDataService is archived - DataService module was moved to archive/modules/
+ * This interface is kept for reference but not currently used.
+ */
+
 // Export interfaces
 export const IEventBus = {}; // Placeholder for JSDoc interface
 export const IStateManager = {}; // Placeholder for JSDoc interface
+// export const IDataService = {}; // Archived - not currently used

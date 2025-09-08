@@ -2,25 +2,26 @@
 
 ## Overview
 
-This project uses a comprehensive build automation system that handles both local development and GitHub Pages deployment. The system compiles TypeScript decorators and ES6 modules into browser-compatible JavaScript while preserving the sophisticated InversifyJS dependency injection architecture.
+This project uses a comprehensive build automation system that handles both local development and GitHub Pages deployment. The system compiles TypeScript decorators and ES6 modules into browser-compatible JavaScript using SWC while preserving the sophisticated InversifyJS dependency injection architecture.
 
 ## Build System Architecture
 
 ### **Core Components**
 
-1. **Babel Compilation**: Transforms TypeScript decorators and ES6 modules
-2. **Watch Mode**: Auto-rebuilds on file changes during development
-3. **GitHub Actions**: Automated build and deployment on commits
-4. **Static File Management**: Copies and optimizes assets for GitHub Pages
+1. **SWC Compilation**: Transforms TypeScript decorators and ES6 modules
+2. **Path Stripping**: Uses `--strip-leading-paths` to prevent nested directory issues
+3. **Watch Mode**: Auto-rebuilds on file changes during development
+4. **GitHub Actions**: Automated build and deployment on commits
+5. **Static File Management**: Copies and optimizes assets for GitHub Pages
 
 ### **Build Process Flow**
 
 ```
 Source Code (js/modules/) 
     ↓
-Babel Compilation (decorators + ES6)
+SWC Compilation (decorators + ES6 + path stripping)
     ↓
-Compiled JavaScript (dist/js/modules/)
+Compiled JavaScript (dist/modules/)
     ↓
 Static File Copy (HTML, CSS, GeoJSON, etc.)
     ↓
@@ -60,13 +61,13 @@ npm run dev:simple
    npm run dev
    ```
    This starts:
-   - Babel watch process (auto-rebuilds on changes)
+   - SWC watch process (auto-rebuilds on changes)
    - Python development server on port 8000
    - Browser auto-refresh on file changes
 
 2. **Edit Code**:
    - Modify files in `js/modules/`
-   - Babel automatically compiles changes
+   - SWC automatically compiles changes
    - Browser refreshes with new code
 
 3. **Test Changes**:
@@ -129,21 +130,25 @@ git push origin main
 
 ## Build Configuration
 
-### **Babel Configuration** (`babel.config.js`)
+### **SWC Configuration** (`.swcrc`)
 
-```javascript
-module.exports = {
-  presets: [
-    ['@babel/preset-env', {
-      targets: { browsers: ['last 2 versions'] },
-      modules: false // Keep ES6 modules
-    }]
-  ],
-  plugins: [
-    ['@babel/plugin-proposal-decorators', { 'legacy': true }],
-    ['@babel/plugin-proposal-class-properties', { 'loose': true }]
-  ]
-};
+```json
+{
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "decorators": true
+    },
+    "transform": {
+      "decoratorMetadata": true,
+      "legacyDecorator": true
+    },
+    "target": "es2020"
+  },
+  "env": {
+    "targets": "last 2 versions"
+  }
+}
 ```
 
 ### **Package.json Scripts**
@@ -152,8 +157,8 @@ module.exports = {
 {
   "scripts": {
     "dev": "npm run build:js && concurrently \"npm run watch:js\" \"npm run serve:dev\"",
-    "build:js": "babel js/modules --out-dir dist/js/modules --source-maps",
-    "watch:js": "babel js/modules --out-dir dist/js/modules --watch --source-maps",
+    "build:js": "swc js/modules --out-dir dist --strip-leading-paths --source-maps",
+    "watch:js": "swc js/modules --out-dir dist --strip-leading-paths --watch --source-maps",
     "build": "npm run build:js && npm run build:web && npm run build:native"
   }
 }
@@ -173,7 +178,7 @@ js/modules/           # Source ES6 modules with decorators
 ### **Compiled Files**
 ```
 dist/                # Compiled output
-├── js/modules/     # Compiled JavaScript modules
+├── modules/        # Compiled JavaScript modules
 │   ├── main.js     # Compiled entry point
 │   ├── DependencyContainer.js  # Compiled with decorators
 │   └── ...         # Other compiled modules
@@ -189,8 +194,9 @@ dist/                # Compiled output
 
 1. **Build Fails with Decorator Error**:
    ```bash
-   # Ensure Babel plugins are installed
-   npm install @babel/plugin-proposal-decorators @babel/plugin-proposal-class-properties
+   # Ensure SWC is properly configured
+   # Check .swcrc configuration file
+   cat .swcrc
    ```
 
 2. **Watch Mode Not Working**:
@@ -208,16 +214,16 @@ dist/                # Compiled output
 4. **Module Loading Errors**:
    ```bash
    # Check compiled output
-   ls dist/js/modules/
+   ls dist/modules/
    # Verify source maps are generated
-   ls dist/js/modules/*.map
+   ls dist/modules/*.map
    ```
 
 ### **Debug Commands**
 
 ```bash
-# Check Babel compilation
-npx babel js/modules --out-dir dist/js/modules --source-maps
+# Check SWC compilation
+npx swc js/modules --out-dir dist --strip-leading-paths --source-maps
 
 # Test compiled modules
 npm run serve:dist
@@ -258,23 +264,27 @@ npm run serve:dist
 
 ## Advanced Configuration
 
-### **Custom Babel Configuration**
+### **Custom SWC Configuration**
 
-To modify compilation settings, edit `babel.config.js`:
+To modify compilation settings, edit `.swcrc`:
 
-```javascript
-module.exports = {
-  presets: [
-    ['@babel/preset-env', {
-      targets: { browsers: ['last 2 versions'] },
-      modules: false
-    }]
-  ],
-  plugins: [
-    ['@babel/plugin-proposal-decorators', { 'legacy': true }],
-    ['@babel/plugin-proposal-class-properties', { 'loose': true }]
-  ]
-};
+```json
+{
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "decorators": true
+    },
+    "transform": {
+      "decoratorMetadata": true,
+      "legacyDecorator": true
+    },
+    "target": "es2020"
+  },
+  "env": {
+    "targets": "last 2 versions"
+  }
+}
 ```
 
 ### **GitHub Actions Customization**

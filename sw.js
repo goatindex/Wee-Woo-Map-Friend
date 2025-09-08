@@ -3,9 +3,11 @@
  * Provides offline support and performance optimization through caching
  */
 
-const CACHE_NAME = 'weewoo-map-v1.0';
-const STATIC_CACHE = 'weewoo-static-v1.0';
-const RUNTIME_CACHE = 'weewoo-runtime-v1.0';
+// Updated cache versions to force cache invalidation - DataService removed
+const CACHE_VERSION = 'v2.1.0-no-dataservice';
+const CACHE_NAME = `weewoo-map-${CACHE_VERSION}`;
+const STATIC_CACHE = `weewoo-static-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `weewoo-runtime-${CACHE_VERSION}`;
 
 // Get base path dynamically
 const getBasePath = () => {
@@ -21,24 +23,41 @@ const getBasePath = () => {
 
 const BASE_PATH = getBasePath();
 
-// Assets to cache immediately on install
+// Assets to cache immediately on install - UPDATED TO DIST PATHS
 const STATIC_ASSETS = [
   BASE_PATH,
   `${BASE_PATH}index.html`,
   `${BASE_PATH}css/styles.css`,
-  `${BASE_PATH}js/modules/main.js`,
-  `${BASE_PATH}js/modules/ApplicationBootstrap.js`,
-  `${BASE_PATH}js/modules/EventBus.js`,
-  `${BASE_PATH}js/modules/StateManager.js`,
-  `${BASE_PATH}js/modules/DeviceManager.js`,
-  `${BASE_PATH}js/modules/CoordinateConverter.js`,
-  `${BASE_PATH}js/modules/ErrorUI.js`,
-  `${BASE_PATH}js/modules/LabelManager.js`,
-  `${BASE_PATH}js/modules/EmphasisManager.js`,
-  `${BASE_PATH}js/modules/PolygonLoader.js`,
-  `${BASE_PATH}js/modules/CollapsibleManager.js`,
-  `${BASE_PATH}js/modules/SearchManager.js`,
-  `${BASE_PATH}js/modules/ActiveListManager.js`,
+  `${BASE_PATH}dist/modules/main.js`,
+  `${BASE_PATH}dist/modules/ApplicationBootstrap.js`,
+  `${BASE_PATH}dist/modules/EventBus.js`,
+  `${BASE_PATH}dist/modules/StateManager.js`,
+  `${BASE_PATH}dist/modules/DependencyContainer.js`,
+  `${BASE_PATH}dist/modules/interfaces.js`,
+  `${BASE_PATH}dist/modules/EnhancedEventBus.js`,
+  `${BASE_PATH}dist/modules/StructuredLogger.js`,
+  `${BASE_PATH}dist/modules/ConfigService.js`,
+  `${BASE_PATH}dist/modules/DataService.js`,
+  `${BASE_PATH}dist/modules/ComponentCommunication.js`,
+  `${BASE_PATH}dist/modules/ComponentLifecycleManager.js`,
+  `${BASE_PATH}dist/modules/ComponentErrorBoundary.js`,
+  `${BASE_PATH}dist/modules/ComponentMemoryManager.js`,
+  `${BASE_PATH}dist/modules/ARIAService.js`,
+  `${BASE_PATH}dist/modules/RefactoredMapManager.js`,
+  `${BASE_PATH}dist/modules/RefactoredSidebarManager.js`,
+  `${BASE_PATH}dist/modules/RefactoredSearchManager.js`,
+  `${BASE_PATH}dist/modules/PlatformService.js`,
+  `${BASE_PATH}dist/modules/MobileComponentAdapter.js`,
+  `${BASE_PATH}dist/modules/MobileUIOptimizer.js`,
+  `${BASE_PATH}dist/modules/UnifiedErrorHandler.js`,
+  `${BASE_PATH}dist/modules/CircuitBreakerStrategy.js`,
+  `${BASE_PATH}dist/modules/RetryStrategy.js`,
+  `${BASE_PATH}dist/modules/FallbackStrategy.js`,
+  `${BASE_PATH}dist/modules/HealthCheckService.js`,
+  `${BASE_PATH}dist/modules/ErrorContext.js`,
+  `${BASE_PATH}dist/modules/ProgressiveDataLoader.js`,
+  `${BASE_PATH}dist/modules/DataValidator.js`,
+  `${BASE_PATH}dist/modules/ErrorBoundary.js`,
   `${BASE_PATH}manifest.json`
 ];
 
@@ -105,26 +124,67 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate event - cleanup old caches
+// Activate event - cleanup old caches with aggressive invalidation
 self.addEventListener('activate', event => {
-  console.log('Service Worker: Activating...');
-  
+  console.log('Service Worker: Activating with aggressive cache invalidation...');
+
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          // Delete old caches
-          if (cacheName !== STATIC_CACHE && cacheName !== RUNTIME_CACHE) {
+          // Delete ALL old caches (aggressive cache busting)
+          if (!cacheName.includes(CACHE_VERSION)) {
             console.log('Service Worker: Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     }).then(() => {
+      console.log('Service Worker: Cache invalidation complete');
+      // Force all clients to reload to get fresh modules
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'CACHE_INVALIDATED',
+            version: CACHE_VERSION,
+            action: 'RELOAD',
+            reason: 'DataService removed - force fresh load'
+          });
+        });
+      });
+    }).then(() => {
       console.log('Service Worker: Activation complete');
       return self.clients.claim();
     })
   );
+});
+
+// Handle force cache invalidation messages
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'FORCE_CACHE_INVALIDATION') {
+    console.log('Service Worker: Force cache invalidation requested:', event.data.reason);
+    // Delete all caches and force reload
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          console.log('Service Worker: Force deleting cache:', cacheName);
+          return caches.delete(cacheName);
+        })
+      );
+    }).then(() => {
+      // Notify all clients to reload
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'CACHE_INVALIDATED',
+            version: CACHE_VERSION,
+            action: 'RELOAD',
+            reason: event.data.reason
+          });
+        });
+      });
+    });
+  }
 });
 
 // Fetch event - serve cached content with fallback strategies
@@ -182,7 +242,17 @@ async function cacheFirst(request, cacheName) {
       return cachedResponse;
     }
     
-    const networkResponse = await fetch(request);
+    // Add cache-busting headers for ES6 modules
+    const cacheBustingRequest = new Request(request, {
+      headers: {
+        ...Object.fromEntries(request.headers.entries()),
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+    
+    const networkResponse = await fetch(cacheBustingRequest);
     
     // Cache successful responses
     if (networkResponse.ok) {
@@ -215,7 +285,17 @@ async function cacheFirst(request, cacheName) {
  */
 async function networkFirst(request, cacheName) {
   try {
-    const networkResponse = await fetch(request);
+    // Add cache-busting headers for ES6 modules
+    const cacheBustingRequest = new Request(request, {
+      headers: {
+        ...Object.fromEntries(request.headers.entries()),
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+    
+    const networkResponse = await fetch(cacheBustingRequest);
     
     if (networkResponse.ok) {
       const cache = await caches.open(cacheName);

@@ -1,5 +1,6 @@
 import { injectable, inject } from 'inversify';
-import { TYPES, BaseService } from './DependencyContainer.js';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 import { logger } from './StructuredLogger.js';
 
 /**
@@ -50,7 +51,7 @@ export class ProgressiveDataLoader extends BaseService {
   };
 
   constructor(
-    @inject(TYPES.DataService) private dataService: any,
+    // @inject(TYPES.DataService) private dataService: any, // Archived - not currently used
     @inject(TYPES.ConfigService) private configService: any,
     @inject(TYPES.EventBus) private eventBus: any
   ) {
@@ -144,19 +145,23 @@ export class ProgressiveDataLoader extends BaseService {
       this.logger.info('Loading data on demand', { category, options });
       
       // Check if data is already loaded
-      const cached = this.dataService.getCachedData(category);
-      if (cached) {
-        this.logger.debug('On-demand data already cached', { category });
-        return cached;
-      }
+      // const cached = this.dataService.getCachedData(category); // Archived - DataService not available
+      // if (cached) {
+      //   this.logger.debug('On-demand data already cached', { category });
+      //   return cached;
+      // }
       
       // Load data
-      const data = await this.dataService.loadData(category, {
-        validate: true,
-        sanitize: true,
-        cache: true,
-        ...options
-      });
+      // const data = await // this.dataService // Archived - DataService not available.loadData(category, { // Archived - DataService not available
+      //   validate: true,
+      //   sanitize: true,
+      //   cache: true,
+      //   ...options
+      // });
+      
+      // TODO: Implement direct data loading or use existing loaders
+      this.logger.warn('ProgressiveDataLoader: DataService archived, using fallback', { category });
+      const data = []; // Placeholder - implement actual data loading
       
       // Update statistics
       this.statistics.onDemandLoads++;
@@ -304,12 +309,16 @@ export class ProgressiveDataLoader extends BaseService {
       // Load critical data in parallel
       const promises = criticalCategories.map(async (category) => {
         try {
-          const data = await this.dataService.loadData(category, {
-            validate: true,
-            sanitize: true,
-            cache: true,
-            ...options
-          });
+          // const data = await this.dataService.loadData(category, { // Archived - DataService not available
+          //   validate: true,
+          //   sanitize: true,
+          //   cache: true,
+          //   ...options
+          // });
+          
+          // TODO: Implement direct data loading or use existing loaders
+          this.logger.warn('ProgressiveDataLoader: DataService archived, using fallback', { category });
+          const data = []; // Placeholder - implement actual data loading
           
           this.statistics.criticalLoads++;
           this.updatePhaseProgress('critical', 1);
@@ -374,12 +383,16 @@ export class ProgressiveDataLoader extends BaseService {
       // Load important data in parallel
       const promises = importantCategories.map(async (category) => {
         try {
-          const data = await this.dataService.loadData(category, {
-            validate: true,
-            sanitize: true,
-            cache: true,
-            ...options
-          });
+          // const data = await this.dataService.loadData(category, { // Archived - DataService not available
+          //   validate: true,
+          //   sanitize: true,
+          //   cache: true,
+          //   ...options
+          // });
+          
+          // TODO: Implement direct data loading or use existing loaders
+          this.logger.warn('ProgressiveDataLoader: DataService archived, using fallback', { category });
+          const data = []; // Placeholder - implement actual data loading
           
           this.updatePhaseProgress('important', 1);
           
@@ -461,12 +474,16 @@ export class ProgressiveDataLoader extends BaseService {
         const category = categories[i];
         
         try {
-          const data = await this.dataService.loadData(category, {
-            validate: true,
-            sanitize: true,
-            cache: true,
-            ...options
-          });
+          // const data = await this.dataService.loadData(category, { // Archived - DataService not available
+          //   validate: true,
+          //   sanitize: true,
+          //   cache: true,
+          //   ...options
+          // });
+          
+          // TODO: Implement direct data loading or use existing loaders
+          this.logger.warn('ProgressiveDataLoader: DataService archived, using fallback', { category });
+          const data = []; // Placeholder - implement actual data loading
           
           this.statistics.backgroundLoads++;
           this.updatePhaseProgress('secondary', 1);

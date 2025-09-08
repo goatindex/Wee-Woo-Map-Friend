@@ -17,14 +17,20 @@ WeeWoo Map Friend is built on a modern, responsive architecture that prioritizes
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │js/modules/main.js│───▶│ES6Bootstrap.js  │───▶│  Modern Modules │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                                              │
-         ▼                                              ▼
+         │                      │                      │
+         ▼                      ▼                      ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │  Legacy Loaders │◀───│  UI Managers    │◀───│ StateManager    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          ▲                                              ▲
          │                                              │
          └─────────────── config.js ───────────────────┘
+         │
+         ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   SWC Build     │───▶│ dist/modules/   │───▶│ GitHub Pages    │
+│   System        │    │ (Compiled JS)   │    │ Deployment      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
 ### Core Principles
@@ -36,6 +42,7 @@ WeeWoo Map Friend is built on a modern, responsive architecture that prioritizes
 - **Mobile-First Design**: Responsive design with 4-tier breakpoint system (480px/768px/1024px/1200px+)
 - **Performance Optimization**: Canvas rendering, async operations, and smart caching strategies
 - **Legacy Compatibility**: Backward compatibility maintained during modernization
+- **Modern Build System**: SWC-based compilation for TypeScript decorators and ES6 modules
 
 ## Key Components
 
@@ -294,6 +301,90 @@ The project has successfully completed a comprehensive migration to ES6 modules:
 - **Lifecycle**: Implement consistent initialization, event handling, and cleanup
 - **Event System**: Use EventBus for component communication
 - **State Integration**: Integrate with StateManager for reactive updates
+
+## Build System Architecture
+
+### SWC Compilation Pipeline
+
+The application uses **SWC (Speedy Web Compiler)** to transform TypeScript decorators and ES6 modules into browser-compatible JavaScript while preserving the sophisticated InversifyJS dependency injection architecture.
+
+#### Build Process Flow
+
+```
+Source Code (js/modules/) 
+    ↓
+SWC Compilation (TypeScript decorators + ES6 modules)
+    ↓
+Path Stripping (--strip-leading-paths)
+    ↓
+Compiled JavaScript (dist/modules/)
+    ↓
+GitHub Pages Deployment
+```
+
+#### Key Features
+
+- **Performance**: 40% faster than Babel (~477ms for 75 files)
+- **Path Control**: Native `--strip-leading-paths` support prevents nested directories
+- **Source Maps**: Excellent debugging support with proper source paths
+- **TypeScript Support**: Native decorator transformation for InversifyJS
+- **ES6 Modules**: Modern module system with browser compatibility
+
+#### Build Configuration
+
+**Package.json Scripts**:
+```json
+{
+  "build:js": "swc js/modules --out-dir dist --strip-leading-paths --source-maps",
+  "watch:js": "swc js/modules --out-dir dist --strip-leading-paths --watch --source-maps"
+}
+```
+
+**SWC Configuration** (`.swcrc`):
+```json
+{
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "decorators": true
+    },
+    "transform": {
+      "decoratorMetadata": true,
+      "legacyDecorator": true
+    },
+    "target": "es2020"
+  },
+  "module": {
+    "type": "es6"
+  },
+  "sourceMaps": true
+}
+```
+
+#### Output Structure
+
+```
+dist/
+├── modules/           # Compiled JavaScript modules
+│   ├── main.js       # Entry point
+│   ├── main.js.map   # Source map
+│   └── ...           # Other compiled modules
+├── index.html        # Static HTML
+├── css/              # Stylesheets
+└── geojson/          # Data files
+```
+
+#### Integration with Architecture
+
+The build system is tightly integrated with the core architecture:
+
+- **Dependency Injection**: Preserves InversifyJS decorators (`@injectable`, `@inject`)
+- **ES6 Modules**: Maintains modern module system for browser compatibility
+- **Source Maps**: Enables debugging of original TypeScript source code
+- **Performance**: Fast compilation supports rapid development cycles
+- **Deployment**: Clean output structure compatible with GitHub Pages
+
+This build system enables the sophisticated dependency injection architecture while providing excellent developer experience and deployment compatibility.
 
 ## Future Architecture Roadmap
 

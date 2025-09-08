@@ -54,7 +54,7 @@ This document provides a comprehensive analysis for the go/no-go decision on the
 - **InversifyJS**: ~15KB bundle size
 - **TypeScript**: Development tooling
 - **Testing Framework**: Jest, Playwright
-- **Build Tools**: Rollup, Babel
+- **Build Tools**: Rollup, SWC
 
 ### **Learning Curve**
 - **Redux Toolkit**: Moderate (3-5 days)

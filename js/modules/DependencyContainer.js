@@ -7,174 +7,141 @@
  * @author WeeWoo Map Friend Team
  */
 
-import 'reflect-metadata';
 import { Container, injectable, inject } from 'inversify';
 import { logger } from './StructuredLogger.js';
 import { enhancedEventBus } from './EnhancedEventBus.js';
 import { errorBoundary } from './ErrorBoundary.js';
+import { BaseService } from './BaseService.js';
+import { TYPES } from './Types.js';
 import { ConfigService } from './ConfigService.js';
 import { dataValidator } from './DataValidator.js';
-import { DataService } from './DataService.js';
-import { ProgressiveDataLoader } from './ProgressiveDataLoader.js';
-import { ComponentCommunication } from './ComponentCommunication.js';
-import { ComponentLifecycleManager } from './ComponentLifecycleManager.js';
-import { ComponentErrorBoundary } from './ComponentErrorBoundary.js';
-import { ComponentMemoryManager } from './ComponentMemoryManager.js';
-import { ARIAService } from './ARIAService.js';
-import { RefactoredMapManager } from './RefactoredMapManager.js';
-import { RefactoredSidebarManager } from './RefactoredSidebarManager.js';
-import { RefactoredSearchManager } from './RefactoredSearchManager.js';
-import { PlatformService } from './PlatformService.js';
-import { MobileComponentAdapter } from './MobileComponentAdapter.js';
-import { MobileUIOptimizer } from './MobileUIOptimizer.js';
-import { UnifiedErrorHandler } from './UnifiedErrorHandler.js';
-import { CircuitBreakerStrategy } from './CircuitBreakerStrategy.js';
-import { RetryStrategy } from './RetryStrategy.js';
-import { FallbackStrategy } from './FallbackStrategy.js';
-import { HealthCheckService } from './HealthCheckService.js';
-import { ErrorContext } from './ErrorContext.js';
+// Service imports moved to methods to break circular dependencies
+// import { DataService } from './DataService.js';
 
-/**
- * Service identifiers for dependency injection
- */
-export const TYPES = {
-  // Core services
-  Logger: Symbol.for('Logger'),
-  EventBus: Symbol.for('EventBus'),
-  ErrorBoundary: Symbol.for('ErrorBoundary'),
-  
-  // Configuration services
-  ConfigService: Symbol.for('ConfigService'),
-  EnvironmentService: Symbol.for('EnvironmentService'),
-  
-  // Data services
-  DataService: Symbol.for('DataService'),
-  DataValidator: Symbol.for('DataValidator'),
-  ProgressiveDataLoader: Symbol.for('ProgressiveDataLoader'),
-  CacheService: Symbol.for('CacheService'),
-  
-  // State management
-  StateManager: Symbol.for('StateManager'),
-  StateStore: Symbol.for('StateStore'),
-  
-  // UI services
-  MapManager: Symbol.for('MapManager'),
-  RefactoredMapManager: Symbol.for('RefactoredMapManager'),
-  SidebarManager: Symbol.for('SidebarManager'),
-  RefactoredSidebarManager: Symbol.for('RefactoredSidebarManager'),
-  SearchManager: Symbol.for('SearchManager'),
-  RefactoredSearchManager: Symbol.for('RefactoredSearchManager'),
-  UIManager: Symbol.for('UIManager'),
-  
-  // Component communication services
-  ComponentCommunication: Symbol.for('ComponentCommunication'),
-  ComponentLifecycleManager: Symbol.for('ComponentLifecycleManager'),
-  ComponentErrorBoundary: Symbol.for('ComponentErrorBoundary'),
-  ComponentMemoryManager: Symbol.for('ComponentMemoryManager'),
-  
-  // Accessibility services
-  ARIAService: Symbol.for('ARIAService'),
-  
-  // Platform services
-  PlatformService: Symbol.for('PlatformService'),
-  DeviceService: Symbol.for('DeviceService'),
-  MobileComponentAdapter: Symbol.for('MobileComponentAdapter'),
-  MobileUIOptimizer: Symbol.for('MobileUIOptimizer'),
-  
-  // Utility services
-  ValidationService: Symbol.for('ValidationService'),
-  PerformanceService: Symbol.for('PerformanceService'),
-  SecurityService: Symbol.for('SecurityService'),
-  
-  // Error handling services
-  UnifiedErrorHandler: Symbol.for('UnifiedErrorHandler'),
-  CircuitBreakerStrategy: Symbol.for('CircuitBreakerStrategy'),
-  RetryStrategy: Symbol.for('RetryStrategy'),
-  FallbackStrategy: Symbol.for('FallbackStrategy'),
-  HealthCheckService: Symbol.for('HealthCheckService'),
-  ErrorContext: Symbol.for('ErrorContext')
-};
+// TYPES moved to separate module to break circular dependencies
 
 /**
  * Base service interface
  */
-export class BaseService {
-  constructor() {
-    this.logger = logger.createChild({ 
-      module: this.constructor.name 
-    });
-  }
-
-  /**
-   * Initialize the service
-   * @returns {Promise<void>}
-   */
-  async initialize() {
-    this.logger.info(`${this.constructor.name} initialized`);
-  }
-
-  /**
-   * Cleanup the service
-   * @returns {Promise<void>}
-   */
-  async cleanup() {
-    this.logger.info(`${this.constructor.name} cleaned up`);
-  }
-}
+// BaseService moved to separate module to break circular dependencies
 
 /**
- * Configuration service interface
+ * Configuration service interface for managing application settings
+ * Used by InversifyJS for dependency injection across the application
+ * 
+ * @typedef {Object} IConfigService
+ * @property {function(string, any): any} get - Retrieve configuration value by key
+ * @property {function(string, any): void} set - Set configuration value by key
+ * @property {function(string): boolean} has - Check if configuration key exists
+ * @property {function(): Record<string, any>} getAll - Get all configuration values
+ * @property {function(): Promise<void>} load - Load configuration from storage
+ * 
+ * @example
+ * // Used in dependency injection:
+ * constructor(@inject(TYPES.ConfigService) private config: IConfigService) {}
+ * 
+ * @dependencies
+ * - Used by: ApplicationBootstrap, StateManager, PlatformService
+ * - Implements: ConfigService class
  */
-export interface IConfigService {
-  get(key: string, defaultValue?: any): any;
-  set(key: string, value: any): void;
-  has(key: string): boolean;
-  getAll(): Record<string, any>;
-  load(): Promise<void>;
-}
 
 /**
- * Event bus service interface
+ * Event bus interface for application-wide event communication
+ * Provides pub/sub pattern for loose coupling between components
+ * 
+ * @typedef {Object} IEventBus
+ * @property {function(string, Function, Object): Function} on - Subscribe to event
+ * @property {function(string, Function, Object): Function} once - Subscribe to event once
+ * @property {function(string, Function): void} off - Unsubscribe from event
+ * @property {function(string, any, any): Promise<any[]>} emit - Emit event asynchronously
+ * @property {function(string, any, any): any[]} emitSync - Emit event synchronously
+ * 
+ * @example
+ * // Subscribe to event:
+ * eventBus.on('user:login', (data) => console.log('User logged in:', data));
+ * 
+ * // Emit event:
+ * await eventBus.emit('user:login', { userId: 123 });
+ * 
+ * @dependencies
+ * - Used by: All components for communication
+ * - Implements: EnhancedEventBus class
+ * - Related: StateManager, ComponentCommunication
  */
-export interface IEventBus {
-  on(eventType: string, handler: Function, options?: any): Function;
-  once(eventType: string, handler: Function, options?: any): Function;
-  off(eventType: string, listener: any): void;
-  emit(eventType: string, payload?: any, metadata?: any): Promise<any[]>;
-  emitSync(eventType: string, payload?: any, metadata?: any): any[];
-}
 
 /**
- * Data service interface
+ * Data service interface for managing GeoJSON data loading and caching
+ * Handles data loading, caching, and update notifications
+ * 
+ * @typedef {Object} IDataService
+ * @property {function(string): Promise<any[]>} loadData - Load data for specific category
+ * @property {function(string[]): Promise<Map<string, any[]>>} loadDataBatch - Load multiple data categories
+ * @property {function(string): any[]|null} getCachedData - Get cached data for category
+ * @property {function(string): void} invalidateCache - Clear cache for category
+ * @property {function(string, Function): Function} subscribeToDataUpdates - Subscribe to data updates
+ * 
+ * @example
+ * // Load SES data:
+ * const sesData = await dataService.loadData('ses');
+ * 
+ * // Subscribe to updates:
+ * const unsubscribe = dataService.subscribeToDataUpdates('ses', (data) => {
+ *   console.log('SES data updated:', data);
+ * });
+ * 
+ * @dependencies
+ * - Used by: MapManager, LayerManager, DataLoadingOrchestrator
+ * - Implements: DataService class
  */
-export interface IDataService {
-  loadData(category: string): Promise<any[]>;
-  loadDataBatch(categories: string[]): Promise<Map<string, any[]>>;
-  getCachedData(category: string): any[] | null;
-  invalidateCache(category: string): void;
-  subscribeToDataUpdates(category: string, callback: Function): Function;
-}
 
 /**
- * State manager interface
+ * State manager interface for centralized application state management
+ * Provides reactive state updates and subscription system
+ * 
+ * @typedef {Object} IStateManager
+ * @property {function(): any} getState - Get current application state
+ * @property {function(any): void} setState - Set new application state
+ * @property {function(string, Function): Function} subscribe - Subscribe to state changes
+ * @property {function(any): void} dispatch - Dispatch state action
+ * 
+ * @example
+ * // Get current state:
+ * const currentState = stateManager.getState();
+ * 
+ * // Subscribe to changes:
+ * const unsubscribe = stateManager.subscribe('map.zoom', (zoom) => {
+ *   console.log('Map zoom changed to:', zoom);
+ * });
+ * 
+ * @dependencies
+ * - Used by: MapManager, SidebarManager, UIManager
+ * - Implements: StateManager class
  */
-export interface IStateManager {
-  getState(): any;
-  setState(newState: any): void;
-  subscribe(path: string, listener: Function): Function;
-  dispatch(action: any): void;
-}
 
 /**
- * Platform service interface
+ * Platform service interface for device and platform detection
+ * Provides platform-specific capabilities and feature detection
+ * 
+ * @typedef {Object} IPlatformService
+ * @property {function(): string} getPlatform - Get current platform (web/ios/android)
+ * @property {function(): any} getCapabilities - Get platform capabilities
+ * @property {function(): boolean} isMobile - Check if running on mobile device
+ * @property {function(): boolean} isDesktop - Check if running on desktop
+ * @property {function(): boolean} isWeb - Check if running in web browser
+ * 
+ * @example
+ * // Check platform:
+ * if (platformService.isMobile()) {
+ *   // Mobile-specific code
+ * }
+ * 
+ * // Get capabilities:
+ * const capabilities = platformService.getCapabilities();
+ * 
+ * @dependencies
+ * - Used by: MobileComponentAdapter, MobileUIOptimizer, DeviceManager
+ * - Implements: PlatformService class
  */
-export interface IPlatformService {
-  getPlatform(): string;
-  getCapabilities(): any;
-  isMobile(): boolean;
-  isDesktop(): boolean;
-  isWeb(): boolean;
-}
 
 // Use the comprehensive ConfigService from ConfigService.js
 // The ConfigService class is already imported and will be used directly
@@ -280,7 +247,8 @@ export class EnvironmentService extends BaseService {
 
   private detectES6Modules(): boolean {
     try {
-      return typeof import !== 'undefined';
+      // Check if dynamic import is supported
+      return typeof window !== 'undefined' && 'import' in window;
     } catch (e) {
       return false;
     }
@@ -398,42 +366,42 @@ export class DependencyContainer {
 
     // Configuration services
     this.container.bind<IConfigService>(TYPES.ConfigService).to(ConfigService).inSingletonScope();
-    this.container.bind(TYPES.EnvironmentService).to(EnvironmentService).inSingletonScope();
+    // this.container.bind(TYPES.EnvironmentService).to(EnvironmentService).inSingletonScope();
 
-    // Data services
-    this.container.bind<IDataService>(TYPES.DataService).to(DataService).inSingletonScope();
+    // Data services - temporarily disabled due to circular dependency
+    // this.container.bind<IDataService>(TYPES.DataService).to(DataService).inSingletonScope();
     this.container.bind(TYPES.DataValidator).toConstantValue(dataValidator);
-    this.container.bind(TYPES.ProgressiveDataLoader).to(ProgressiveDataLoader).inSingletonScope();
+    // this.container.bind(TYPES.ProgressiveDataLoader).to(ProgressiveDataLoader).inSingletonScope();
 
-    // State management
-    this.container.bind<IStateManager>(TYPES.StateManager).to(StateManager).inSingletonScope();
+    // State management - temporarily commented out to break circular dependencies
+    // this.container.bind<IStateManager>(TYPES.StateManager).to(StateManager).inSingletonScope();
 
-    // Component communication services
-    this.container.bind(TYPES.ComponentCommunication).to(ComponentCommunication).inSingletonScope();
-    this.container.bind(TYPES.ComponentLifecycleManager).to(ComponentLifecycleManager).inSingletonScope();
-    this.container.bind(TYPES.ComponentErrorBoundary).to(ComponentErrorBoundary).inSingletonScope();
-    this.container.bind(TYPES.ComponentMemoryManager).to(ComponentMemoryManager).inSingletonScope();
+    // Component communication services - temporarily commented out to break circular dependencies
+    // this.container.bind(TYPES.ComponentCommunication).to(ComponentCommunication).inSingletonScope();
+    // this.container.bind(TYPES.ComponentLifecycleManager).to(ComponentLifecycleManager).inSingletonScope();
+    // this.container.bind(TYPES.ComponentErrorBoundary).to(ComponentErrorBoundary).inSingletonScope();
+    // this.container.bind(TYPES.ComponentMemoryManager).to(ComponentMemoryManager).inSingletonScope();
     
-    // Accessibility services
-    this.container.bind(TYPES.ARIAService).to(ARIAService).inSingletonScope();
+    // Accessibility services - temporarily commented out to break circular dependencies
+    // this.container.bind(TYPES.ARIAService).to(ARIAService).inSingletonScope();
     
-    // UI services
-    this.container.bind(TYPES.RefactoredMapManager).to(RefactoredMapManager).inSingletonScope();
-    this.container.bind(TYPES.RefactoredSidebarManager).to(RefactoredSidebarManager).inSingletonScope();
-    this.container.bind(TYPES.RefactoredSearchManager).to(RefactoredSearchManager).inSingletonScope();
+    // UI services - temporarily commented out to break circular dependencies
+    // this.container.bind(TYPES.RefactoredMapManager).to(RefactoredMapManager).inSingletonScope();
+    // this.container.bind(TYPES.RefactoredSidebarManager).to(RefactoredSidebarManager).inSingletonScope();
+    // this.container.bind(TYPES.RefactoredSearchManager).to(RefactoredSearchManager).inSingletonScope();
     
-    // Platform services
-    this.container.bind(TYPES.PlatformService).to(PlatformService).inSingletonScope();
-    this.container.bind(TYPES.MobileComponentAdapter).to(MobileComponentAdapter).inSingletonScope();
-    this.container.bind(TYPES.MobileUIOptimizer).to(MobileUIOptimizer).inSingletonScope();
+    // Platform services - temporarily commented out to break circular dependencies
+    // this.container.bind(TYPES.PlatformService).to(PlatformService).inSingletonScope();
+    // this.container.bind(TYPES.MobileComponentAdapter).to(MobileComponentAdapter).inSingletonScope();
+    // this.container.bind(TYPES.MobileUIOptimizer).to(MobileUIOptimizer).inSingletonScope();
     
-    // Error handling services
-    this.container.bind(TYPES.UnifiedErrorHandler).to(UnifiedErrorHandler).inSingletonScope();
-    this.container.bind(TYPES.CircuitBreakerStrategy).to(CircuitBreakerStrategy).inSingletonScope();
-    this.container.bind(TYPES.RetryStrategy).to(RetryStrategy).inSingletonScope();
-    this.container.bind(TYPES.FallbackStrategy).to(FallbackStrategy).inSingletonScope();
-    this.container.bind(TYPES.HealthCheckService).to(HealthCheckService).inSingletonScope();
-    this.container.bind(TYPES.ErrorContext).to(ErrorContext).inSingletonScope();
+    // Error handling services - temporarily commented out to break circular dependencies
+    // this.container.bind(TYPES.UnifiedErrorHandler).to(UnifiedErrorHandler).inSingletonScope();
+    // this.container.bind(TYPES.CircuitBreakerStrategy).to(CircuitBreakerStrategy).inSingletonScope();
+    // this.container.bind(TYPES.RetryStrategy).to(RetryStrategy).inSingletonScope();
+    // this.container.bind(TYPES.FallbackStrategy).to(FallbackStrategy).inSingletonScope();
+    // this.container.bind(TYPES.HealthCheckService).to(HealthCheckService).inSingletonScope();
+    // this.container.bind(TYPES.ErrorContext).to(ErrorContext).inSingletonScope();
 
     this.logger.info('Dependency container bindings configured');
   }
@@ -474,8 +442,8 @@ export class DependencyContainer {
     const environmentService = this.get(TYPES.EnvironmentService);
     await environmentService.initialize();
 
-    const dataService = this.get<IDataService>(TYPES.DataService);
-    await dataService.initialize();
+    // const dataService = this.get<IDataService>(TYPES.DataService); // Archived - DataService not available
+    // await dataService.initialize();
 
     const stateManager = this.get<IStateManager>(TYPES.StateManager);
     await stateManager.initialize();
@@ -505,7 +473,7 @@ export class DependencyContainer {
     const services = [
       this.get<IConfigService>(TYPES.ConfigService),
       this.get(TYPES.EnvironmentService),
-      this.get<IDataService>(TYPES.DataService),
+      // this.get<IDataService>(TYPES.DataService), // Archived - DataService not available
       this.get<IStateManager>(TYPES.StateManager),
       this.get(TYPES.PlatformService),
       this.get(TYPES.MobileComponentAdapter),
@@ -530,6 +498,10 @@ export class DependencyContainer {
     return this.container;
   }
 }
+
+// Export interfaces
+export { IEventBus, IStateManager } from './interfaces.js';
+// IDataService archived - not currently used
 
 // Export singleton instance
 export const dependencyContainer = new DependencyContainer();

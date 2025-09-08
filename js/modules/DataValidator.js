@@ -1,5 +1,5 @@
 import { logger } from './StructuredLogger.js';
-import { globalEventBus } from './EnhancedEventBus.js';
+import { enhancedEventBus as globalEventBus } from './EnhancedEventBus.js';
 
 /**
  * @typedef {Object} ValidationResult

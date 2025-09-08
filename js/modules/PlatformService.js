@@ -8,10 +8,9 @@
  * @author WeeWoo Map Friend Team
  */
 
-import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
-import { BaseService } from './DependencyContainer.js';
-import { TYPES } from './DependencyContainer.js';
+import { BaseService } from './BaseService.js';
+import { TYPES } from './Types.js';
 import { logger } from './StructuredLogger.js';
 import { pathResolver } from './PathResolver.js';
 import { environmentConfig } from './EnvironmentConfig.js';
@@ -739,7 +738,7 @@ export class PlatformService extends BaseService {
       wasm: 'WebAssembly' in window,
       
       // Modern JavaScript capabilities
-      es6Modules: typeof import !== 'undefined',
+      es6Modules: typeof window !== 'undefined' && 'import' in window,
       promises: typeof Promise !== 'undefined',
       asyncAwait: this.detectAsyncAwait(),
       arrowFunctions: this.detectArrowFunctions(),

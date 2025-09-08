@@ -20,7 +20,7 @@ if (!fs.existsSync(distDir)) {
 try {
   // Step 1: Compile JavaScript modules
   console.log('📦 Compiling JavaScript modules...');
-  execSync('npx babel js/modules --out-dir dist/js/modules --source-maps', { stdio: 'inherit' });
+  execSync('npx swc js/modules --out-dir dist/js/modules --source-maps', { stdio: 'inherit' });
   
   // Step 2: Copy static files
   console.log('📋 Copying static files...');

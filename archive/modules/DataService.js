@@ -1,5 +1,7 @@
 import { injectable, inject } from 'inversify';
-import { TYPES, BaseService, IDataService } from './DependencyContainer.js';
+import { TYPES } from './Types.js';
+import { IDataService } from './interfaces.js';
+import { BaseService } from './BaseService.js';
 import { logger } from './StructuredLogger.js';
 import { dataValidator } from './DataValidator.js';
 

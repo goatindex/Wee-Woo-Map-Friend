@@ -415,6 +415,83 @@ class RetryStrategy {
 - **A/B Testing**: Compare implementations during development
 - **Quick Rollback**: Rapid reversion capability (though less critical given current broken state)
 
+## Build System Architecture
+
+### SWC Compilation Pipeline
+
+The refactored system uses **SWC (Speedy Web Compiler)** to enable modern JavaScript development while maintaining browser compatibility and supporting the sophisticated dependency injection architecture.
+
+#### Build Process Integration
+
+```
+Source Code (js/modules/)
+    ↓
+SWC Compilation (TypeScript decorators + ES6 modules)
+    ↓
+Path Stripping (--strip-leading-paths)
+    ↓
+Compiled JavaScript (dist/modules/)
+    ↓
+GitHub Pages Deployment
+```
+
+#### Key Architectural Benefits
+
+1. **Dependency Injection Support**: Preserves InversifyJS decorators (`@injectable`, `@inject`)
+2. **Performance**: 40% faster compilation than Babel (~477ms for 75 files)
+3. **Path Control**: Native `--strip-leading-paths` prevents nested directory issues
+4. **Source Maps**: Excellent debugging support for development
+5. **ES6 Modules**: Modern module system with browser compatibility
+
+#### Build Configuration
+
+**Package.json Scripts**:
+```json
+{
+  "build:js": "swc js/modules --out-dir dist --strip-leading-paths --source-maps",
+  "watch:js": "swc js/modules --out-dir dist --strip-leading-paths --watch --source-maps"
+}
+```
+
+**SWC Configuration** (`.swcrc`):
+```json
+{
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "decorators": true
+    },
+    "transform": {
+      "decoratorMetadata": true,
+      "legacyDecorator": true
+    },
+    "target": "es2020"
+  },
+  "module": {
+    "type": "es6"
+  },
+  "sourceMaps": true
+}
+```
+
+#### Integration with Core Architecture
+
+The build system is essential to the refactored architecture:
+
+- **Event-Driven Architecture**: Enables modern ES6 modules for event bus communication
+- **Dependency Injection**: Preserves TypeScript decorators for InversifyJS container
+- **Circuit Breaker Pattern**: Supports async/await syntax for resilient error handling
+- **State Management**: Enables modern Redux patterns with ES6 modules
+- **Component Architecture**: Supports modern component lifecycle with decorators
+
+#### Deployment Architecture
+
+```
+Development (js/modules/) → SWC Build → Production (dist/modules/) → GitHub Pages
+```
+
+This build system enables the sophisticated architectural patterns while providing excellent developer experience and deployment compatibility.
+
 ---
 
 *This high-level design provides the foundation for a resilient, maintainable, and extensible system that addresses the current fragility issues while supporting long-term growth.*

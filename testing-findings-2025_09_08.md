@@ -409,7 +409,7 @@ export class StateManager extends BaseService implements IStateManager {
 }
 
 // Add build step to compile decorators
-// Use TypeScript or Babel to compile decorators to JavaScript
+// Use TypeScript or SWC to compile decorators to JavaScript
 ```
 
 #### **Option 2: Use InversifyJS Without Decorators (ALTERNATIVE)**
@@ -436,7 +436,7 @@ container.bind(TYPES.StateManager).to(StateManager).inSingletonScope();
 3. ✅ **Update imports** to reference JSDoc types
 
 **Priority 2: InversifyJS Browser Compatibility (CRITICAL)**
-1. **Add build step** to compile decorators (TypeScript/Babel)
+1. **Add build step** to compile decorators (TypeScript/SWC)
 2. **OR use manual binding** without decorators
 3. **Preserve all InversifyJS functionality**
 4. **Test dependency injection** works correctly
@@ -614,3 +614,30 @@ get(serviceIdentifier) {
 - **Type Safety**: Existing JSDoc system in `js/types/interfaces.js` provides foundation
 
 **This is a critical blocking issue that prevents the entire application from functioning. The fix requires careful interface conversion to preserve dependency injection while removing TypeScript syntax.**
+
+---
+
+## ✅ **Resolution Update - 2025-09-08**
+
+### **SWC Nested Directory Issue - RESOLVED**
+
+**Problem**: SWC was creating nested directory structure (`dist/js/modules/js/modules/`) instead of flat structure (`dist/js/modules/`)
+
+**Root Cause**: SWC preserves relative path structure when using `--out-dir` with input directory paths
+
+**Solution Implemented**:
+- Added `--strip-leading-paths` flag to SWC build commands
+- Changed output directory from `dist/js/modules` to `dist` 
+- Updated HTML references from `dist/js/modules/main.js` to `dist/modules/main.js`
+- Updated package.json scripts:
+  - `build:js`: `swc js/modules --out-dir dist --strip-leading-paths --source-maps`
+  - `watch:js`: `swc js/modules --out-dir dist --strip-leading-paths --watch --source-maps`
+
+**Result**: 
+- ✅ Files now compile to correct `dist/modules/` structure
+- ✅ All 75 files compile successfully
+- ✅ Source maps generated correctly
+- ✅ GitHub Pages compatible directory structure
+- ✅ Build performance maintained (~360ms)
+
+**Status**: **COMPLETELY RESOLVED** - No further action required

@@ -4,9 +4,8 @@
  * Implements independent initialization and enhanced search functionality
  */
 
-import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
-import { TYPES } from './DependencyContainer.js';
+import { TYPES } from './Types.js';
 import { BaseService } from './BaseService.js';
 import { logger } from './StructuredLogger.js';
 

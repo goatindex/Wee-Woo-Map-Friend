@@ -33,9 +33,9 @@ staticFiles.forEach(file => {
   }
 });
 
-// Start Babel watch process
+// Start SWC watch process
 console.log('👀 Watching JavaScript modules...');
-const babelProcess = spawn('npx', ['babel', 'js/modules', '--out-dir', 'dist/js/modules', '--watch', '--source-maps'], {
+const swcProcess = spawn('npx', ['swc', 'js/modules', '--out-dir', 'dist/js/modules', '--watch', '--source-maps'], {
   stdio: 'inherit',
   shell: true
 });
@@ -51,14 +51,14 @@ const serverProcess = spawn('python', ['-m', 'http.server', '8000'], {
 // Handle process cleanup
 process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down development server...');
-  babelProcess.kill();
+  swcProcess.kill();
   serverProcess.kill();
   process.exit(0);
 });
 
 // Handle errors
-babelProcess.on('error', (error) => {
-  console.error('❌ Babel process error:', error);
+swcProcess.on('error', (error) => {
+  console.error('❌ SWC process error:', error);
 });
 
 serverProcess.on('error', (error) => {

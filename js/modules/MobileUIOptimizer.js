@@ -8,10 +8,9 @@
  * @author WeeWoo Map Friend Team
  */
 
-import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
-import { BaseService } from './DependencyContainer.js';
-import { TYPES } from './DependencyContainer.js';
+import { BaseService } from './BaseService.js';
+import { TYPES } from './Types.js';
 import { logger } from './StructuredLogger.js';
 
 /**

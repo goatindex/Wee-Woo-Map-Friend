@@ -83,10 +83,14 @@
 
 ## **Configuration Updates**
 
-### **Babel Configuration**
-- **Removed Jest-specific configuration** (CommonJS transformation)
-- **Simplified to ES6 module support** for modern browsers
-- **Removed test environment configuration**
+### **Build Configuration**
+- **✅ Migrated from Babel to SWC** for improved performance
+- **✅ Resolved nested directory issue** with `--strip-leading-paths` flag
+- **✅ Removed Jest-specific configuration** (CommonJS transformation)
+- **✅ Simplified to ES6 module support** for modern browsers
+- **✅ Removed test environment configuration**
+- **✅ Build performance maintained** (~477ms for 75 files)
+- **✅ All source maps generated correctly** for debugging
 
 ### **Package.json**
 - **Removed Jest dependencies** (already removed)

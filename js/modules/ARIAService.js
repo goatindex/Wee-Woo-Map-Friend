@@ -5,7 +5,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { TYPES } from './DependencyContainer.js';
+import { TYPES } from './Types.js';
 import { logger } from './StructuredLogger.js';
 import { BaseService } from './BaseService.js';
 

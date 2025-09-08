@@ -9,71 +9,81 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { TYPES, BaseService, IEventBus } from './DependencyContainer.js';
+import { TYPES } from './Types.js';
+import { IEventBus } from './DependencyContainer.js';
+import { BaseService } from './BaseService.js';
 import { logger } from './StructuredLogger.js';
 import { errorBoundary } from './ErrorBoundary.js';
 import { Component, ComponentStatus } from './ComponentCommunication.js';
 import { UnifiedErrorHandler } from './UnifiedErrorHandler.js';
 
 /**
- * @interface IComponentErrorBoundary
- * Defines the interface for the ComponentErrorBoundary service.
+ * Component error boundary interface for error handling and recovery
+ * Provides comprehensive error management for UI components
+ * 
+ * @typedef {Object} IComponentErrorBoundary
+ * @property {function(): Promise<void>} initialize - Initialize error boundary system
+ * @property {function(): Promise<void>} cleanup - Cleanup error boundary resources
+ * @property {function(Component): Component} wrapComponent - Wrap component with error boundary
+ * @property {function(Component, Error, string): Promise<void>} handleComponentError - Handle component errors
+ * @property {function(Component): Promise<boolean>} recoverComponent - Attempt component recovery
+ * @property {function(Component): void} isolateComponent - Isolate failing component
+ * @property {function(string): ComponentError[]} getComponentErrorHistory - Get error history for component
+ * @property {function(): ErrorStatistics} getErrorStatistics - Get overall error statistics
+ * @property {function(string): void} clearComponentErrors - Clear errors for component
+ * @property {function(string): boolean} isComponentIsolated - Check if component is isolated
+ * @property {function(): string[]} getIsolatedComponents - Get list of isolated components
+ * 
+ * @example
+ * // Wrap a component:
+ * const wrappedComponent = errorBoundary.wrapComponent(myComponent);
+ * 
+ * // Handle errors:
+ * await errorBoundary.handleComponentError(component, error, 'user-action');
+ * 
+ * @dependencies
+ * - Used by: All UI components for error handling
+ * - Implements: ComponentErrorBoundary class
  */
-export interface IComponentErrorBoundary {
-  initialize(): Promise<void>;
-  cleanup(): Promise<void>;
-  wrapComponent(component: Component): Component;
-  handleComponentError(component: Component, error: Error, context?: string): Promise<void>;
-  recoverComponent(component: Component): Promise<boolean>;
-  isolateComponent(component: Component): void;
-  getComponentErrorHistory(componentId: string): ComponentError[];
-  getErrorStatistics(): ErrorStatistics;
-  clearComponentErrors(componentId: string): void;
-  isComponentIsolated(componentId: string): boolean;
-  getIsolatedComponents(): string[];
-}
 
 /**
- * @interface ComponentError
- * Represents an error that occurred in a component.
+ * Component error data structure for tracking component failures
+ * 
+ * @typedef {Object} ComponentError
+ * @property {string} id - Unique error identifier
+ * @property {string} componentId - ID of the component that failed
+ * @property {string} componentName - Human-readable component name
+ * @property {Error} error - The actual error object
+ * @property {string} [context] - Optional context where error occurred
+ * @property {number} timestamp - When the error occurred (Unix timestamp)
+ * @property {number} recoveryAttempts - Number of recovery attempts made
+ * @property {boolean} isRecovered - Whether the component was successfully recovered
+ * @property {string} stackTrace - Error stack trace
+ * @property {Record<string, any>} metadata - Additional error metadata
  */
-export interface ComponentError {
-  id: string;
-  componentId: string;
-  componentName: string;
-  error: Error;
-  context?: string;
-  timestamp: number;
-  recoveryAttempts: number;
-  isRecovered: boolean;
-  stackTrace: string;
-  metadata: Record<string, any>;
-}
 
 /**
- * @interface ErrorStatistics
- * Represents error statistics across all components.
+ * Error statistics data structure for monitoring component health
+ * 
+ * @typedef {Object} ErrorStatistics
+ * @property {number} totalErrors - Total number of errors across all components
+ * @property {Map<string, number>} errorsByComponent - Error count per component
+ * @property {Map<string, number>} errorsByType - Error count by error type
+ * @property {number} recoveryRate - Percentage of successful recoveries
+ * @property {number} isolationRate - Percentage of components that were isolated
+ * @property {number} averageRecoveryTime - Average time to recover components (ms)
+ * @property {number} lastErrorTime - Timestamp of most recent error
  */
-export interface ErrorStatistics {
-  totalErrors: number;
-  errorsByComponent: Map<string, number>;
-  errorsByType: Map<string, number>;
-  recoveryRate: number;
-  isolationRate: number;
-  averageRecoveryTime: number;
-  lastErrorTime: number;
-}
 
 /**
- * @interface RecoveryStrategy
- * Defines a recovery strategy for component errors.
+ * Recovery strategy interface for component error recovery
+ * 
+ * @typedef {Object} RecoveryStrategy
+ * @property {string} name - Name of the recovery strategy
+ * @property {function(Error, Component): boolean} canHandle - Check if strategy can handle error
+ * @property {function(Component, Error): Promise<boolean>} recover - Attempt to recover component
+ * @property {number} priority - Priority level (higher = more important)
  */
-export interface RecoveryStrategy {
-  name: string;
-  canHandle(error: Error, component: Component): boolean;
-  recover(component: Component, error: Error): Promise<boolean>;
-  priority: number;
-}
 
 /**
  * @class ComponentErrorBoundary
@@ -81,27 +91,25 @@ export interface RecoveryStrategy {
  * Manages error boundaries for individual components, providing isolation and recovery.
  */
 @injectable()
-export class ComponentErrorBoundary extends BaseService implements IComponentErrorBoundary {
-  private componentErrors: Map<string, ComponentError[]> = new Map();
-  private isolatedComponents: Set<string> = new Set();
-  private recoveryStrategies: RecoveryStrategy[] = [];
-  private errorStatistics: ErrorStatistics = {
-    totalErrors: 0,
-    errorsByComponent: new Map(),
-    errorsByType: new Map(),
-    recoveryRate: 0,
-    isolationRate: 0,
-    averageRecoveryTime: 0,
-    lastErrorTime: 0
-  };
-
-  constructor(
-    @inject(TYPES.EventBus) private eventBus: IEventBus,
-    @inject(TYPES.ErrorBoundary) private globalErrorBoundary: typeof errorBoundary,
-    @inject(TYPES.UnifiedErrorHandler) private unifiedErrorHandler: UnifiedErrorHandler
-  ) {
+export class ComponentErrorBoundary extends BaseService {
+  constructor(eventBus, globalErrorBoundary, unifiedErrorHandler) {
     super();
+    this.eventBus = eventBus;
+    this.globalErrorBoundary = globalErrorBoundary;
+    this.unifiedErrorHandler = unifiedErrorHandler;
     this.logger = logger.createChild({ module: 'ComponentErrorBoundary' });
+    this.componentErrors = new Map();
+    this.isolatedComponents = new Set();
+    this.recoveryStrategies = [];
+    this.errorStatistics = {
+      totalErrors: 0,
+      errorsByComponent: new Map(),
+      errorsByType: new Map(),
+      recoveryRate: 0,
+      isolationRate: 0,
+      averageRecoveryTime: 0,
+      lastErrorTime: 0
+    };
     this.setupRecoveryStrategies();
   }
 
@@ -119,7 +127,7 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
    * @param {Component} component - The component to wrap.
    * @returns {Component} The wrapped component.
    */
-  wrapComponent(component: Component): Component {
+  wrapComponent(component) {
     const originalEmit = component.emit.bind(component);
     const originalInitialize = component.initialize.bind(component);
     const originalCleanup = component.cleanup.bind(component);
@@ -167,7 +175,7 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
    * @param {Error} error - The error that occurred.
    * @param {string} [context] - Additional context about where the error occurred.
    */
-  async handleComponentError(component: Component, error: Error, context?: string): Promise<void> {
+  async handleComponentError(component, error, context) {
     // Use UnifiedErrorHandler for error processing
     const result = await this.unifiedErrorHandler.handleError(error, {
       component: component.id,
@@ -228,7 +236,7 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
    * @param {Component} component - The component to recover.
    * @returns {Promise<boolean>} True if recovery was successful.
    */
-  async recoverComponent(component: Component): Promise<boolean> {
+  async recoverComponent(component) {
     const componentErrors = this.componentErrors.get(component.id) || [];
     const latestError = componentErrors[componentErrors.length - 1];
     
@@ -321,7 +329,7 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
    * Isolates a component to prevent error propagation.
    * @param {Component} component - The component to isolate.
    */
-  isolateComponent(component: Component): void {
+  isolateComponent(component) {
     if (this.isolatedComponents.has(component.id)) {
       this.logger.warn('Component already isolated', { componentId: component.id });
       return;
@@ -492,7 +500,7 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
    * @param {Component} component - The component to recover.
    * @param {ComponentError} error - The error that occurred.
    */
-  private async attemptRecovery(component: Component, error: ComponentError): Promise<void> {
+  private async attemptRecovery(component, error) {
     // Don't attempt recovery if component is already isolated
     if (this.isolatedComponents.has(component.id)) {
       return;
@@ -524,7 +532,7 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
    * @private
    * @param {Component} component - The component to check.
    */
-  private checkIsolationThreshold(component: Component): void {
+  private checkIsolationThreshold(component) {
     const errorCount = this.componentErrors.get(component.id)?.length || 0;
     const recentErrors = this.componentErrors.get(component.id)?.filter(
       e => Date.now() - e.timestamp < 60000 // Last minute
@@ -541,7 +549,7 @@ export class ComponentErrorBoundary extends BaseService implements IComponentErr
    * @private
    * @param {ComponentError} error - The error to add to statistics.
    */
-  private updateErrorStatistics(error: ComponentError): void {
+  private updateErrorStatistics(error) {
     this.errorStatistics.totalErrors++;
     this.errorStatistics.lastErrorTime = error.timestamp;
 
