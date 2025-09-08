@@ -1,66 +1,26 @@
 /**
  * Babel Configuration for WeeWoo Map Friend
- * Transforms ES6 modules for Jest testing
+ * ES6 module support with decorator compilation for InversifyJS
  */
 
-module.exports = {
+export default {
   presets: [
     [
       '@babel/preset-env',
       {
         targets: {
-          node: 'current'
+          browsers: ['last 2 versions']
         },
-        modules: 'commonjs' // Transform ES6 modules to CommonJS for Jest
+        modules: false // Keep ES6 modules for modern browsers
       }
     ]
   ],
   
   plugins: [
-    // Add any additional plugins if needed
-  ],
-  
-  // Environment-specific configuration
-  env: {
-    test: {
-      presets: [
-        [
-          '@babel/preset-env',
-          {
-            targets: {
-              node: 'current'
-            },
-            modules: 'commonjs'
-          }
-        ]
-      ]
-    },
-    development: {
-      presets: [
-        [
-          '@babel/preset-env',
-          {
-            targets: {
-              browsers: ['last 2 versions']
-            },
-            modules: false // Keep ES6 modules in development
-          }
-        ]
-      ]
-    },
-    production: {
-      presets: [
-        [
-          '@babel/preset-env',
-          {
-            targets: {
-              browsers: ['last 2 versions']
-            },
-            modules: false // Keep ES6 modules in production
-          }
-        ]
-      ]
-    }
-  }
+    // Decorator support for InversifyJS
+    ['@babel/plugin-proposal-decorators', { 'legacy': true }],
+    // Class properties support
+    ['@babel/plugin-proposal-class-properties', { 'loose': true }]
+  ]
 };
 

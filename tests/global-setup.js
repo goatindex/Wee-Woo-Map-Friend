@@ -12,7 +12,7 @@ async function globalSetup(config) {
   });
   
   // Wait for the server to be ready
-  const { chromium } = require('@playwright/test');
+  const { chromium } = await import('@playwright/test');
   const browser = await chromium.launch();
   const page = await browser.newPage();
   
@@ -27,4 +27,4 @@ async function globalSetup(config) {
   }
 }
 
-module.exports = globalSetup;
+export default globalSetup;

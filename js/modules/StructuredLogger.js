@@ -345,9 +345,7 @@ export class StructuredLogger {
   isTestEnvironment() {
     return typeof window !== 'undefined' && 
            (window.location.hostname === 'localhost' || 
-            window.location.search.includes('test=true') ||
-            typeof jest !== 'undefined' ||
-            typeof window.jest !== 'undefined');
+            window.location.search.includes('test=true'));
   }
   
   /**

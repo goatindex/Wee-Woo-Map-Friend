@@ -3,17 +3,14 @@
  * Automated browser testing for ES6 module validation
  */
 
-const { defineConfig, devices } = require('@playwright/test');
+import { defineConfig, devices } from '@playwright/test';
 
-module.exports = defineConfig({
+export default defineConfig({
   testDir: './tests',
   
-  // Only run our ES6 validation tests
+  // Run all test files in the new structure
   testMatch: [
-    '**/es6-modules/**/*.test.js',
-    '**/integration/**/*.test.js',
-    '**/performance/**/*.test.js',
-    '**/console/**/*.test.js'
+    '**/*.spec.js'
   ],
   
   // Run tests in files in parallel
@@ -88,8 +85,8 @@ module.exports = defineConfig({
   },
   
   // Global setup and teardown
-  globalSetup: require.resolve('./tests/global-setup.js'),
-  globalTeardown: require.resolve('./tests/e2e/global-teardown.js'),
+  globalSetup: './tests/global-setup.js',
+  globalTeardown: './tests/global-teardown.js',
   
   // Test timeout
   timeout: 30000,

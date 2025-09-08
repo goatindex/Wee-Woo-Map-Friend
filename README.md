@@ -127,7 +127,7 @@ Project documentation reflects the completed ES6 migration, providing guidance f
 - **Getting Started**: [Quick Start Guide](project_docs/getting-started/quick-start.md)
 - **Architecture**: [System Overview](project_docs/architecture/overview.md)
 - **Development**: [Developer Setup](project_docs/development/setup.md)
-- **Testing**: [Testing Framework](project_docs/development/testing.md)
+- **Testing**: [Testing Framework](project_docs/development/testing-playwright.md)
 - **Logging**: [Logging Architecture](project_docs/development/logging-architecture.md)
 - **Legacy Compatibility**: [Legacy Compatibility System](project_docs/development/legacy-compatibility-system.md)
 - **Error Recovery**: [Error Recovery & Resilience](project_docs/development/error-recovery-resilience.md)
