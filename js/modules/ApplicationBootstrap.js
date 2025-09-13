@@ -6,13 +6,8 @@
  */
 
 // Core modules only - no circular dependencies
-import { globalEventBus } from './EventBus.js';
-import { stateManager } from './StateManager.js';
-import { logger } from './StructuredLogger.js';
-import { dependencyContainer } from './DependencyContainer.js';
-import { UnifiedErrorHandler } from './UnifiedErrorHandler.js';
-import { CircuitBreakerManager } from './CircuitBreakerStrategy.js';
-import { HealthCheckService } from './HealthCheckService.js';
+import { DependencyContainer } from './DependencyContainer.js';
+import { TYPES } from './Types.js';
 // DependencyRegistry removed - using direct module initialization
 
 /**
@@ -34,31 +29,27 @@ export class ApplicationBootstrap {
     this.timeouts = [];
     this.initializedModules = new Set();
     
-    // Create module-specific logger
-    this.logger = logger.createChild({ module: 'ApplicationBootstrap' });
+    // Create temporary logger until DI container is ready
+    this.tempLogger = {
+      info: (msg, data) => console.log(`[ApplicationBootstrap] ${msg}`, data || ''),
+      warn: (msg, data) => console.warn(`[ApplicationBootstrap] ${msg}`, data || ''),
+      error: (msg, data) => console.error(`[ApplicationBootstrap] ${msg}`, data || ''),
+      debug: (msg, data) => console.debug(`[ApplicationBootstrap] ${msg}`, data || ''),
+      createChild: () => this.tempLogger
+    };
+    this.logger = this.tempLogger;
+    this.moduleLogger = this.tempLogger;
     
-    // Initialize UnifiedErrorHandler
-    this.unifiedErrorHandler = new UnifiedErrorHandler({
-      maxRetries: 3,
-      retryDelay: 1000,
-      circuitBreakerThreshold: 5,
-      circuitBreakerTimeout: 30000,
-      enableLogging: true,
-      enableMetrics: true
-    });
-
-    // Initialize CircuitBreakerManager
-    this.circuitBreakerManager = new CircuitBreakerManager();
-
-    // Initialize HealthCheckService
-    this.healthCheckService = new HealthCheckService({
-      checkInterval: 30000,
-      timeout: 5000,
-      retryAttempts: 3,
-      retryDelay: 1000,
-      enableMetrics: true,
-      enableLogging: true
-    });
+    // Initialize dependency container
+    this.dependencyContainer = new DependencyContainer();
+    
+    // Dependencies will be resolved from DI container after initialization
+    this.eventBus = null;
+    this.stateManager = null;
+    this.logger = null;
+    this.unifiedErrorHandler = null;
+    this.circuitBreakerManager = null;
+    this.healthCheckService = null;
     
     // Bind methods
     this.init = this.init.bind(this);
@@ -67,7 +58,63 @@ export class ApplicationBootstrap {
     this.cleanup = this.cleanup.bind(this);
     this.destroy = this.destroy.bind(this);
     
-    this.logger.info('Unified application bootstrap system initialized');
+    this.moduleLogger.info('Unified application bootstrap system initialized');
+  }
+
+  /**
+   * Initialize dependency container and resolve dependencies
+   * Called before any other initialization phases
+   */
+  async initializeDependencyContainer() {
+    try {
+      this.moduleLogger.info('Initializing dependency container...');
+      
+      // Initialize the dependency container
+      await this.dependencyContainer.initialize();
+      
+      // Resolve dependencies from DI container
+      this.resolveDependencies();
+      
+      // Expose DependencyContainer for testing and debugging (after initialization)
+      if (typeof window !== 'undefined') {
+        window.DependencyContainer = {
+          getContainer: () => this.dependencyContainer.container,
+          get: (type) => this.dependencyContainer.container.get(type),
+          isBound: (type) => this.dependencyContainer.container.isBound(type)
+        };
+        
+        // Expose TYPES for testing
+        window.TYPES = TYPES;
+      }
+      
+      this.moduleLogger.info('Dependency container initialized and dependencies resolved');
+    } catch (error) {
+      this.moduleLogger.error('Failed to initialize dependency container:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Resolve dependencies from DI container
+   * Called after DI container is initialized
+   */
+  resolveDependencies() {
+    try {
+      this.eventBus = this.dependencyContainer.container.get(TYPES.EventBus);
+      this.stateManager = this.dependencyContainer.container.get(TYPES.StateManager);
+      this.logger = this.dependencyContainer.container.get(TYPES.StructuredLogger);
+      this.unifiedErrorHandler = this.dependencyContainer.container.get(TYPES.UnifiedErrorHandler);
+      this.circuitBreakerManager = this.dependencyContainer.container.get(TYPES.CircuitBreakerStrategy);
+      this.healthCheckService = this.dependencyContainer.container.get(TYPES.HealthCheckService);
+      
+      // Update logger to use proper DI logger
+      this.moduleLogger = this.logger.createChild({ module: 'ApplicationBootstrap' });
+      
+      this.moduleLogger.info('Dependencies resolved from DI container');
+    } catch (error) {
+      console.error('Failed to resolve dependencies from DI container:', error);
+      // Continue with temporary logger if DI resolution fails
+    }
   }
 
   /**
@@ -78,6 +125,17 @@ export class ApplicationBootstrap {
    * @param {Object} options - Execution options
    */
   async safeExecute(phase, fn, options = {}) {
+    // If UnifiedErrorHandler is not available yet, execute directly with basic error handling
+    if (!this.unifiedErrorHandler) {
+      try {
+        this.moduleLogger.info(`Executing phase: ${phase}`);
+        return await fn();
+      } catch (error) {
+        this.moduleLogger.error(`Phase ${phase} failed:`, error);
+        throw error;
+      }
+    }
+    
     return await this.unifiedErrorHandler.safeExecute(phase, fn, options);
   }
 
@@ -85,51 +143,79 @@ export class ApplicationBootstrap {
    * Initialize core modules directly with comprehensive error handling
    */
   async initializeCoreModules() {
-    this.logger.info('Initializing core modules...');
+    this.moduleLogger.info('Initializing core modules...');
     
     const moduleInitializers = [
-      { name: 'DeviceManager', path: './DeviceManager.js', required: true },
-      { name: 'CollapsibleManager', path: './CollapsibleManager.js', required: true },
-      { name: 'SearchManager', path: './SearchManager.js', required: false },
-      { name: 'ActiveListManager', path: './ActiveListManager.js', required: true },
-      { name: 'MapManager', path: './MapManager.js', required: true },
-      { name: 'LayerManager', path: './LayerManager.js', required: true },
-      { name: 'PolygonLoader', path: './PolygonLoader.js', required: true },
-      { name: 'LabelManager', path: './LabelManager.js', required: false },
-      { name: 'EmphasisManager', path: './EmphasisManager.js', required: false },
-      { name: 'UtilityManager', path: './UtilityManager.js', required: false },
-      { name: 'UIManager', path: './UIManager.js', required: false }
+      { name: 'DeviceManager', path: '/dist/modules/DeviceManager.js', required: true, useDI: true },
+      { name: 'ConfigurationManager', path: '/dist/modules/ConfigurationManager.js', required: true, useDI: true },
+      { name: 'CollapsibleManager', path: '/dist/modules/CollapsibleManager.js', required: true, useDI: false },
+      { name: 'SearchManager', path: '/dist/modules/SearchManager.js', required: false, useDI: false },
+      { name: 'ActiveListManager', path: '/dist/modules/ActiveListManager.js', required: true, useDI: true },
+      { name: 'CoordinateConverter', path: '/dist/modules/CoordinateConverter.js', required: false, useDI: true },
+      { name: 'TextFormatter', path: '/dist/modules/TextFormatter.js', required: false, useDI: true },
+      { name: 'StructuredLogger', path: '/dist/modules/StructuredLogger.js', required: false, useDI: true },
+      { name: 'EventBus', path: '/dist/modules/EventBus.js', required: false, useDI: true },
+    { name: 'FeatureEnhancer', path: '/dist/modules/FeatureEnhancer.js', required: false, useDI: true },
+    { name: 'UtilityManager', path: '/dist/modules/UtilityManager.js', required: false, useDI: true },
+    { name: 'PathResolver', path: '/dist/modules/PathResolver.js', required: false, useDI: true },
+      { name: 'ErrorUI', path: '/dist/modules/ErrorUI.js', required: false, useDI: true },
+      { name: 'EnvironmentConfig', path: '/dist/modules/EnvironmentConfig.js', required: false, useDI: true },
+      { name: 'DataValidator', path: '/dist/modules/DataValidator.js', required: false, useDI: true },
+      { name: 'MapManager', path: '/dist/modules/MapManager.js', required: true, useDI: true },
+      { name: 'LayerManager', path: '/dist/modules/LayerManager.js', required: true, useDI: true },
+      { name: 'ProgressiveDataLoader', path: '/dist/modules/ProgressiveDataLoader.js', required: false, useDI: true },
+      { name: 'PolygonLoader', path: '/dist/modules/PolygonLoader.js', required: false, useDI: true },
+      { name: 'AmbulanceLoader', path: '/dist/modules/AmbulanceLoader.js', required: false, useDI: true },
+      { name: 'PoliceLoader', path: '/dist/modules/PoliceLoader.js', required: false, useDI: true },
+      { name: 'LabelManager', path: '/dist/modules/LabelManager.js', required: false, useDI: false },
+      { name: 'EmphasisManager', path: '/dist/modules/EmphasisManager.js', required: false, useDI: false },
+      { name: 'UtilityManager', path: '/dist/modules/UtilityManager.js', required: false, useDI: false },
+      { name: 'UIManager', path: '/dist/modules/UIManager.js', required: false, useDI: false }
     ];
     
     const initializedModules = new Map();
     
     for (const moduleInfo of moduleInitializers) {
       try {
-        this.logger.info(`Loading module: ${moduleInfo.name}`);
-        const module = await import(moduleInfo.path);
+        this.moduleLogger.info(`Loading module: ${moduleInfo.name}`);
         
-        // Get the singleton instance using standardized naming convention
-        const singletonName = moduleInfo.name.charAt(0).toLowerCase() + moduleInfo.name.slice(1);
-        let moduleInstance = module[singletonName] || module.default;
+        let moduleInstance;
         
-        // If we got the class instead of instance, try to get the singleton
-        if (typeof moduleInstance === 'function' && module[singletonName]) {
-          moduleInstance = module[singletonName];
-        }
-        
-        if (!moduleInstance) {
-          throw new Error(`Module ${moduleInfo.name} does not export expected instance`);
+        if (moduleInfo.useDI) {
+          // Use DI container for modules that require dependency injection
+          this.moduleLogger.info(`Using DI container for ${moduleInfo.name}`);
+          moduleInstance = this.dependencyContainer.get(TYPES[moduleInfo.name]);
+          
+          if (!moduleInstance) {
+            throw new Error(`Module ${moduleInfo.name} not found in DI container`);
+          }
+        } else {
+          // Use direct import for modules that don't require DI
+          const module = await import(moduleInfo.path);
+          
+          // Get the singleton instance using standardized naming convention
+          const singletonName = moduleInfo.name.charAt(0).toLowerCase() + moduleInfo.name.slice(1);
+          moduleInstance = module[singletonName] || module.default;
+          
+          // If we got the class instead of instance, try to get the singleton
+          if (typeof moduleInstance === 'function' && module[singletonName]) {
+            moduleInstance = module[singletonName];
+          }
+          
+          if (!moduleInstance) {
+            throw new Error(`Module ${moduleInfo.name} does not export expected instance`);
+          }
         }
         
         // Initialize the module
         if (typeof moduleInstance.init === 'function') {
           await moduleInstance.init();
-          this.logger.info(`✅ ${moduleInfo.name} initialized successfully`);
+          this.moduleLogger.info(`✅ ${moduleInfo.name} initialized successfully`);
           
           // Track module for cleanup
           this.trackModule(moduleInfo.name, moduleInstance);
         } else {
-          this.logger.warn(`⚠️ ${moduleInfo.name} has no init method, skipping initialization`);
+          this.moduleLogger.warn(`⚠️ ${moduleInfo.name} has no init method, skipping initialization`);
         }
         
         initializedModules.set(moduleInfo.name, moduleInstance);
@@ -139,15 +225,27 @@ export class ApplicationBootstrap {
           this.deviceManager = moduleInstance;
         }
         
+        // Store ConfigurationManager in state manager
+        if (moduleInfo.name === 'ConfigurationManager') {
+          this.stateManager.set('configurationManager', moduleInstance);
+          this.moduleLogger.info('ConfigurationManager stored in state manager');
+        }
+        
+        // Store LayerManager in state manager
+        if (moduleInfo.name === 'LayerManager') {
+          this.stateManager.set('layerManager', moduleInstance);
+          this.moduleLogger.info('LayerManager stored in state manager');
+        }
+        
         // Special handling for PolygonLoader
         if (moduleInfo.name === 'PolygonLoader') {
           // Ensure PolygonLoader is fully initialized before storing
           if (moduleInstance.initialized) {
-            stateManager.set('polygonLoader', moduleInstance);
-            this.logger.info('PolygonLoader stored in state manager');
+            this.stateManager.set('polygonLoader', moduleInstance);
+            this.moduleLogger.info('PolygonLoader stored in state manager');
           } else {
-            this.logger.warn('PolygonLoader not fully initialized, storing anyway');
-            stateManager.set('polygonLoader', moduleInstance);
+            this.moduleLogger.warn('PolygonLoader not fully initialized, storing anyway');
+            this.stateManager.set('polygonLoader', moduleInstance);
           }
         }
         
@@ -155,20 +253,23 @@ export class ApplicationBootstrap {
         const errorMsg = `Failed to initialize ${moduleInfo.name}: ${error.message}`;
         
         if (moduleInfo.required) {
-          this.logger.error(`❌ ${errorMsg}`);
+          this.moduleLogger.error(`❌ ${errorMsg}`);
           // Pass module context for recovery
           throw new Error(`Required module ${moduleInfo.name} failed to initialize: ${error.message}`);
         } else {
-          this.logger.warn(`⚠️ ${errorMsg} (optional module)`);
+          this.moduleLogger.warn(`⚠️ ${errorMsg} (optional module)`);
           // Continue with optional module failure
         }
       }
     }
     
-    this.logger.info(`Core modules initialization complete. ${initializedModules.size}/${moduleInitializers.length} modules loaded`);
+    this.moduleLogger.info(`Core modules initialization complete. ${initializedModules.size}/${moduleInitializers.length} modules loaded`);
     
     // Store initialized modules for later use
     this.initializedModules = initializedModules;
+    
+    // Expose map instance for legacy compatibility
+    this.exposeMapInstance();
   }
 
   /**
@@ -191,7 +292,7 @@ export class ApplicationBootstrap {
       try {
         return this.deviceManager.getContext();
       } catch (error) {
-        this.logger.warn('Failed to get device context from deviceManager', { error: error.message });
+        this.moduleLogger.warn('Failed to get device context from deviceManager', { error: error.message });
       }
     }
     
@@ -200,7 +301,7 @@ export class ApplicationBootstrap {
       try {
         return window.DeviceContext.getContext();
       } catch (error) {
-        this.logger.warn('Failed to get device context from global DeviceContext', { error: error.message });
+        this.moduleLogger.warn('Failed to get device context from global DeviceContext', { error: error.message });
       }
     }
     
@@ -226,7 +327,7 @@ export class ApplicationBootstrap {
       }
       return nativeFeatures;
     } catch (error) {
-      this.logger.warn('Native features not available', { error: error.message });
+      this.moduleLogger.warn('Native features not available', { error: error.message });
       return null;
     }
   }
@@ -290,13 +391,13 @@ export class ApplicationBootstrap {
         this.applyDeviceStyles(deviceContext);
         
         // Trigger map resize if available
-        const map = stateManager.get('map');
+        const map = this.stateManager.get('map');
         if (map) {
           map.invalidateSize();
         }
         
         // Dispatch custom event for other components
-        globalEventBus.emit('app:orientationChange', { context: deviceContext });
+        this.eventBus.emit('app:orientationChange', { context: deviceContext });
       }, 100);
     };
     
@@ -322,9 +423,9 @@ export class ApplicationBootstrap {
     try {
       // MapManager is already initialized in Phase 2 (initializeCoreModules)
       // This phase is kept for future map-specific setup if needed
-      this.logger.info('Map system already initialized in core modules phase');
+      this.moduleLogger.info('Map system already initialized in core modules phase');
     } catch (error) {
-      this.logger.warn('Map system setup failed', { error: error.message });
+      this.moduleLogger.warn('Map system setup failed', { error: error.message });
       // Don't throw - allow bootstrap to continue without map
     }
   }
@@ -333,7 +434,7 @@ export class ApplicationBootstrap {
    * Set up UI components
    */
   async setupUI() {
-    const { collapsibleManager } = await import('./CollapsibleManager.js');
+    const { collapsibleManager } = await import('/dist/modules/CollapsibleManager.js');
     // CollapsibleManager auto-initializes via initializeExistingSections()
     // No manual setupCollapsible() call needed
   }
@@ -343,30 +444,30 @@ export class ApplicationBootstrap {
    */
   async loadComponents() {
     try {
-      this.logger.info('Loading data and UI components...');
+      this.moduleLogger.info('Loading data and UI components...');
       
-      const { DataLoadingOrchestrator } = await import('./DataLoadingOrchestrator.js');
-      if (!DataLoadingOrchestrator) {
-        throw new Error('DataLoadingOrchestrator class not found in module');
+      // Get DataLoadingOrchestrator from DI container
+      const orchestrator = this.dependencyContainer.get(TYPES.DataLoadingOrchestrator);
+      if (!orchestrator) {
+        throw new Error('DataLoadingOrchestrator not found in DI container');
       }
       
-      const orchestrator = new DataLoadingOrchestrator();
       if (typeof orchestrator.init !== 'function') {
         throw new Error('DataLoadingOrchestrator instance has no init method');
       }
       
       await orchestrator.init();
-      this.logger.info('✅ DataLoadingOrchestrator initialized');
+      this.moduleLogger.info('✅ DataLoadingOrchestrator initialized');
       
       if (typeof orchestrator.loadInitialData !== 'function') {
         throw new Error('DataLoadingOrchestrator instance has no loadInitialData method');
       }
       
       await orchestrator.loadInitialData();
-      this.logger.info('✅ Data loading completed');
+      this.moduleLogger.info('✅ Data loading completed');
       
     } catch (error) {
-      this.logger.error('❌ Failed to load components', { 
+      this.moduleLogger.error('❌ Failed to load components', { 
         error: error.message, 
         stack: error.stack 
       });
@@ -378,7 +479,7 @@ export class ApplicationBootstrap {
    * Set up event handlers
    */
   async setupEventHandlers() {
-    const { searchManager } = await import('./SearchManager.js');
+    const { searchManager } = await import('/dist/modules/SearchManager.js');
     if (searchManager && typeof searchManager.setupEventHandlers === 'function') {
       searchManager.setupEventHandlers();
     }
@@ -388,7 +489,7 @@ export class ApplicationBootstrap {
    * Handle initial location
    */
   async handleInitialLocation() {
-    const { mapManager } = await import('./MapManager.js');
+    const { mapManager } = await import('/dist/modules/MapManager.js');
     if (mapManager && typeof mapManager.handleInitialLocation === 'function') {
       await mapManager.handleInitialLocation();
     }
@@ -399,10 +500,10 @@ export class ApplicationBootstrap {
    * Centralizes all legacy global exposures and compatibility functions
    */
   async setupLegacyCompatibility() {
-    this.logger.info('Setting up consolidated legacy compatibility layer...');
+    this.moduleLogger.info('Setting up consolidated legacy compatibility layer...');
     
     if (typeof window === 'undefined') {
-      this.logger.warn('Window not available - skipping legacy compatibility setup');
+      this.moduleLogger.warn('Window not available - skipping legacy compatibility setup');
       return;
     }
 
@@ -419,9 +520,9 @@ export class ApplicationBootstrap {
       // Legacy event system compatibility
       this.setupLegacyEventCompatibility();
       
-      this.logger.info('Consolidated legacy compatibility layer active');
+      this.moduleLogger.info('Consolidated legacy compatibility layer active');
     } catch (error) {
-      this.logger.error('Failed to setup legacy compatibility', { 
+      this.moduleLogger.error('Failed to setup legacy compatibility', { 
         error: error.message,
         stack: error.stack 
       });
@@ -436,7 +537,7 @@ export class ApplicationBootstrap {
     // Legacy AppBootstrap interface
     window.AppBootstrap = {
       init: () => {
-        this.logger.info('Legacy AppBootstrap.init() called - delegating to ApplicationBootstrap');
+        this.moduleLogger.info('Legacy AppBootstrap.init() called - delegating to ApplicationBootstrap');
         return this.init();
       },
       // Add other legacy bootstrap methods as needed
@@ -446,6 +547,11 @@ export class ApplicationBootstrap {
     // Legacy global bootstrap access
     window.ApplicationBootstrap = this;
     window.applicationBootstrap = this;
+    
+    // Expose core services to global scope for legacy compatibility
+    if (this.stateManager) {
+      window.stateManager = this.stateManager;
+    }
   }
 
   /**
@@ -453,16 +559,16 @@ export class ApplicationBootstrap {
    */
   async setupCoreModuleExposures() {
     const coreModules = [
-      { name: 'StateManager', path: './StateManager.js', instanceName: 'stateManager' },
-      { name: 'EventBus', path: './EventBus.js', instanceName: 'globalEventBus' },
-      { name: 'DeviceManager', path: './DeviceManager.js', instanceName: 'deviceManager' },
-      { name: 'MapManager', path: './MapManager.js', instanceName: 'mapManager' },
-      { name: 'UIManager', path: './UIManager.js', instanceName: 'uiManager' },
-      { name: 'LayerManager', path: './LayerManager.js', instanceName: 'layerManager' },
-      { name: 'SearchManager', path: './SearchManager.js', instanceName: 'searchManager' },
-      { name: 'ActiveListManager', path: './ActiveListManager.js', instanceName: 'activeListManager' },
-      { name: 'FABManager', path: './FABManager.js', instanceName: 'fabManager' },
-      { name: 'ConfigurationManager', path: './ConfigurationManager.js', instanceName: 'configurationManager' }
+      { name: 'StateManager', path: '/dist/modules/StateManager.js', instanceName: 'stateManager' },
+      { name: 'EventBus', path: '/dist/modules/EventBus.js', instanceName: 'globalEventBus' },
+      { name: 'DeviceManager', path: '/dist/modules/DeviceManager.js', instanceName: 'deviceManager' },
+      { name: 'MapManager', path: '/dist/modules/MapManager.js', instanceName: 'mapManager' },
+      { name: 'UIManager', path: '/dist/modules/UIManager.js', instanceName: 'uiManager' },
+      { name: 'LayerManager', path: '/dist/modules/LayerManager.js', instanceName: 'layerManager' },
+      { name: 'SearchManager', path: '/dist/modules/SearchManager.js', instanceName: 'searchManager' },
+      { name: 'ActiveListManager', path: '/dist/modules/ActiveListManager.js', instanceName: 'activeListManager' },
+      { name: 'FABManager', path: '/dist/modules/FABManager.js', instanceName: 'fabManager' },
+      { name: 'ConfigurationManager', path: '/dist/modules/ConfigurationManager.js', instanceName: 'configurationManager' }
     ];
 
     for (const module of coreModules) {
@@ -478,16 +584,28 @@ export class ApplicationBootstrap {
           window[module.instanceName] = instance;
         }
         
-        this.logger.debug(`Exposed ${module.name} globally`, { 
+        this.moduleLogger.debug(`Exposed ${module.name} globally`, { 
           hasClass: !!ModuleClass, 
           hasInstance: !!instance 
         });
       } catch (error) {
-        this.logger.warn(`Failed to expose ${module.name} globally`, { 
+        this.moduleLogger.warn(`Failed to expose ${module.name} globally`, { 
           error: error.message,
           module: module.name 
         });
       }
+    }
+  }
+
+  /**
+   * Expose map instance for legacy compatibility
+   */
+  exposeMapInstance() {
+    if (window.mapManager && typeof window.mapManager.getMap === 'function') {
+      window.map = window.mapManager.getMap();
+      this.moduleLogger.info('Map instance exposed to window.map for legacy compatibility');
+    } else {
+      this.moduleLogger.warn('MapManager not available for legacy map exposure');
     }
   }
 
@@ -503,17 +621,20 @@ export class ApplicationBootstrap {
       return null;
     };
 
+    // Map instance will be exposed after MapManager is initialized
+    // See exposeMapInstance() method
+
     // Legacy bulk operation functions
     window.BulkOperationManager = {
       begin: (operationType, itemCount) => {
-        if (window.stateManager && typeof window.stateManager.beginBulkOperation === 'function') {
-          return window.stateManager.beginBulkOperation(operationType, itemCount);
+        if (window.stateManager && typeof window.this.stateManager.beginBulkOperation === 'function') {
+          return window.this.stateManager.beginBulkOperation(operationType, itemCount);
         }
         return false;
       },
       end: () => {
-        if (window.stateManager && typeof window.stateManager.endBulkOperation === 'function') {
-          return window.stateManager.endBulkOperation();
+        if (window.stateManager && typeof window.this.stateManager.endBulkOperation === 'function') {
+          return window.this.stateManager.endBulkOperation();
         }
         return false;
       }
@@ -521,22 +642,22 @@ export class ApplicationBootstrap {
 
     // Legacy bulk operation functions (direct access)
     window.beginBulkOperation = () => {
-      if (window.stateManager && typeof window.stateManager.beginBulkOperation === 'function') {
-        return window.stateManager.beginBulkOperation('legacy');
+      if (window.stateManager && typeof window.this.stateManager.beginBulkOperation === 'function') {
+        return window.this.stateManager.beginBulkOperation('legacy');
       }
       return false;
     };
 
     window.endBulkOperation = () => {
-      if (window.stateManager && typeof window.stateManager.endBulkOperation === 'function') {
-        return window.stateManager.endBulkOperation();
+      if (window.stateManager && typeof window.this.stateManager.endBulkOperation === 'function') {
+        return window.this.stateManager.endBulkOperation();
       }
       return false;
     };
 
     // Legacy device context functions
     try {
-      const { getResponsiveContext, isMobileSize } = await import('./DeviceManager.js');
+      const { getResponsiveContext, isMobileSize } = await import('/dist/modules/DeviceManager.js');
       if (getResponsiveContext) {
         window.getResponsiveContext = getResponsiveContext;
       }
@@ -544,7 +665,7 @@ export class ApplicationBootstrap {
         window.isMobileSize = isMobileSize;
       }
     } catch (error) {
-      this.logger.warn('Failed to setup legacy device functions', { error: error.message });
+      this.moduleLogger.warn('Failed to setup legacy device functions', { error: error.message });
     }
   }
 
@@ -568,7 +689,7 @@ export class ApplicationBootstrap {
         });
       });
 
-      this.logger.debug('Legacy event compatibility active', { 
+      this.moduleLogger.debug('Legacy event compatibility active', { 
         mappedEvents: Object.keys(legacyEventMap).length 
       });
     }
@@ -580,7 +701,7 @@ export class ApplicationBootstrap {
   setupGlobalEvents() {
     // Global error handling
     this.registerEventListener(window, 'error', (event) => {
-      this.logger.error('Global error caught', {
+      this.moduleLogger.error('Global error caught', {
         message: event.message,
         filename: event.filename,
         lineno: event.lineno,
@@ -591,7 +712,7 @@ export class ApplicationBootstrap {
     
     // Global unhandled promise rejection handling
     this.registerEventListener(window, 'unhandledrejection', (event) => {
-      this.logger.error('Unhandled promise rejection', {
+      this.moduleLogger.error('Unhandled promise rejection', {
         reason: event.reason,
         promise: event.promise
       });
@@ -642,7 +763,7 @@ export class ApplicationBootstrap {
    * Check if application is in degraded mode
    */
   isDegradedMode() {
-    return stateManager.get('degradedMode') === true;
+    return this.stateManager.get('degradedMode') === true;
   }
 
   /**
@@ -654,9 +775,9 @@ export class ApplicationBootstrap {
     }
     
     return {
-      phase: stateManager.get('degradedPhase'),
-      error: stateManager.get('degradedError'),
-      timestamp: stateManager.get('degradedTimestamp') || Date.now()
+      phase: this.stateManager.get('degradedPhase'),
+      error: this.stateManager.get('degradedError'),
+      timestamp: this.stateManager.get('degradedTimestamp') || Date.now()
     };
   }
 
@@ -680,21 +801,21 @@ export class ApplicationBootstrap {
   setupNetworkMonitoring() {
     // Monitor online/offline status
     this.registerEventListener(window, 'online', () => {
-      this.logger.info('Network connection restored');
+      this.moduleLogger.info('Network connection restored');
       globalEventBus.emit('app:networkOnline');
       
       // Try to recover from network-related degraded mode
       if (this.isDegradedMode()) {
         const degradedInfo = this.getDegradedModeInfo();
         if (degradedInfo && degradedInfo.phase === 'data loading') {
-          this.logger.info('Attempting to recover from network-related degraded mode');
+          this.moduleLogger.info('Attempting to recover from network-related degraded mode');
           // Could trigger a retry of data loading here
         }
       }
     }, 'network-online-handler');
     
     this.registerEventListener(window, 'offline', () => {
-      this.logger.warn('Network connection lost');
+      this.moduleLogger.warn('Network connection lost');
       globalEventBus.emit('app:networkOffline');
       
       // Show offline notification
@@ -714,49 +835,50 @@ export class ApplicationBootstrap {
    */
   async init() {
     if (this.initialized) {
-      this.logger.warn('Already initialized');
+      this.moduleLogger.warn('Already initialized');
       return;
     }
     
     try {
-      this.logger.info('Starting unified application bootstrap initialization...');
-      this.logger.info('Init called from main.js - single entry point confirmed');
+      this.moduleLogger.info('Starting unified application bootstrap initialization...');
+      this.moduleLogger.info('Init called from main.js - single entry point confirmed');
+      
+      // Phase 0: Initialize dependency container and resolve dependencies FIRST
+      await this.initializeDependencyContainer();
       
       // Phase 1: Wait for DOM
       await this.safeExecute('DOM ready', async () => {
         await this.waitForDOM();
       });
       
-      // Phase 1.5: Initialize dependency container and ARIA service
-      await this.safeExecute('dependency container initialization', async () => {
-        await dependencyContainer.initialize();
-        
+      // Phase 1.5: Initialize ARIA and Platform services
+      await this.safeExecute('ARIA and Platform services initialization', async () => {
         // Initialize ARIA service
-        const ariaService = dependencyContainer.get('ARIAService');
+        const ariaService = this.dependencyContainer.get(TYPES.ARIAService);
         if (ariaService && typeof ariaService.init === 'function') {
           await ariaService.init();
-          this.logger.info('ARIAService initialized successfully');
+          this.moduleLogger.info('ARIAService initialized successfully');
         }
         
         // Initialize Platform service
-        const platformService = dependencyContainer.get('PlatformService');
+        const platformService = this.dependencyContainer.get(TYPES.PlatformService);
         if (platformService && typeof platformService.initialize === 'function') {
           await platformService.initialize();
-          this.logger.info('PlatformService initialized successfully');
+          this.moduleLogger.info('PlatformService initialized successfully');
         }
         
         // Initialize Mobile Component Adapter
-        const mobileComponentAdapter = dependencyContainer.get('MobileComponentAdapter');
+        const mobileComponentAdapter = this.dependencyContainer.get(TYPES.MobileComponentAdapter);
         if (mobileComponentAdapter && typeof mobileComponentAdapter.initialize === 'function') {
           await mobileComponentAdapter.initialize();
-          this.logger.info('MobileComponentAdapter initialized successfully');
+          this.moduleLogger.info('MobileComponentAdapter initialized successfully');
         }
         
         // Initialize Mobile UI Optimizer
-        const mobileUIOptimizer = dependencyContainer.get('MobileUIOptimizer');
+        const mobileUIOptimizer = this.dependencyContainer.get(TYPES.MobileUIOptimizer);
         if (mobileUIOptimizer && typeof mobileUIOptimizer.initialize === 'function') {
           await mobileUIOptimizer.initialize();
-          this.logger.info('MobileUIOptimizer initialized successfully');
+          this.moduleLogger.info('MobileUIOptimizer initialized successfully');
         }
       });
       
@@ -778,7 +900,7 @@ export class ApplicationBootstrap {
       // Phase 6: Get device context
       await this.safeExecute('device context', async () => {
         this.deviceContext = await this.getDeviceContext();
-        this.logger.info('Device context initialized', this.deviceContext);
+        this.moduleLogger.info('Device context initialized', this.deviceContext);
       });
       
       // Phase 7: Apply device-specific styling
@@ -860,7 +982,7 @@ export class ApplicationBootstrap {
       this.initialized = true;
       
       const initTime = performance.now() - this.initStartTime;
-      this.logger.info(`Unified application bootstrap complete`, { duration: initTime });
+      this.moduleLogger.info(`Unified application bootstrap complete`, { duration: initTime });
       
       // Emit completion event
       globalEventBus.emit('app:bootstrapComplete', { bootstrap: this });
@@ -877,7 +999,7 @@ export class ApplicationBootstrap {
    */
   registerCleanup(cleanupFn, name = 'unnamed') {
     this.cleanupFunctions.push({ fn: cleanupFn, name });
-    this.logger.debug('Cleanup function registered', { name });
+    this.moduleLogger.debug('Cleanup function registered', { name });
   }
 
   /**
@@ -890,7 +1012,7 @@ export class ApplicationBootstrap {
   registerEventListener(target, event, listener, options = {}) {
     target.addEventListener(event, listener, options);
     this.eventListeners.push({ target, event, listener, options });
-    this.logger.debug('Event listener registered', { event, target: target.constructor.name });
+    this.moduleLogger.debug('Event listener registered', { event, target: target.constructor.name });
   }
 
   /**
@@ -903,7 +1025,7 @@ export class ApplicationBootstrap {
   registerInterval(callback, delay, name = 'unnamed') {
     const id = setInterval(callback, delay);
     this.intervals.push({ id, name, callback, delay });
-    this.logger.debug('Interval registered', { name, delay });
+    this.moduleLogger.debug('Interval registered', { name, delay });
     return id;
   }
 
@@ -917,7 +1039,7 @@ export class ApplicationBootstrap {
   registerTimeout(callback, delay, name = 'unnamed') {
     const id = setTimeout(callback, delay);
     this.timeouts.push({ id, name, callback, delay });
-    this.logger.debug('Timeout registered', { name, delay });
+    this.moduleLogger.debug('Timeout registered', { name, delay });
     return id;
   }
 
@@ -928,7 +1050,7 @@ export class ApplicationBootstrap {
    */
   trackModule(moduleName, moduleInstance) {
     this.initializedModules.add({ name: moduleName, instance: moduleInstance });
-    this.logger.debug('Module tracked for cleanup', { moduleName });
+    this.moduleLogger.debug('Module tracked for cleanup', { moduleName });
   }
 
   /**
@@ -942,7 +1064,7 @@ export class ApplicationBootstrap {
       preserveState = false 
     } = options;
 
-    this.logger.info('Starting application cleanup', { 
+    this.moduleLogger.info('Starting application cleanup', { 
       reason, 
       force,
       cleanupFunctions: this.cleanupFunctions.length,
@@ -956,21 +1078,21 @@ export class ApplicationBootstrap {
       // 1. Clear all timeouts
       this.timeouts.forEach(({ id, name }) => {
         clearTimeout(id);
-        this.logger.debug('Timeout cleared', { name });
+        this.moduleLogger.debug('Timeout cleared', { name });
       });
       this.timeouts = [];
 
       // 2. Clear all intervals
       this.intervals.forEach(({ id, name }) => {
         clearInterval(id);
-        this.logger.debug('Interval cleared', { name });
+        this.moduleLogger.debug('Interval cleared', { name });
       });
       this.intervals = [];
 
       // 3. Remove all event listeners
       this.eventListeners.forEach(({ target, event, listener, options }) => {
         target.removeEventListener(event, listener, options);
-        this.logger.debug('Event listener removed', { 
+        this.moduleLogger.debug('Event listener removed', { 
           event, 
           target: target.constructor.name 
         });
@@ -982,13 +1104,13 @@ export class ApplicationBootstrap {
         try {
           if (instance && typeof instance.cleanup === 'function') {
             await instance.cleanup();
-            this.logger.debug('Module cleanup completed', { moduleName: name });
+            this.moduleLogger.debug('Module cleanup completed', { moduleName: name });
           } else if (instance && typeof instance.destroy === 'function') {
             await instance.destroy();
-            this.logger.debug('Module destroy completed', { moduleName: name });
+            this.moduleLogger.debug('Module destroy completed', { moduleName: name });
           }
         } catch (error) {
-          this.logger.warn('Module cleanup failed', { 
+          this.moduleLogger.warn('Module cleanup failed', { 
             moduleName: name, 
             error: error.message 
           });
@@ -999,9 +1121,9 @@ export class ApplicationBootstrap {
       for (const { fn, name } of this.cleanupFunctions) {
         try {
           await fn();
-          this.logger.debug('Cleanup function completed', { name });
+          this.moduleLogger.debug('Cleanup function completed', { name });
         } catch (error) {
-          this.logger.warn('Cleanup function failed', { 
+          this.moduleLogger.warn('Cleanup function failed', { 
             name, 
             error: error.message 
           });
@@ -1019,10 +1141,10 @@ export class ApplicationBootstrap {
         this.nativeFeatures = null;
       }
 
-      this.logger.info('Application cleanup completed', { reason });
+      this.moduleLogger.info('Application cleanup completed', { reason });
 
     } catch (error) {
-      this.logger.error('Cleanup failed', { 
+      this.moduleLogger.error('Cleanup failed', { 
         error: error.message, 
         reason 
       });
@@ -1037,7 +1159,7 @@ export class ApplicationBootstrap {
   async destroy(options = {}) {
     const { reason = 'application-shutdown' } = options;
 
-    this.logger.info('Starting application destruction', { reason });
+    this.moduleLogger.info('Starting application destruction', { reason });
 
     try {
       // 1. Cleanup all resources
@@ -1066,10 +1188,10 @@ export class ApplicationBootstrap {
       this.intervals = [];
       this.timeouts = [];
 
-      this.logger.info('Application destruction completed', { reason });
+      this.moduleLogger.info('Application destruction completed', { reason });
 
     } catch (error) {
-      this.logger.error('Application destruction failed', { 
+      this.moduleLogger.error('Application destruction failed', { 
         error: error.message, 
         reason 
       });
@@ -1079,6 +1201,7 @@ export class ApplicationBootstrap {
 }
 
 // Export singleton instance
+// Create ApplicationBootstrap instance - it's the root module
 export const applicationBootstrap = new ApplicationBootstrap();
 
 // Global exposure is now handled by the consolidated legacy compatibility system

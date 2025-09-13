@@ -101,6 +101,9 @@
   <!-- Proj4 for coordinate conversion (required by coordConvert.js) -->
   <script src="https://cdn.jsdelivr.net/npm/proj4@2.9.2/dist/proj4.min.js"></script>
   
+  <!-- Reflect-metadata polyfill (required by InversifyJS) -->
+  <script src="https://cdn.jsdelivr.net/npm/reflect-metadata@0.1.13/Reflect.min.js"></script>
+  
   <!-- InversifyJS for dependency injection -->
   <script type="importmap">
     {
@@ -111,7 +114,7 @@
   </script>
   
           <!-- ES6 Module System -->
-          <script type="module" src="dist/modules/main.js?v=2.1.0-no-dataservice&t=20240908&bust=999999"></script>
+          <script type="module" src="dist/modules/main.js?v=2.1.0-stable&t=20250111&bust=000001"></script>
   
   <!-- ES6-ONLY MODE: Legacy fallback completely disabled -->
   <script>
@@ -130,14 +133,11 @@
   
   <!-- Service Worker Registration -->
   <script type="module">
-    // Import environment configuration
-    import { environmentConfig } from './js/modules/EnvironmentConfig.js';
-    
-    // Set dynamic meta tags
+    // Set dynamic meta tags with fallback values
     document.addEventListener('DOMContentLoaded', () => {
       const currentUrl = window.location.href;
-      const manifestPath = environmentConfig.getManifestPath();
-      const serviceWorkerPath = environmentConfig.getServiceWorkerPath();
+      const manifestPath = '/manifest.json'; // Fallback value
+      const serviceWorkerPath = '/sw.js'; // Fallback value
       
       // Update meta tags
       document.querySelector('meta[property="og:url"]').setAttribute('content', currentUrl);
@@ -151,8 +151,7 @@
     // Register service worker for PWA functionality
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', async () => {
-        const { environmentConfig } = await import('./js/modules/EnvironmentConfig.js');
-        const serviceWorkerPath = environmentConfig.getServiceWorkerPath();
+        const serviceWorkerPath = '/sw.js'; // Fallback value
         
         navigator.serviceWorker.register(serviceWorkerPath)
           .then(registration => {
@@ -194,7 +193,7 @@
             if (registration.active) {
               registration.active.postMessage({
                 type: 'FORCE_CACHE_INVALIDATION',
-                reason: 'DataService removed - force fresh load'
+                reason: 'Manual cache invalidation'
               });
             }
           });

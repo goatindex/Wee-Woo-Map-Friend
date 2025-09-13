@@ -4,17 +4,21 @@
  * Centralizes all deployment-specific settings and configurations
  */
 
-import { pathResolver } from './PathResolver.js';
-import { logger } from './StructuredLogger.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 
 /**
  * @class EnvironmentConfig
  * Manages environment-specific configurations and settings
  */
-export class EnvironmentConfig {
-  constructor() {
-    this.logger = logger.createChild({ module: 'EnvironmentConfig' });
-    this.pathResolver = pathResolver;
+@injectable()
+export class EnvironmentConfig extends BaseService {
+  constructor(
+    @inject(TYPES.StructuredLogger) structuredLogger,
+    @inject(TYPES.PathResolver) private pathResolver
+  ) {
+    super(structuredLogger);
     this.environment = this.pathResolver.getEnvironment();
     this.config = this.pathResolver.getEnvironmentConfig();
     
@@ -325,4 +329,34 @@ export class EnvironmentConfig {
 }
 
 // Create singleton instance
-export const environmentConfig = new EnvironmentConfig();
+// Legacy compatibility functions - use DI container instead
+export const environmentConfig = {
+  getEnvironment: () => {
+    console.warn('environmentConfig.getEnvironment: Legacy function called. Use DI container to get EnvironmentConfig instance.');
+    throw new Error('Legacy function not available. Use DI container to get EnvironmentConfig instance.');
+  },
+  getConfig: () => {
+    console.warn('environmentConfig.getConfig: Legacy function called. Use DI container to get EnvironmentConfig instance.');
+    throw new Error('Legacy function not available. Use DI container to get EnvironmentConfig instance.');
+  },
+  getBasePath: () => {
+    console.warn('environmentConfig.getBasePath: Legacy function called. Use DI container to get EnvironmentConfig instance.');
+    throw new Error('Legacy function not available. Use DI container to get EnvironmentConfig instance.');
+  },
+  getManifestPath: () => {
+    console.warn('environmentConfig.getManifestPath: Legacy function called. Use DI container to get EnvironmentConfig instance.');
+    throw new Error('Legacy function not available. Use DI container to get EnvironmentConfig instance.');
+  },
+  getServiceWorkerPath: () => {
+    console.warn('environmentConfig.getServiceWorkerPath: Legacy function called. Use DI container to get EnvironmentConfig instance.');
+    throw new Error('Legacy function not available. Use DI container to get EnvironmentConfig instance.');
+  },
+  getFaviconPath: () => {
+    console.warn('environmentConfig.getFaviconPath: Legacy function called. Use DI container to get EnvironmentConfig instance.');
+    throw new Error('Legacy function not available. Use DI container to get EnvironmentConfig instance.');
+  },
+  getAssetPath: () => {
+    console.warn('environmentConfig.getAssetPath: Legacy function called. Use DI container to get EnvironmentConfig instance.');
+    throw new Error('Legacy function not available. Use DI container to get EnvironmentConfig instance.');
+  }
+};

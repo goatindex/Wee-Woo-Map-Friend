@@ -4,26 +4,29 @@
  * Replaces the legacy loadAmbulance function with a reactive, event-driven system
  */
 
-import { globalEventBus } from './EventBus.js';
-import { stateManager } from './StateManager.js';
-import { configurationManager } from './ConfigurationManager.js';
-import { layerManager } from './LayerManager.js';
-import { logger } from './StructuredLogger.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 
 /**
  * @class AmbulanceLoader
  * Loads and manages ambulance station data from GeoJSON sources
  */
-export class AmbulanceLoader {
-  constructor() {
+@injectable()
+export class AmbulanceLoader extends BaseService {
+  constructor(
+    @inject(TYPES.StructuredLogger) structuredLogger,
+    @inject(TYPES.EventBus) private eventBus,
+    @inject(TYPES.StateManager) private stateManager,
+    @inject(TYPES.ConfigurationManager) private configurationManager,
+    @inject(TYPES.LayerManager) private layerManager
+  ) {
+    super(structuredLogger);
     this.initialized = false;
     this.loading = false;
     this.loaded = false;
     this.ambulanceData = [];
     this.markers = new Map(); // key -> marker
-    
-    // Create module-specific logger
-    this.logger = logger.createChild({ module: 'AmbulanceLoader' });
     
     // Bind methods
     this.init = this.init.bind(this);
@@ -75,9 +78,9 @@ export class AmbulanceLoader {
    */
   async waitForDependencies() {
     const dependencies = [
-      { name: 'LayerManager', check: () => layerManager.isReady() },
-      { name: 'ConfigurationManager', check: () => configurationManager.isReady() },
-      { name: 'StateManager', check: () => stateManager.isReady() }
+      { name: 'LayerManager', check: () => this.layerManager.isReady() },
+      { name: 'ConfigurationManager', check: () => this.configurationManager.isReady() },
+      { name: 'StateManager', check: () => this.stateManager.isReady() }
     ];
     
     for (const dep of dependencies) {
@@ -118,12 +121,12 @@ export class AmbulanceLoader {
    */
   setupEventListeners() {
     // Listen for layer manager events
-    globalEventBus.on('layer:ready', () => {
+    this.eventBus.on('layer:ready', () => {
       this.logger.info('Layer manager ready, can load ambulance stations');
     });
     
     // Listen for configuration changes
-    globalEventBus.on('config:change', ({ path, value }) => {
+    this.eventBus.on('config:change', ({ path, value }) => {
       if (path.startsWith('categoryMeta.ambulance')) {
         this.logger.info('Ambulance metadata updated');
       }
@@ -182,7 +185,7 @@ export class AmbulanceLoader {
       this.logger.info('Loading ambulance stations...');
       
       this.loading = true;
-      globalEventBus.emit('ambulance:loading');
+      this.eventBus.emit('ambulance:loading');
       
       // Check offline status
       if (this.isOffline()) {
@@ -206,7 +209,7 @@ export class AmbulanceLoader {
       this.loading = false;
       
       // Emit success event
-      globalEventBus.emit('ambulance:loaded', { 
+      this.eventBus.emit('ambulance:loaded', { 
         featureCount: this.ambulanceData.length 
       });
       
@@ -223,7 +226,7 @@ export class AmbulanceLoader {
       this.loading = false;
       
       // Emit error event
-      globalEventBus.emit('ambulance:error', { error });
+      this.eventBus.emit('ambulance:error', { error });
       
       // Show user-friendly error
       this.showLoadingError(error);
@@ -237,13 +240,13 @@ export class AmbulanceLoader {
    */
   processFeatures() {
     const category = 'ambulance';
-    const meta = configurationManager.get(`categoryMeta.${category}`);
+    const meta = this.configurationManager.get(`categoryMeta.${category}`);
     if (!meta) {
       throw new Error(`No metadata found for category ${category}`);
     }
     
     // Initialize feature layers for ambulance category
-    const currentFeatureLayers = stateManager.get('featureLayers', {});
+    const currentFeatureLayers = this.stateManager.get('featureLayers', {});
     if (!currentFeatureLayers[category]) {
       currentFeatureLayers[category] = {};
     }
@@ -257,10 +260,10 @@ export class AmbulanceLoader {
       currentFeatureLayers[category][key] = null; // Will be populated when marker is shown
     });
     
-    stateManager.set('featureLayers', currentFeatureLayers);
+    this.stateManager.set('featureLayers', currentFeatureLayers);
     
     // Update names by category
-    const currentNamesByCategory = stateManager.get('namesByCategory', {});
+    const currentNamesByCategory = this.stateManager.get('namesByCategory', {});
     currentNamesByCategory[category] = Object.keys(currentFeatureLayers[category])
       .map(key => {
         const match = this.ambulanceData.find(feature => 
@@ -270,30 +273,30 @@ export class AmbulanceLoader {
       })
       .sort((a, b) => a.localeCompare(b));
     
-    stateManager.set('namesByCategory', currentNamesByCategory);
+    this.stateManager.set('namesByCategory', currentNamesByCategory);
     
     // Update name to key mapping
-    const currentNameToKey = stateManager.get('nameToKey', {});
+    const currentNameToKey = this.stateManager.get('nameToKey', {});
     currentNameToKey[category] = {};
     currentNamesByCategory[category].forEach(name => {
       currentNameToKey[category][name] = name.toLowerCase().replace(/\s+/g, '_');
     });
     
-    stateManager.set('nameToKey', currentNameToKey);
+    this.stateManager.set('nameToKey', currentNameToKey);
     
     // Initialize emphasised state for category
-    const currentEmphasised = stateManager.get('emphasised', {});
+    const currentEmphasised = this.stateManager.get('emphasised', {});
     if (!currentEmphasised[category]) {
       currentEmphasised[category] = {};
     }
-    stateManager.set('emphasised', currentEmphasised);
+    this.stateManager.set('emphasised', currentEmphasised);
     
     // Initialize name label markers for category
-    const currentNameLabelMarkers = stateManager.get('nameLabelMarkers', {});
+    const currentNameLabelMarkers = this.stateManager.get('nameLabelMarkers', {});
     if (!currentNameLabelMarkers[category]) {
       currentNameLabelMarkers[category] = {};
     }
-    stateManager.set('nameLabelMarkers', currentNameLabelMarkers);
+    this.stateManager.set('nameLabelMarkers', currentNameLabelMarkers);
     
     this.logger.info(`Processed ${this.ambulanceData.length} ambulance features`);
   }
@@ -303,7 +306,7 @@ export class AmbulanceLoader {
    */
   populateSidebar() {
     const category = 'ambulance';
-    const meta = configurationManager.get(`categoryMeta.${category}`);
+    const meta = this.configurationManager.get(`categoryMeta.${category}`);
     const listEl = document.getElementById('ambulanceList');
     
     if (!listEl) {
@@ -314,8 +317,8 @@ export class AmbulanceLoader {
     // Clear existing content
     listEl.innerHTML = '';
     
-    const namesByCategory = stateManager.get('namesByCategory', {});
-    const nameToKey = stateManager.get('nameToKey', {});
+    const namesByCategory = this.stateManager.get('namesByCategory', {});
+    const nameToKey = this.stateManager.get('nameToKey', {});
     
     // Create checkboxes for each ambulance station
     namesByCategory[category].forEach(fullName => {
@@ -346,7 +349,7 @@ export class AmbulanceLoader {
    */
   setupToggleAll() {
     const category = 'ambulance';
-    const meta = configurationManager.get(`categoryMeta.${category}`);
+    const meta = this.configurationManager.get(`categoryMeta.${category}`);
     const toggleAll = document.getElementById(meta.toggleAllId);
     
     if (!toggleAll) {
@@ -371,11 +374,11 @@ export class AmbulanceLoader {
    */
   handleToggleAll(checked) {
     const category = 'ambulance';
-    const namesByCategory = stateManager.get('namesByCategory', {});
-    const nameToKey = stateManager.get('nameToKey', {});
+    const namesByCategory = this.stateManager.get('namesByCategory', {});
+    const nameToKey = this.stateManager.get('nameToKey', {});
     
     // Begin bulk operation
-    stateManager.beginBulkOperation('toggleAll', namesByCategory[category].length);
+    this.stateManager.beginBulkOperation('toggleAll', namesByCategory[category].length);
     
     try {
       namesByCategory[category].forEach(name => {
@@ -394,7 +397,7 @@ export class AmbulanceLoader {
       });
     } finally {
       // End bulk operation
-      stateManager.endBulkOperation();
+      this.stateManager.endBulkOperation();
     }
     
     this.logger.info(`Toggle All handled for ${category}`, { checked });
@@ -410,23 +413,23 @@ export class AmbulanceLoader {
       this.hideMarker(key);
       
       // Clean up emphasis and labels
-      const emphasised = stateManager.get('emphasised', {});
+      const emphasised = this.stateManager.get('emphasised', {});
       if (emphasised.ambulance) {
         emphasised.ambulance[key] = false;
-        stateManager.set('emphasised', emphasised);
+        this.stateManager.set('emphasised', emphasised);
       }
       
-      const nameLabelMarkers = stateManager.get('nameLabelMarkers', {});
-      const map = stateManager.get('map');
+      const nameLabelMarkers = this.stateManager.get('nameLabelMarkers', {});
+      const map = this.stateManager.get('map');
       if (nameLabelMarkers.ambulance?.[key] && map) {
         map.removeLayer(nameLabelMarkers.ambulance[key]);
         nameLabelMarkers.ambulance[key] = null;
-        stateManager.set('nameLabelMarkers', nameLabelMarkers);
+        this.stateManager.set('nameLabelMarkers', nameLabelMarkers);
       }
     }
     
     // Update active list
-    globalEventBus.emit('activeList:update');
+    this.eventBus.emit('activeList:update');
   }
   
   /**
@@ -452,14 +455,14 @@ export class AmbulanceLoader {
    * Show ambulance marker for the given key
    */
   showMarker(key) {
-    const map = stateManager.get('map');
+    const map = this.stateManager.get('map');
     if (!map) {
       this.logger.warn('Map not available');
       return;
     }
     
     // Check if marker already exists and is visible
-    const featureLayers = stateManager.get('featureLayers', {});
+    const featureLayers = this.stateManager.get('featureLayers', {});
     if (featureLayers.ambulance?.[key]) {
       map.addLayer(featureLayers.ambulance[key]);
       return;
@@ -493,7 +496,7 @@ export class AmbulanceLoader {
     
     // Store marker reference
     featureLayers.ambulance[key] = marker;
-    stateManager.set('featureLayers', featureLayers);
+    this.stateManager.set('featureLayers', featureLayers);
     
     this.markers.set(key, marker);
     
@@ -504,13 +507,13 @@ export class AmbulanceLoader {
    * Hide ambulance marker for the given key
    */
   hideMarker(key) {
-    const map = stateManager.get('map');
+    const map = this.stateManager.get('map');
     if (!map) {
       this.logger.warn('Map not available');
       return;
     }
     
-    const featureLayers = stateManager.get('featureLayers', {});
+    const featureLayers = this.stateManager.get('featureLayers', {});
     const marker = featureLayers.ambulance?.[key];
     
     if (marker) {
@@ -591,7 +594,19 @@ export class AmbulanceLoader {
 }
 
 // Export singleton instance
-export const ambulanceLoader = new AmbulanceLoader();
+// Legacy compatibility functions - use DI container instead
+export const ambulanceLoader = {
+  init: () => { console.warn('ambulanceLoader.init: Legacy function called. Use DI container to get AmbulanceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get AmbulanceLoader instance.'); },
+  load: () => { console.warn('ambulanceLoader.load: Legacy function called. Use DI container to get AmbulanceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get AmbulanceLoader instance.'); },
+  getFeatures: () => { console.warn('ambulanceLoader.getFeatures: Legacy function called. Use DI container to get AmbulanceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get AmbulanceLoader instance.'); },
+  createIcon: () => { console.warn('ambulanceLoader.createIcon: Legacy function called. Use DI container to get AmbulanceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get AmbulanceLoader instance.'); },
+  showMarker: () => { console.warn('ambulanceLoader.showMarker: Legacy function called. Use DI container to get AmbulanceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get AmbulanceLoader instance.'); },
+  hideMarker: () => { console.warn('ambulanceLoader.hideMarker: Legacy function called. Use DI container to get AmbulanceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get AmbulanceLoader instance.'); },
+  processFeatures: () => { console.warn('ambulanceLoader.processFeatures: Legacy function called. Use DI container to get AmbulanceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get AmbulanceLoader instance.'); },
+  populateSidebar: () => { console.warn('ambulanceLoader.populateSidebar: Legacy function called. Use DI container to get AmbulanceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get AmbulanceLoader instance.'); },
+  setupToggleAll: () => { console.warn('ambulanceLoader.setupToggleAll: Legacy function called. Use DI container to get AmbulanceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get AmbulanceLoader instance.'); },
+  handleMarkerToggle: () => { console.warn('ambulanceLoader.handleMarkerToggle: Legacy function called. Use DI container to get AmbulanceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get AmbulanceLoader instance.'); }
+};
 
 // Global exposure handled by consolidated legacy compatibility system
 // See ApplicationBootstrap.setupLegacyCompatibility() for details

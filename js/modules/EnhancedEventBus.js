@@ -7,9 +7,10 @@
  * @author WeeWoo Map Friend Team
  */
 
-import { logger } from './StructuredLogger.js';
+// Logger is now passed as constructor parameter
 import { errorBoundary } from './ErrorBoundary.js';
 import { UnifiedErrorHandler } from './UnifiedErrorHandler.js';
+import { TYPES } from './Types.js';
 
 /**
  * Event types for type safety
@@ -175,9 +176,9 @@ export class EventMiddleware {
  * Logging middleware for event monitoring
  */
 export class LoggingMiddleware extends EventMiddleware {
-  constructor() {
+  constructor(logger = console) {
     super();
-    this.logger = logger.createChild({ module: 'EventBusLogging' });
+    this.logger = logger;
   }
 
   beforeEmit(event) {
@@ -235,10 +236,15 @@ export class LoggingMiddleware extends EventMiddleware {
  * Error handling middleware
  */
 export class ErrorHandlingMiddleware extends EventMiddleware {
-  constructor() {
+  constructor(container = null) {
     super();
-    this.logger = logger.createChild({ module: 'EventBusErrorHandling' });
-    this.unifiedErrorHandler = new UnifiedErrorHandler();
+    // Logger will be set by BaseService constructor
+    // Use DI injection if container is available, otherwise fall back to direct instantiation
+    if (container) {
+      this.unifiedErrorHandler = container.get(TYPES.UnifiedErrorHandler);
+    } else {
+      this.unifiedErrorHandler = new UnifiedErrorHandler();
+    }
   }
 
   beforeListener(event, listener) {
@@ -286,7 +292,7 @@ export class ErrorHandlingMiddleware extends EventMiddleware {
 export class PerformanceMiddleware extends EventMiddleware {
   constructor() {
     super();
-    this.logger = logger.createChild({ module: 'EventBusPerformance' });
+    // Logger will be set by BaseService constructor
     this.metrics = new Map();
   }
 
@@ -409,16 +415,17 @@ export class EventListener {
  * Enhanced EventBus with middleware and typed events
  */
 export class EnhancedEventBus {
-  constructor(options = {}) {
+  constructor(options = {}, container = null, logger = console) {
     this.listeners = new Map();
     this.middleware = [];
     this.maxListeners = options.maxListeners || 100;
     this.enableMetrics = options.enableMetrics !== false;
-    this.logger = logger.createChild({ module: 'EnhancedEventBus' });
+    this.logger = logger;
+    this.container = container;
 
     // Add default middleware
-    this.addMiddleware(new LoggingMiddleware());
-    this.addMiddleware(new ErrorHandlingMiddleware());
+    this.addMiddleware(new LoggingMiddleware(this.logger));
+    this.addMiddleware(new ErrorHandlingMiddleware(container));
     
     if (this.enableMetrics) {
       this.addMiddleware(new PerformanceMiddleware());
@@ -543,6 +550,29 @@ export class EnhancedEventBus {
    * @returns {Promise<Array>} Array of listener results
    */
   async emit(eventTypeOrEvent, payload = {}, metadata = {}) {
+    // Input validation and error reporting
+    const validationResult = this.validateEmitInput(eventTypeOrEvent, payload, metadata);
+    if (!validationResult.valid) {
+      this.logger.error('Invalid emit input', {
+        error: validationResult.error,
+        eventType: typeof eventTypeOrEvent === 'string' ? eventTypeOrEvent : 'Event object',
+        payload: this.sanitizePayload(payload),
+        metadata: this.sanitizeMetadata(metadata),
+        recommendation: validationResult.recommendation
+      });
+      
+      // Emit error event for external monitoring
+      this.emitErrorEvent('validation_error', {
+        operation: 'emit',
+        message: validationResult.error,
+        context: { eventType: eventTypeOrEvent, payload, metadata },
+        severity: 'error',
+        recoverable: false
+      });
+      
+      return [];
+    }
+
     const event = eventTypeOrEvent instanceof Event 
       ? eventTypeOrEvent 
       : new Event(eventTypeOrEvent, payload, metadata);
@@ -550,7 +580,29 @@ export class EnhancedEventBus {
     // Apply beforeEmit middleware
     let processedEvent = event;
     for (const middleware of this.middleware) {
-      processedEvent = middleware.beforeEmit(processedEvent);
+      try {
+        processedEvent = middleware.beforeEmit(processedEvent);
+      } catch (error) {
+        this.logger.error('Middleware beforeEmit error', {
+          eventType: processedEvent.type,
+          middleware: middleware.constructor.name,
+          error: error.message,
+          stack: error.stack
+        });
+        
+        this.emitErrorEvent('middleware_error', {
+          operation: 'beforeEmit',
+          eventType: processedEvent.type,
+          middleware: middleware.constructor.name,
+          message: error.message,
+          context: { eventType: processedEvent.type },
+          severity: 'error',
+          recoverable: true
+        });
+        
+        // Continue with original event if middleware fails
+        processedEvent = event;
+      }
     }
 
     const listeners = this.listeners.get(processedEvent.type) || [];
@@ -587,15 +639,46 @@ export class EnhancedEventBus {
         }
 
       } catch (error) {
+        // Enhanced error reporting with context
         this.logger.error('Event listener error', {
           eventType: processedEvent.type,
           listenerId: listener.id,
-          error: error.message
+          listenerName: listener.handler.name || 'anonymous',
+          error: error.message,
+          stack: error.stack,
+          eventPayload: this.sanitizePayload(processedEvent.payload),
+          eventMetadata: this.sanitizeMetadata(processedEvent.metadata),
+          listenerOptions: listener.options
+        });
+
+        // Emit error event for external monitoring
+        this.emitErrorEvent('listener_error', {
+          operation: 'listener_execution',
+          eventType: processedEvent.type,
+          listenerId: listener.id,
+          listenerName: listener.handler.name || 'anonymous',
+          message: error.message,
+          context: { 
+            eventType: processedEvent.type,
+            listenerId: listener.id,
+            eventPayload: this.sanitizePayload(processedEvent.payload)
+          },
+          severity: processedEvent.metadata.priority >= EventPriority.CRITICAL ? 'error' : 'warning',
+          recoverable: processedEvent.metadata.priority < EventPriority.CRITICAL
         });
 
         // Apply afterListener middleware with error
         for (const middleware of this.middleware) {
-          middleware.afterListener(processedEvent, listener.handler, null, error);
+          try {
+            middleware.afterListener(processedEvent, listener.handler, null, error);
+          } catch (middlewareError) {
+            this.logger.error('Middleware afterListener error', {
+              eventType: processedEvent.type,
+              middleware: middleware.constructor.name,
+              originalError: error.message,
+              middlewareError: middlewareError.message
+            });
+          }
         }
 
         // Re-throw error for critical events
@@ -715,6 +798,163 @@ export class EnhancedEventBus {
    * @param {string} namespace - Namespace prefix
    * @returns {Object} Namespaced event bus methods
    */
+  /**
+   * Validate emit input parameters
+   * @param {string|Event} eventTypeOrEvent - Event type or Event object
+   * @param {any} payload - Event payload
+   * @param {Object} metadata - Event metadata
+   * @returns {Object} Validation result
+   */
+  validateEmitInput(eventTypeOrEvent, payload, metadata) {
+    // Validate event type
+    if (eventTypeOrEvent === null || eventTypeOrEvent === undefined) {
+      return {
+        valid: false,
+        error: 'Event type cannot be null or undefined',
+        recommendation: 'Provide a valid event type string or Event object'
+      };
+    }
+
+    if (typeof eventTypeOrEvent === 'string' && eventTypeOrEvent.trim() === '') {
+      return {
+        valid: false,
+        error: 'Event type cannot be empty string',
+        recommendation: 'Provide a non-empty event type string'
+      };
+    }
+
+    // Validate payload
+    if (payload !== null && payload !== undefined) {
+      try {
+        JSON.stringify(payload);
+      } catch (error) {
+        if (error.message.includes('circular')) {
+          return {
+            valid: false,
+            error: 'Payload contains circular references',
+            recommendation: 'Remove circular references from payload before emitting'
+          };
+        }
+      }
+    }
+
+    // Validate metadata
+    if (metadata !== null && metadata !== undefined && typeof metadata !== 'object') {
+      return {
+        valid: false,
+        error: 'Metadata must be an object',
+        recommendation: 'Provide metadata as an object or null/undefined'
+      };
+    }
+
+    return { valid: true };
+  }
+
+  /**
+   * Emit error event for external monitoring
+   * @param {string} errorType - Type of error
+   * @param {Object} errorData - Error data
+   */
+  emitErrorEvent(errorType, errorData) {
+    try {
+      // Emit to internal error monitoring
+      this.emit('eventbus:error', {
+        type: errorType,
+        ...errorData,
+        timestamp: Date.now(),
+        source: 'EnhancedEventBus'
+      });
+    } catch (error) {
+      // Fallback to console if event emission fails
+      console.error('Failed to emit error event:', error);
+    }
+  }
+
+  /**
+   * Sanitize payload for logging
+   * @param {any} payload - Payload to sanitize
+   * @returns {any} Sanitized payload
+   */
+  sanitizePayload(payload) {
+    if (payload === null || payload === undefined) {
+      return payload;
+    }
+
+    try {
+      const sanitized = { ...payload };
+      // Remove sensitive data
+      delete sanitized.password;
+      delete sanitized.token;
+      delete sanitized.secret;
+      return sanitized;
+    } catch (error) {
+      return '[Circular Reference]';
+    }
+  }
+
+  /**
+   * Sanitize metadata for logging
+   * @param {Object} metadata - Metadata to sanitize
+   * @returns {Object} Sanitized metadata
+   */
+  sanitizeMetadata(metadata) {
+    if (!metadata || typeof metadata !== 'object') {
+      return metadata;
+    }
+
+    try {
+      const sanitized = { ...metadata };
+      // Remove sensitive data
+      delete sanitized.password;
+      delete sanitized.token;
+      delete sanitized.secret;
+      return sanitized;
+    } catch (error) {
+      return '[Circular Reference]';
+    }
+  }
+
+  /**
+   * Get event bus statistics for monitoring
+   * @returns {Object} Event bus statistics
+   */
+  getEventBusStats() {
+    const totalListeners = Array.from(this.listeners.values())
+      .reduce((total, listeners) => total + listeners.length, 0);
+    
+    const eventTypes = Array.from(this.listeners.keys());
+    
+    return {
+      totalListeners,
+      eventTypes: eventTypes.length,
+      middlewareCount: this.middleware.length,
+      eventTypesList: eventTypes,
+      memoryUsage: this.estimateMemoryUsage()
+    };
+  }
+
+  /**
+   * Estimate memory usage of event bus
+   * @returns {number} Estimated memory usage in bytes
+   */
+  estimateMemoryUsage() {
+    let totalSize = 0;
+    
+    // Estimate listener memory usage
+    for (const listeners of this.listeners.values()) {
+      for (const listener of listeners) {
+        totalSize += JSON.stringify(listener).length;
+      }
+    }
+    
+    // Estimate middleware memory usage
+    for (const middleware of this.middleware) {
+      totalSize += JSON.stringify(middleware).length;
+    }
+    
+    return totalSize;
+  }
+
   namespace(namespace) {
     return {
       on: (eventType, handler, options) => this.on(`${namespace}:${eventType}`, handler, options),
@@ -727,7 +967,10 @@ export class EnhancedEventBus {
 }
 
 // Export singleton instance
-export const enhancedEventBus = new EnhancedEventBus();
+export const enhancedEventBus = () => {
+  console.warn('enhancedEventBus: Legacy function called. Use DI container to get EnhancedEventBus instance.');
+  throw new Error('Legacy function not available. Use DI container to get EnhancedEventBus instance.');
+};
 
 // Export convenience functions
 export const on = (eventType, handler, options) => enhancedEventBus.on(eventType, handler, options);

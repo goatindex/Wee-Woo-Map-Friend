@@ -4,15 +4,22 @@
  * Replaces legacy text formatting functions with a reactive, event-driven system
  */
 
-import { globalEventBus } from './EventBus.js';
-import { stateManager } from './StateManager.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 
 /**
  * @class TextFormatter
  * Handles text formatting, normalization, and display name generation
  */
-export class TextFormatter {
-  constructor() {
+@injectable()
+export class TextFormatter extends BaseService {
+  constructor(
+    @inject(TYPES.StructuredLogger) structuredLogger,
+    @inject(TYPES.EventBus) private eventBus,
+    @inject(TYPES.StateManager) private stateManager
+  ) {
+    super(structuredLogger);
     this.initialized = false;
     this.formattingRules = new Map();
     this.cache = new Map(); // Simple caching for performance
@@ -28,7 +35,7 @@ export class TextFormatter {
     this.normalizeName = this.normalizeName.bind(this);
     this.getStatus = this.getStatus.bind(this);
     
-    console.log('📝 TextFormatter: Text formatting system initialized');
+    this.logger.info('TextFormatter: Text formatting system initialized');
   }
   
   /**
@@ -130,7 +137,7 @@ export class TextFormatter {
    */
   setupEventListeners() {
     // Listen for text formatting requests
-    globalEventBus.on('text:format', ({ category, name, type = 'display' }) => {
+    this.eventBus.on('text:format', ({ category, name, type = 'display' }) => {
       try {
         let result;
         switch (category) {
@@ -153,10 +160,10 @@ export class TextFormatter {
             result = this.normalizeName(name);
         }
         
-        globalEventBus.emit('text:formatted', { category, input: name, output: result, type });
+        this.eventBus.emit('text:formatted', { category, input: name, output: result, type });
         
       } catch (error) {
-        globalEventBus.emit('text:error', { error: error.message, category, name });
+        this.eventBus.emit('text:error', { error: error.message, category, name });
       }
     });
     
@@ -216,7 +223,7 @@ export class TextFormatter {
       this.cache.set(cacheKey, formatted);
       
       // Emit formatting event
-      globalEventBus.emit('text:formatted', {
+      this.eventBus.emit('text:formatted', {
         category: 'lga',
         input: name,
         output: formatted,
@@ -260,7 +267,7 @@ export class TextFormatter {
       this.cache.set(cacheKey, formatted);
       
       // Emit formatting event
-      globalEventBus.emit('text:formatted', {
+      this.eventBus.emit('text:formatted', {
         category: 'frv',
         input: name,
         output: formatted,
@@ -309,7 +316,7 @@ export class TextFormatter {
       this.cache.set(cacheKey, formatted);
       
       // Emit formatting event
-      globalEventBus.emit('text:formatted', {
+      this.eventBus.emit('text:formatted', {
         category: 'ses',
         input: name,
         output: formatted,
@@ -358,7 +365,7 @@ export class TextFormatter {
       this.cache.set(cacheKey, formatted);
       
       // Emit formatting event
-      globalEventBus.emit('text:formatted', {
+      this.eventBus.emit('text:formatted', {
         category: 'ambulance',
         input: name,
         output: formatted,
@@ -407,7 +414,7 @@ export class TextFormatter {
       this.cache.set(cacheKey, formatted);
       
       // Emit formatting event
-      globalEventBus.emit('text:formatted', {
+      this.eventBus.emit('text:formatted', {
         category: 'police',
         input: name,
         output: formatted,
@@ -462,8 +469,33 @@ export class TextFormatter {
   }
 }
 
-// Export singleton instance
-export const textFormatter = new TextFormatter();
-
-// Global exposure handled by consolidated legacy compatibility system
-// See ApplicationBootstrap.setupLegacyCompatibility() for details
+// Legacy compatibility functions for backward compatibility
+// Note: These functions will be removed once all modules are migrated to DI
+export const formatLgaName = (name) => {
+  console.warn('formatLgaName: Legacy function called. Use DI container to get TextFormatter instance.');
+  throw new Error('Legacy function not available. Use DI container to get TextFormatter instance.');
+};
+export const formatFrvName = (name) => {
+  console.warn('formatFrvName: Legacy function called. Use DI container to get TextFormatter instance.');
+  throw new Error('Legacy function not available. Use DI container to get TextFormatter instance.');
+};
+export const formatSesName = (name) => {
+  console.warn('formatSesName: Legacy function called. Use DI container to get TextFormatter instance.');
+  throw new Error('Legacy function not available. Use DI container to get TextFormatter instance.');
+};
+export const formatAmbulanceName = (name) => {
+  console.warn('formatAmbulanceName: Legacy function called. Use DI container to get TextFormatter instance.');
+  throw new Error('Legacy function not available. Use DI container to get TextFormatter instance.');
+};
+export const formatPoliceName = (name) => {
+  console.warn('formatPoliceName: Legacy function called. Use DI container to get TextFormatter instance.');
+  throw new Error('Legacy function not available. Use DI container to get TextFormatter instance.');
+};
+export const normalizeName = (name) => {
+  console.warn('normalizeName: Legacy function called. Use DI container to get TextFormatter instance.');
+  throw new Error('Legacy function not available. Use DI container to get TextFormatter instance.');
+};
+export const toTitleCase = (text) => {
+  console.warn('toTitleCase: Legacy function called. Use DI container to get TextFormatter instance.');
+  throw new Error('Legacy function not available. Use DI container to get TextFormatter instance.');
+};

@@ -4,15 +4,20 @@
  * Handles GitHub Pages, local development, and future hosting platforms
  */
 
-import { logger } from './StructuredLogger.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 
 /**
  * @class PathResolver
  * Centralized path resolution for different deployment environments
  */
-export class PathResolver {
-  constructor() {
-    this.logger = logger.createChild({ module: 'PathResolver' });
+@injectable()
+export class PathResolver extends BaseService {
+  constructor(
+    @inject(TYPES.StructuredLogger) structuredLogger
+  ) {
+    super(structuredLogger);
     this.environment = this.detectEnvironment();
     this.basePath = this.calculateBasePath();
     
@@ -235,5 +240,46 @@ export class PathResolver {
   }
 }
 
-// Create singleton instance
-export const pathResolver = new PathResolver();
+// Legacy compatibility functions - use DI container instead
+export const pathResolver = {
+  resolvePath: () => {
+    console.warn('pathResolver.resolvePath: Legacy function called. Use DI container to get PathResolver instance.');
+    throw new Error('Legacy function not available. Use DI container to get PathResolver instance.');
+  },
+  getBasePath: () => {
+    console.warn('pathResolver.getBasePath: Legacy function called. Use DI container to get PathResolver instance.');
+    throw new Error('Legacy function not available. Use DI container to get PathResolver instance.');
+  },
+  getEnvironment: () => {
+    console.warn('pathResolver.getEnvironment: Legacy function called. Use DI container to get PathResolver instance.');
+    throw new Error('Legacy function not available. Use DI container to get PathResolver instance.');
+  },
+  isGitHubPages: () => {
+    console.warn('pathResolver.isGitHubPages: Legacy function called. Use DI container to get PathResolver instance.');
+    throw new Error('Legacy function not available. Use DI container to get PathResolver instance.');
+  },
+  isLocal: () => {
+    console.warn('pathResolver.isLocal: Legacy function called. Use DI container to get PathResolver instance.');
+    throw new Error('Legacy function not available. Use DI container to get PathResolver instance.');
+  },
+  getEnvironmentConfig: () => {
+    console.warn('pathResolver.getEnvironmentConfig: Legacy function called. Use DI container to get PathResolver instance.');
+    throw new Error('Legacy function not available. Use DI container to get PathResolver instance.');
+  },
+  getManifestPath: () => {
+    console.warn('pathResolver.getManifestPath: Legacy function called. Use DI container to get PathResolver instance.');
+    throw new Error('Legacy function not available. Use DI container to get PathResolver instance.');
+  },
+  getServiceWorkerPath: () => {
+    console.warn('pathResolver.getServiceWorkerPath: Legacy function called. Use DI container to get PathResolver instance.');
+    throw new Error('Legacy function not available. Use DI container to get PathResolver instance.');
+  },
+  getFaviconPath: () => {
+    console.warn('pathResolver.getFaviconPath: Legacy function called. Use DI container to get PathResolver instance.');
+    throw new Error('Legacy function not available. Use DI container to get PathResolver instance.');
+  },
+  getAssetPath: () => {
+    console.warn('pathResolver.getAssetPath: Legacy function called. Use DI container to get PathResolver instance.');
+    throw new Error('Legacy function not available. Use DI container to get PathResolver instance.');
+  }
+};

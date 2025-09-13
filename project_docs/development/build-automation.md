@@ -219,6 +219,21 @@ dist/                # Compiled output
    ls dist/modules/*.map
    ```
 
+5. **Test Failures Due to Missing Build**:
+   ```bash
+   # Always build before testing
+   npm run build:js
+   npm run test
+   
+   # Or use test scripts that include build
+   npm run test:e2e  # Includes build:js automatically
+   ```
+
+6. **Decorator Errors in Tests**:
+   - Ensure tests run against compiled code (`dist/modules/`)
+   - Check that `npm run build:js` completed successfully
+   - Verify SWC configuration in `.swcrc` is correct
+
 ### **Debug Commands**
 
 ```bash
@@ -243,8 +258,46 @@ npm run serve:dist
 ### **Runtime Performance**
 
 - **ES6 Modules**: Native browser support
-- **Decorators**: Compiled to efficient JavaScript
-- **InversifyJS**: Full functionality preserved
+- **Decorators**: Compiled to efficient JavaScript (not stripped, but transformed)
+- **InversifyJS**: Full functionality preserved through SWC transformation
+
+### **Decorator Transformation Process**
+
+**Important**: Decorators are **not stripped** during build - they are **transformed** into browser-compatible JavaScript:
+
+#### **What Happens to Decorators**
+
+1. **Source Code** (`js/modules/`): Contains TypeScript decorators
+2. **SWC Compilation**: Transforms decorators into standard JavaScript
+3. **Output** (`dist/modules/`): Contains transformed, browser-compatible code
+
+#### **Example Transformation**
+
+```typescript
+// Source code (js/modules/ConfigService.js)
+@injectable()
+export class ConfigService {
+  @inject('ConfigService')
+  private config: any;
+}
+```
+
+**SWC transforms this into:**
+```javascript
+// Compiled code (dist/modules/ConfigService.js)
+export class ConfigService {
+  constructor() {
+    this.config = container.get('ConfigService');
+  }
+}
+```
+
+#### **Why This Is Good**
+
+- **Browser Compatibility**: Decorators aren't natively supported in browsers yet
+- **Performance**: Transformed code runs faster than runtime decorator processing
+- **Bundle Size**: No need for decorator runtime libraries
+- **InversifyJS Compatibility**: The transformed code works perfectly with InversifyJS
 
 ## Best Practices
 

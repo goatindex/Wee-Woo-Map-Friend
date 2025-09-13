@@ -1,7 +1,13 @@
 /**
- * @fileoverview Phase 4: Cross-Browser Compatibility Tests
- * Ensures consistent application behavior and appearance across various platforms
- * Tests responsive design, touch interactions, and browser-specific features
+ * @fileoverview Playwright Test File
+ * 
+ * 📚 Documentation:
+ * - Testing Framework: project_docs/development/testing-playwright.md
+ * - Build Process: project_docs/development/build-automation.md
+ * 
+ * 🔧 Build Process:
+ * Tests automatically run `npm run build:js` before execution to ensure
+ * decorators are properly transformed from TypeScript to browser-compatible JavaScript.
  */
 
 import { test, expect } from '@playwright/test';

@@ -1,5 +1,6 @@
-import { logger } from './StructuredLogger.js';
-import { enhancedEventBus as globalEventBus } from './EnhancedEventBus.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 
 /**
  * @typedef {Object} ValidationResult
@@ -32,9 +33,13 @@ import { enhancedEventBus as globalEventBus } from './EnhancedEventBus.js';
  * Comprehensive data validation system with GeoJSON validation,
  * schema validation, data sanitization, and performance monitoring.
  */
-export class DataValidator {
-  constructor() {
-    this.logger = logger.createChild({ module: 'DataValidator' });
+@injectable()
+export class DataValidator extends BaseService {
+  constructor(
+    @inject(TYPES.StructuredLogger) structuredLogger,
+    @inject(TYPES.EventBus) private eventBus
+  ) {
+    super(structuredLogger);
     this.validationRules = new Map();
     this.schemas = new Map();
     this.statistics = {
@@ -103,7 +108,7 @@ export class DataValidator {
       this.updateValidationStatistics(startTime, result.valid);
       
       // Emit validation event
-      globalEventBus.emit('data.validation.completed', {
+      this.eventBus.emit('data.validation.completed', {
         type: 'geojson',
         valid: result.valid,
         featureCount: result.featureCount,
@@ -195,7 +200,7 @@ export class DataValidator {
       this.updateValidationStatistics(startTime, result.valid);
       
       // Emit validation event
-      globalEventBus.emit('data.validation.completed', {
+      this.eventBus.emit('data.validation.completed', {
         type: 'schema',
         schemaName,
         valid: result.valid,
@@ -241,7 +246,7 @@ export class DataValidator {
       const sanitized = this.performSanitization(data, options);
       
       // Emit sanitization event
-      globalEventBus.emit('data.sanitization.completed', {
+      this.eventBus.emit('data.sanitization.completed', {
         originalType: typeof data,
         sanitizedType: typeof sanitized,
         changes: this.calculateSanitizationChanges(data, sanitized)
@@ -845,7 +850,7 @@ export class DataValidator {
    */
   setupEventHandlers() {
     // Listen for data validation requests
-    globalEventBus.on('data.validation.request', (event) => {
+    this.eventBus.on('data.validation.request', (event) => {
       this.handleValidationRequest(event.payload);
     });
   }
@@ -870,7 +875,7 @@ export class DataValidator {
       }
       
       // Emit validation result
-      globalEventBus.emit('data.validation.result', {
+      this.eventBus.emit('data.validation.result', {
         requestId: payload.requestId,
         result
       });
@@ -885,4 +890,34 @@ export class DataValidator {
 }
 
 // Export singleton instance
-export const dataValidator = new DataValidator();
+// Legacy compatibility functions - use DI container instead
+export const dataValidator = {
+  validateGeoJSON: () => {
+    console.warn('dataValidator.validateGeoJSON: Legacy function called. Use DI container to get DataValidator instance.');
+    throw new Error('Legacy function not available. Use DI container to get DataValidator instance.');
+  },
+  validateSchema: () => {
+    console.warn('dataValidator.validateSchema: Legacy function called. Use DI container to get DataValidator instance.');
+    throw new Error('Legacy function not available. Use DI container to get DataValidator instance.');
+  },
+  sanitizeData: () => {
+    console.warn('dataValidator.sanitizeData: Legacy function called. Use DI container to get DataValidator instance.');
+    throw new Error('Legacy function not available. Use DI container to get DataValidator instance.');
+  },
+  registerValidationRule: () => {
+    console.warn('dataValidator.registerValidationRule: Legacy function called. Use DI container to get DataValidator instance.');
+    throw new Error('Legacy function not available. Use DI container to get DataValidator instance.');
+  },
+  registerSchema: () => {
+    console.warn('dataValidator.registerSchema: Legacy function called. Use DI container to get DataValidator instance.');
+    throw new Error('Legacy function not available. Use DI container to get DataValidator instance.');
+  },
+  getStatistics: () => {
+    console.warn('dataValidator.getStatistics: Legacy function called. Use DI container to get DataValidator instance.');
+    throw new Error('Legacy function not available. Use DI container to get DataValidator instance.');
+  },
+  resetStatistics: () => {
+    console.warn('dataValidator.resetStatistics: Legacy function called. Use DI container to get DataValidator instance.');
+    throw new Error('Legacy function not available. Use DI container to get DataValidator instance.');
+  }
+};

@@ -1,7 +1,13 @@
 /**
- * @fileoverview Phase 4: End-to-End User Journey Tests
- * Tests complete user workflows from map loading to feature interaction
- * Validates real user experience in actual browser environment
+ * @fileoverview Playwright Test File
+ * 
+ * 📚 Documentation:
+ * - Testing Framework: project_docs/development/testing-playwright.md
+ * - Build Process: project_docs/development/build-automation.md
+ * 
+ * 🔧 Build Process:
+ * Tests automatically run `npm run build:js` before execution to ensure
+ * decorators are properly transformed from TypeScript to browser-compatible JavaScript.
  */
 
 import { test, expect } from '@playwright/test';

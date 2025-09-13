@@ -1,6 +1,16 @@
 # Migration Progress - mapexp.github.io
 
-## Current Status: Phase 1 Complete, Phase 2 In Progress
+## Current Status: Phase 1 Complete, Phase 2 In Progress, Service Worker Updated
+
+### ✅ **SERVICE WORKER UPDATE (2025-01-11)**
+- **Status**: ✅ **COMPLETE**
+- **Files Modified**: `sw.js`, `index.html`
+- **Key Changes**:
+  - Updated cache version from `v2.1.0-no-dataservice` to `v2.1.0-stable`
+  - Removed DataService.js from cached assets (file archived)
+  - Updated cache invalidation messages to reflect completed migration
+  - Changed manual invalidation reason from "DataService removed" to "Manual cache invalidation"
+- **Impact**: Eliminates unnecessary aggressive cache invalidation behavior
 
 ### ✅ **COMPLETED PHASE 1: Critical System Fixes**
 

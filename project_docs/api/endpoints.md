@@ -429,6 +429,105 @@ const cacheStrategies = {
 
 ---
 
+## 📝 **Service Logging APIs**
+
+### **BaseService Logger Interface**
+
+All services extending BaseService have access to a service-specific logger instance.
+
+```javascript
+// Service-specific logger instance
+this.logger = logger.createChild({
+  module: this.constructor.name
+});
+```
+
+**Available Methods**:
+
+| Method | Description | Usage |
+|--------|-------------|-------|
+| `this.logger.debug(message, context)` | Debug level logging | Development debugging |
+| `this.logger.info(message, context)` | Info level logging | General information |
+| `this.logger.warn(message, context)` | Warning level logging | Non-critical issues |
+| `this.logger.error(message, context)` | Error level logging | Error conditions |
+| `this.logger.time(label)` | Performance timing | Performance measurement |
+
+**Example Usage**:
+
+```javascript
+export class MyService extends BaseService {
+  async processData(data) {
+    // Debug logging
+    this.logger.debug('Processing data', { dataSize: data.length });
+    
+    // Performance timing
+    const timer = this.logger.time('data-processing');
+    
+    try {
+      const result = await this.transformData(data);
+      
+      // Info logging
+      this.logger.info('Data processed successfully', { 
+        inputSize: data.length, 
+        outputSize: result.length 
+      });
+      
+      return result;
+    } catch (error) {
+      // Error logging
+      this.logger.error('Data processing failed', error, { 
+        dataSize: data.length 
+      });
+      throw error;
+    } finally {
+      // End performance timing
+      timer.end();
+    }
+  }
+}
+```
+
+### **Backward Compatibility Methods**
+
+BaseService also provides backward-compatible logging methods:
+
+```javascript
+// Backward compatible methods
+this.log(message, context);        // Uses logger.info internally
+this.logError(message, error, context); // Uses logger.error internally
+```
+
+### **DependencyContainer Logging**
+
+DependencyContainer uses direct logger calls since it doesn't extend BaseService:
+
+```javascript
+// Direct logger usage in DependencyContainer
+logger.info('Dependency container bindings configured');
+logger.info('Initializing dependency container');
+logger.info('Dependency container initialized successfully');
+```
+
+### **Structured Logging Output**
+
+All logs include structured metadata:
+
+```json
+{
+  "timestamp": "2025-09-09T09:24:08.493Z",
+  "level": "INFO",
+  "message": "State updated",
+  "context": {
+    "module": "StateManager",
+    "service": "StateManager",
+    "oldState": { "map": { "zoom": 10 } },
+    "newState": { "map": { "zoom": 12 } }
+  }
+}
+```
+
+---
+
 ## 🔗 **Related Documentation**
 
 - **[API Overview](README.md)**: General API information and navigation

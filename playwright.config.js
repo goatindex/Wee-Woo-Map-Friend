@@ -22,20 +22,23 @@ export default defineConfig({
   // Retry on CI only
   retries: process.env.CI ? 2 : 0,
   
-  // Opt out of parallel tests on CI
-  workers: process.env.CI ? 1 : undefined,
+  // Optimize worker count for performance
+  workers: process.env.CI ? 2 : 6,  // 2 workers on CI, 6 on local
   
-  // Reporter to use
+  // Reporter to use - HTML dashboard + minimal terminal output
   reporter: [
-    ['html'],
+    ['html', { 
+      open: 'always',  // Always open browser
+      outputFolder: 'playwright-report' 
+    }],
+    ['line'],  // Clean progress view in terminal
     ['json', { outputFile: 'test-results/results.json' }],
     ['junit', { outputFile: 'test-results/results.xml' }]
   ],
   
   // Shared settings for all the projects below
   use: {
-    // Base URL to use in actions like `await page.goto('/')`
-    baseURL: 'http://localhost:8000',
+    // Base URL configured per project for multi-server setup
     
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -51,38 +54,114 @@ export default defineConfig({
     navigationTimeout: 30000,
   },
   
-  // Configure projects for major browsers
+  // Multi-server projects for optimal resource distribution
   projects: [
+    // Unit Tests (Port 8001) - 2 workers
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'unit-chromium',
+      testMatch: 'tests/unit/**/*.spec.js',
+      use: { 
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:8001',
+      },
     },
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      name: 'unit-firefox', 
+      testMatch: 'tests/unit/**/*.spec.js',
+      use: { 
+        ...devices['Desktop Firefox'],
+        baseURL: 'http://localhost:8001',
+      },
+    },
+    
+    // E2E Tests (Port 8002) - 2 workers
+    {
+      name: 'e2e-chromium',
+      testMatch: 'tests/core/**/*.spec.js',
+      use: { 
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:8002',
+      },
     },
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      name: 'e2e-mobile',
+      testMatch: 'tests/core/**/*.spec.js', 
+      use: { 
+        ...devices['Pixel 5'],
+        baseURL: 'http://localhost:8002',
+      },
     },
-    // Mobile testing
+    
+    // Debug Tests (Port 8003) - 1 worker
     {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
+      name: 'debug-webkit',
+      testMatch: 'tests/debug/**/*.spec.js',
+      use: { 
+        ...devices['Desktop Safari'],
+        baseURL: 'http://localhost:8003',
+      },
     },
+    
+    // Performance Tests (Port 8004) - 1 worker
     {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
+      name: 'performance-chromium',
+      testMatch: 'tests/performance/**/*.spec.js',
+      use: { 
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:8004',
+      },
     },
+    
+    // Compatibility Tests (Port 8002) - shared with E2E
+    {
+      name: 'compatibility-firefox',
+      testMatch: 'tests/compatibility/**/*.spec.js',
+      use: { 
+        ...devices['Desktop Firefox'],
+        baseURL: 'http://localhost:8002',
+      },
+    }
   ],
   
-  // Run your local dev server before starting the tests
-  webServer: {
-    command: 'python -m http.server 8000',
-    url: 'http://localhost:8000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  // Multi-server configuration for optimal performance
+  webServer: [
+    // Unit Tests Server (Port 8001) - 2 workers
+    {
+      command: 'python -m http.server 8001 --bind 127.0.0.1',
+      url: 'http://localhost:8001',
+      reuseExistingServer: false,
+      timeout: 120 * 1000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+    // E2E Tests Server (Port 8002) - 2 workers  
+    {
+      command: 'python -m http.server 8002 --bind 127.0.0.1',
+      url: 'http://localhost:8002',
+      reuseExistingServer: false,
+      timeout: 120 * 1000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+    // Debug Tests Server (Port 8003) - 1 worker
+    {
+      command: 'python -m http.server 8003 --bind 127.0.0.1',
+      url: 'http://localhost:8003',
+      reuseExistingServer: false,
+      timeout: 120 * 1000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+    // Performance Tests Server (Port 8004) - 1 worker
+    {
+      command: 'python -m http.server 8004 --bind 127.0.0.1',
+      url: 'http://localhost:8004',
+      reuseExistingServer: false,
+      timeout: 120 * 1000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    }
+  ],
   
   // Global setup and teardown
   globalSetup: './tests/global-setup.js',

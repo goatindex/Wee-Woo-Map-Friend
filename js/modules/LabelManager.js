@@ -4,16 +4,23 @@
  * Migrated from js/labels.js
  */
 
-import { logger } from './StructuredLogger.js';
-import { globalEventBus } from './EventBus.js';
-import { stateManager } from './StateManager.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 
 /**
  * LabelManager - Handles creation and management of map name labels
  */
-export class LabelManager {
-  constructor() {
-    this.logger = logger.createChild({ module: 'LabelManager' });
+@injectable()
+export class LabelManager extends BaseService {
+  constructor(
+    @inject(TYPES.StructuredLogger) structuredLogger,
+    @inject(TYPES.EventBus) eventBus,
+    @inject(TYPES.StateManager) stateManager
+  ) {
+    super(structuredLogger);
+    this.eventBus = eventBus;
+    this.stateManager = stateManager;
     this.logger.info('LabelManager initialized');
   }
 
@@ -24,7 +31,7 @@ export class LabelManager {
     this.logger.info('Initializing LabelManager...');
     
     // Listen for state events
-    globalEventBus.on('state:createLabel', (data) => {
+    this.eventBus.on('state:createLabel', (data) => {
       this.ensureLabel(data.category, data.key, data.labelName, data.isPoint, data.layer);
     });
     
@@ -281,9 +288,9 @@ export class LabelManager {
       if (dependencies) {
         ({ map, state, config } = dependencies);
       } else {
-        map = stateManager.get('map');
-        state = stateManager.get('state') || {};
-        config = stateManager.get('config') || {};
+        map = this.stateManager.get('map');
+        state = this.stateManager.get('state') || {};
+        config = this.stateManager.get('config') || {};
       }
       
       if (!map) {
@@ -371,8 +378,8 @@ export class LabelManager {
       if (dependencies) {
         ({ map, state } = dependencies);
       } else {
-        map = stateManager.get('map');
-        state = stateManager.get('state') || {};
+        map = this.stateManager.get('map');
+        state = this.stateManager.get('state') || {};
       }
       
       if (!state.nameLabelMarkers || !state.nameLabelMarkers[category]) {
@@ -409,8 +416,8 @@ export class LabelManager {
       if (dependencies) {
         ({ map, state } = dependencies);
       } else {
-        map = stateManager.get('map');
-        state = stateManager.get('state') || {};
+        map = this.stateManager.get('map');
+        state = this.stateManager.get('state') || {};
       }
       
       if (!state.nameLabelMarkers || !map) {
@@ -442,7 +449,10 @@ export class LabelManager {
 }
 
 // Create singleton instance
-export const labelManager = new LabelManager();
+export const labelManager = () => {
+  console.warn('labelManager: Legacy function called. Use DI container to get LabelManager instance.');
+  throw new Error('Legacy function not available. Use DI container to get LabelManager instance.');
+};
 
 // Legacy compatibility exports
 export const ensureLabel = (category, key, displayName, isPoint, layerOrMarker, dependencies) => 

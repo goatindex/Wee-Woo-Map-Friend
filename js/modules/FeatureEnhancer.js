@@ -4,15 +4,22 @@
  * Replaces legacy feature enhancement functions with a reactive, event-driven system
  */
 
-import { globalEventBus } from './EventBus.js';
-import { stateManager } from './StateManager.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 
 /**
  * @class FeatureEnhancer
  * Handles feature enhancements like polygon plus markers and SES chevrons
  */
-export class FeatureEnhancer {
-  constructor() {
+@injectable()
+export class FeatureEnhancer extends BaseService {
+  constructor(
+    @inject(TYPES.StructuredLogger) structuredLogger,
+    @inject(TYPES.EventBus) private eventBus,
+    @inject(TYPES.StateManager) private stateManager
+  ) {
+    super(structuredLogger);
     this.initialized = false;
     this.activeEnhancements = new Map(); // featureId -> enhancement data
     this.sesFacilityCoords = new Map(); // normalized name -> coordinates
@@ -31,7 +38,7 @@ export class FeatureEnhancer {
     this.clearEnhancements = this.clearEnhancements.bind(this);
     this.getStatus = this.getStatus.bind(this);
     
-    console.log('✨ FeatureEnhancer: Feature enhancement system initialized');
+    this.logger.info('Feature enhancement system initialized');
   }
   
   /**
@@ -39,12 +46,12 @@ export class FeatureEnhancer {
    */
   async init() {
     if (this.initialized) {
-      console.warn('FeatureEnhancer: Already initialized');
+      this.logger.warn('Already initialized');
       return;
     }
     
     try {
-      console.log('🔧 FeatureEnhancer: Starting feature enhancer initialization...');
+      this.logger.info('Starting feature enhancer initialization...');
       
       // Wait for dependencies
       await this.waitForDependencies();
@@ -56,10 +63,10 @@ export class FeatureEnhancer {
       this.setupLegacyCompatibility();
       
       this.initialized = true;
-      console.log('✅ FeatureEnhancer: Feature enhancement system ready');
+      this.logger.info('Feature enhancement system ready');
       
     } catch (error) {
-      console.error('🚨 FeatureEnhancer: Failed to initialize:', error);
+      this.logger.error('Failed to initialize', { error: error.message, stack: error.stack });
       throw error;
     }
   }
@@ -70,7 +77,7 @@ export class FeatureEnhancer {
   async waitForDependencies() {
     const dependencies = [
       { name: 'L', global: 'L', timeout: 5000 },
-      { name: 'Map', check: () => stateManager.get('map'), timeout: 10000 }
+      { name: 'Map', check: () => this.stateManager.get('map'), timeout: 10000 }
     ];
     
     for (const dep of dependencies) {
@@ -81,7 +88,7 @@ export class FeatureEnhancer {
       }
     }
     
-    console.log('✅ FeatureEnhancer: All dependencies ready');
+    this.logger.info('All dependencies ready');
   }
   
   /**
@@ -143,7 +150,7 @@ export class FeatureEnhancer {
    */
   setupEventListeners() {
     // Listen for polygon plus requests
-    globalEventBus.on('enhancement:polygonPlus', ({ action, map, layer, key }) => {
+    this.eventBus.on('enhancement:polygonPlus', ({ action, map, layer, key }) => {
       try {
         if (action === 'add') {
           this.addPolygonPlus(map, layer, key);
@@ -151,12 +158,12 @@ export class FeatureEnhancer {
           this.removePolygonPlus(layer, map, key);
         }
       } catch (error) {
-        globalEventBus.emit('enhancement:error', { error: error.message, action, key });
+        this.eventBus.emit('enhancement:error', { error: error.message, action, key });
       }
     });
     
     // Listen for SES chevron requests
-    globalEventBus.on('enhancement:sesChevron', ({ action, key, map }) => {
+    this.eventBus.on('enhancement:sesChevron', ({ action, key, map }) => {
       try {
         if (action === 'show') {
           this.showSesChevron(key, map);
@@ -164,12 +171,12 @@ export class FeatureEnhancer {
           this.hideSesChevron(key, map);
         }
       } catch (error) {
-        globalEventBus.emit('enhancement:error', { error: error.message, action, key });
+        this.eventBus.emit('enhancement:error', { error: error.message, action, key });
       }
     });
     
     // Listen for facility coordinate storage
-    globalEventBus.on('enhancement:storeCoords', ({ category, name, coordinates }) => {
+    this.eventBus.on('enhancement:storeCoords', ({ category, name, coordinates }) => {
       try {
         if (category === 'ses') {
           this.storeSesFacilityCoords(name, coordinates);
@@ -177,11 +184,11 @@ export class FeatureEnhancer {
           this.storeCfaFacilityCoords(name, coordinates);
         }
       } catch (error) {
-        globalEventBus.emit('enhancement:error', { error: error.message, action: 'storeCoords', category, name });
+        this.eventBus.emit('enhancement:error', { error: error.message, action: 'storeCoords', category, name });
       }
     });
     
-    console.log('✅ FeatureEnhancer: Event listeners configured');
+    this.logger.info('Event listeners configured');
   }
   
   /**
@@ -198,7 +205,7 @@ export class FeatureEnhancer {
       }
     }
     
-    console.log('✅ FeatureEnhancer: Legacy compatibility configured');
+    this.logger.info('Legacy compatibility configured');
   }
   
   /**
@@ -210,12 +217,12 @@ export class FeatureEnhancer {
   addPolygonPlus(map, polygonLayer, key) {
     try {
       if (!polygonLayer || !polygonLayer.getBounds) {
-        console.warn('⚠️ FeatureEnhancer: Invalid polygon layer for plus marker');
+        this.logger.warn('Invalid polygon layer for plus marker');
         return;
       }
       
       if (!map) {
-        console.warn('⚠️ FeatureEnhancer: No map available for plus marker');
+        this.logger.warn('No map available for plus marker');
         return;
       }
       
@@ -255,12 +262,12 @@ export class FeatureEnhancer {
       polygonLayer._plusMarker = marker;
       
       // Emit enhancement added event
-      globalEventBus.emit('enhancement:added', { type: 'polygonPlus', key, marker });
+      this.eventBus.emit('enhancement:added', { type: 'polygonPlus', key, marker });
       
-      console.log(`✅ FeatureEnhancer: Polygon plus marker added for ${key}`);
+      this.logger.info(`Polygon plus marker added for ${key}`);
       
     } catch (error) {
-      console.error('🚨 FeatureEnhancer: Failed to add polygon plus:', error);
+      this.logger.error('Failed to add polygon plus', { error: error.message, stack: error.stack });
       throw error;
     }
   }
@@ -290,13 +297,13 @@ export class FeatureEnhancer {
         }
         
         // Emit enhancement removed event
-        globalEventBus.emit('enhancement:removed', { type: 'polygonPlus', key });
+        this.eventBus.emit('enhancement:removed', { type: 'polygonPlus', key });
         
-        console.log(`✅ FeatureEnhancer: Polygon plus marker removed for ${key}`);
+        this.logger.info(`Polygon plus marker removed for ${key}`);
       }
       
     } catch (error) {
-      console.error('🚨 FeatureEnhancer: Failed to remove polygon plus:', error);
+      this.logger.error('Failed to remove polygon plus', { error: error.message, stack: error.stack });
       throw error;
     }
   }
@@ -309,14 +316,14 @@ export class FeatureEnhancer {
   showSesChevron(key, map) {
     try {
       if (!map) {
-        console.warn('⚠️ FeatureEnhancer: No map available for SES chevron');
+        this.logger.warn('No map available for SES chevron');
         return;
       }
       
       // Get facility coordinates
       const coords = this.getSesFacilityCoords(key);
       if (!coords) {
-        console.warn(`⚠️ FeatureEnhancer: No coordinates found for SES facility ${key}`);
+        this.logger.warn(`No coordinates found for SES facility ${key}`);
         return;
       }
       
@@ -342,12 +349,12 @@ export class FeatureEnhancer {
       });
       
       // Emit enhancement added event
-      globalEventBus.emit('enhancement:added', { type: 'sesChevron', key, marker });
+      this.eventBus.emit('enhancement:added', { type: 'sesChevron', key, marker });
       
-      console.log(`✅ FeatureEnhancer: SES chevron shown for ${key}`);
+      this.logger.info(`SES chevron shown for ${key}`);
       
     } catch (error) {
-      console.error('🚨 FeatureEnhancer: Failed to show SES chevron:', error);
+      this.logger.error('Failed to show SES chevron', { error: error.message, stack: error.stack });
       throw error;
     }
   }
@@ -372,13 +379,13 @@ export class FeatureEnhancer {
         this.activeEnhancements.delete(enhancementKey);
         
         // Emit enhancement removed event
-        globalEventBus.emit('enhancement:removed', { type: 'sesChevron', key });
+        this.eventBus.emit('enhancement:removed', { type: 'sesChevron', key });
         
-        console.log(`✅ FeatureEnhancer: SES chevron hidden for ${key}`);
+        this.logger.info(`SES chevron hidden for ${key}`);
       }
       
     } catch (error) {
-      console.error('🚨 FeatureEnhancer: Failed to hide SES chevron:', error);
+      this.logger.error('Failed to hide SES chevron', { error: error.message, stack: error.stack });
       throw error;
     }
   }
@@ -407,10 +414,10 @@ export class FeatureEnhancer {
         window.sesFacilityCoords[name.toLowerCase()] = coords;
       }
       
-      console.log(`✅ FeatureEnhancer: SES facility coordinates stored for ${name}`);
+      this.logger.info(`SES facility coordinates stored for ${name}`);
       
     } catch (error) {
-      console.error('🚨 FeatureEnhancer: Failed to store SES facility coordinates:', error);
+      this.logger.error('Failed to store SES facility coordinates', { error: error.message, stack: error.stack });
     }
   }
   
@@ -438,10 +445,10 @@ export class FeatureEnhancer {
         window.cfaFacilityCoords[name.toLowerCase()] = coords;
       }
       
-      console.log(`✅ FeatureEnhancer: CFA facility coordinates stored for ${name}`);
+      this.logger.info(`CFA facility coordinates stored for ${name}`);
       
     } catch (error) {
-      console.error('🚨 FeatureEnhancer: Failed to store CFA facility coordinates:', error);
+      this.logger.error('Failed to store CFA facility coordinates', { error: error.message, stack: error.stack });
     }
   }
   
@@ -498,10 +505,10 @@ export class FeatureEnhancer {
       
       this.activeEnhancements.clear();
       
-      console.log('✅ FeatureEnhancer: All enhancements cleared');
+      this.logger.info('All enhancements cleared');
       
     } catch (error) {
-      console.error('🚨 FeatureEnhancer: Failed to clear enhancements:', error);
+      this.logger.error('Failed to clear enhancements', { error: error.message, stack: error.stack });
     }
   }
   
@@ -521,8 +528,50 @@ export class FeatureEnhancer {
   }
 }
 
-// Export singleton instance
-export const featureEnhancer = new FeatureEnhancer();
-
-// Global exposure handled by consolidated legacy compatibility system
-// See ApplicationBootstrap.setupLegacyCompatibility() for details
+// Legacy compatibility functions - use DI container instead
+export const featureEnhancer = {
+  init: () => {
+    console.warn('featureEnhancer.init: Legacy function called. Use DI container to get FeatureEnhancer instance.');
+    throw new Error('Legacy function not available. Use DI container to get FeatureEnhancer instance.');
+  },
+  addPolygonPlus: () => {
+    console.warn('featureEnhancer.addPolygonPlus: Legacy function called. Use DI container to get FeatureEnhancer instance.');
+    throw new Error('Legacy function not available. Use DI container to get FeatureEnhancer instance.');
+  },
+  removePolygonPlus: () => {
+    console.warn('featureEnhancer.removePolygonPlus: Legacy function called. Use DI container to get FeatureEnhancer instance.');
+    throw new Error('Legacy function not available. Use DI container to get FeatureEnhancer instance.');
+  },
+  showSesChevron: () => {
+    console.warn('featureEnhancer.showSesChevron: Legacy function called. Use DI container to get FeatureEnhancer instance.');
+    throw new Error('Legacy function not available. Use DI container to get FeatureEnhancer instance.');
+  },
+  hideSesChevron: () => {
+    console.warn('featureEnhancer.hideSesChevron: Legacy function called. Use DI container to get FeatureEnhancer instance.');
+    throw new Error('Legacy function not available. Use DI container to get FeatureEnhancer instance.');
+  },
+  storeSesFacilityCoords: () => {
+    console.warn('featureEnhancer.storeSesFacilityCoords: Legacy function called. Use DI container to get FeatureEnhancer instance.');
+    throw new Error('Legacy function not available. Use DI container to get FeatureEnhancer instance.');
+  },
+  storeCfaFacilityCoords: () => {
+    console.warn('featureEnhancer.storeCfaFacilityCoords: Legacy function called. Use DI container to get FeatureEnhancer instance.');
+    throw new Error('Legacy function not available. Use DI container to get FeatureEnhancer instance.');
+  },
+  getSesFacilityCoords: () => {
+    console.warn('featureEnhancer.getSesFacilityCoords: Legacy function called. Use DI container to get FeatureEnhancer instance.');
+    throw new Error('Legacy function not available. Use DI container to get FeatureEnhancer instance.');
+  },
+  getCfaFacilityCoords: () => {
+    console.warn('featureEnhancer.getCfaFacilityCoords: Legacy function called. Use DI container to get FeatureEnhancer instance.');
+    throw new Error('Legacy function not available. Use DI container to get FeatureEnhancer instance.');
+  },
+  clearEnhancements: () => {
+    console.warn('featureEnhancer.clearEnhancements: Legacy function called. Use DI container to get FeatureEnhancer instance.');
+    throw new Error('Legacy function not available. Use DI container to get FeatureEnhancer instance.');
+  },
+  getStatus: () => {
+    console.warn('featureEnhancer.getStatus: Legacy function called. Use DI container to get FeatureEnhancer instance.');
+    throw new Error('Legacy function not available. Use DI container to get FeatureEnhancer instance.');
+  }
+};

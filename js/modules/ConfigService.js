@@ -1,5 +1,5 @@
-import { logger } from './StructuredLogger.js';
-import { enhancedEventBus as globalEventBus } from './EnhancedEventBus.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
 
 /**
  * @typedef {Object} EnvironmentConfig
@@ -24,9 +24,13 @@ import { enhancedEventBus as globalEventBus } from './EnhancedEventBus.js';
  * Centralized configuration management with environment detection,
  * dynamic loading, validation, and event-driven updates.
  */
+@injectable()
 export class ConfigService {
-  constructor() {
-    this.logger = logger.createChild({ module: 'ConfigService' });
+  constructor(
+    @inject(TYPES.StructuredLogger) private logger,
+    @inject(TYPES.EventBus) private eventBus
+  ) {
+    // Logger will be set by BaseService constructor
     this.config = null;
     this.validationRules = new Map();
     this.subscribers = new Map();
@@ -73,7 +77,7 @@ export class ConfigService {
       this.lastUpdated = Date.now();
       
       // Emit configuration loaded event
-      globalEventBus.emit('config.loaded', {
+      this.eventBus.emit('config.loaded', {
         environment,
         platform,
         config: this.config,
@@ -138,7 +142,7 @@ export class ConfigService {
     this.logger.info('Configuration value set', { path, value });
     
     if (emitEvent) {
-      globalEventBus.emit('config.changed', {
+      this.eventBus.emit('config.changed', {
         path,
         value,
         timestamp: this.lastUpdated
@@ -260,7 +264,7 @@ export class ConfigService {
       // Notify subscribers
       this.notifySubscribers();
       
-      globalEventBus.emit('config.reloaded', {
+      this.eventBus.emit('config.reloaded', {
         environment,
         platform,
         config: this.config,
@@ -717,7 +721,7 @@ export class ConfigService {
    */
   setupEventHandlers() {
     // Listen for configuration change events
-    globalEventBus.on('config.changed', (event) => {
+    this.eventBus.on('config.changed', (event) => {
       this.handleConfigurationChange(event.payload);
     });
   }
@@ -787,4 +791,7 @@ export class ConfigService {
 }
 
 // Export singleton instance
-export const configService = new ConfigService();
+// Legacy function stub - ConfigService is now instantiated via DI
+export const configService = () => {
+  throw new Error('Legacy function not available. Use DI container to get ConfigService instance.');
+};

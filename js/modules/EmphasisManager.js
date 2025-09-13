@@ -4,15 +4,21 @@
  * Migrated from js/emphasise.js
  */
 
-import { logger } from './StructuredLogger.js';
-import { stateManager } from './StateManager.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 
 /**
  * EmphasisManager - Handles emphasis visual state for map features
  */
-export class EmphasisManager {
-  constructor() {
-    this.logger = logger.createChild({ module: 'EmphasisManager' });
+@injectable()
+export class EmphasisManager extends BaseService {
+  constructor(
+    @inject(TYPES.StructuredLogger) structuredLogger,
+    @inject(TYPES.StateManager) stateManager
+  ) {
+    super(structuredLogger);
+    this.stateManager = stateManager;
     this.logger.info('EmphasisManager initialized');
   }
 
@@ -163,7 +169,7 @@ export class EmphasisManager {
             // If not emphasised, revert to base opacity from config
             if (!on) {
               // Get base opacity from config using ConfigurationManager
-              const configurationManager = stateManager.get('configurationManager');
+              const configurationManager = this.stateManager.get('configurationManager');
               if (configurationManager) {
                 const styleFn = configurationManager.getStyle(category);
                 if (styleFn) {
@@ -410,7 +416,10 @@ export class EmphasisManager {
 }
 
 // Create singleton instance
-export const emphasisManager = new EmphasisManager();
+export const emphasisManager = () => {
+  console.warn('emphasisManager: Legacy function called. Use DI container to get EmphasisManager instance.');
+  throw new Error('Legacy function not available. Use DI container to get EmphasisManager instance.');
+};
 
 // Legacy compatibility exports
 export const setEmphasis = (category, key, on, isPoint, dependencies) => 

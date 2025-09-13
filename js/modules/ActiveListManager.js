@@ -4,11 +4,13 @@
  * Replaces js/ui/activeList.js with a reactive, event-driven system
  */
 
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 import { globalEventBus } from './EventBus.js';
 import { stateManager } from './StateManager.js';
 import { configurationManager } from './ConfigurationManager.js';
-// Import logger with fallback handling
-import { logger as structuredLogger } from './StructuredLogger.js';
+// Logger is now injected via DI
 import { emphasisManager } from './EmphasisManager.js';
 import { labelManager } from './LabelManager.js';
 
@@ -16,23 +18,24 @@ import { labelManager } from './LabelManager.js';
  * @class ActiveListManager
  * Manages the "All Active" sidebar section with modern ES6 architecture
  */
-export class ActiveListManager {
-  constructor() {
+@injectable()
+export class ActiveListManager extends BaseService {
+  constructor(
+    @inject(TYPES.EventBus) private eventBus,
+    @inject(TYPES.StateManager) private stateManager,
+    @inject(TYPES.ConfigurationManager) private configurationManager,
+    @inject(TYPES.StructuredLogger) private structuredLogger,
+    @inject(TYPES.EmphasisManager) private emphasisManager,
+    @inject(TYPES.LabelManager) private labelManager
+  ) {
+    super(structuredLogger);
     this.initialized = false;
     this.activeListContainer = null;
     this.weatherBox = null;
     this.bulkOperationActive = false;
     this.pendingUpdates = new Set();
     
-    // Create module-specific logger with null check
-    try {
-      this.logger = structuredLogger && typeof structuredLogger.createChild === 'function' 
-        ? structuredLogger.createChild({ module: 'ActiveListManager' })
-        : console; // Fallback to console if logger not available
-    } catch (error) {
-      console.warn('ActiveListManager: Logger not available, using console fallback', error);
-      this.logger = console;
-    }
+    // Logger is now handled by BaseService
     
     // Bind methods
     this.init = this.init.bind(this);
@@ -95,35 +98,35 @@ export class ActiveListManager {
   setupEventListeners() {
     try {
       // Listen for state changes that should trigger active list updates
-      globalEventBus.on('stateChange', ({ property, value }) => {
+      this.eventBus.on('stateChange', ({ property, value }) => {
         if (this.shouldUpdateActiveList(property)) {
           this.scheduleUpdate();
         }
       });
       
       // Listen for configuration changes
-      globalEventBus.on('config:change', ({ path, value }) => {
+      this.eventBus.on('config:change', ({ path, value }) => {
         if (path.startsWith('categoryMeta')) {
           this.scheduleUpdate();
         }
       });
       
       // Listen for bulk operation events
-      globalEventBus.on('bulk:begin', () => {
+      this.eventBus.on('bulk:begin', () => {
         this.beginBulkOperation();
       });
       
-      globalEventBus.on('bulk:end', () => {
+      this.eventBus.on('bulk:end', () => {
         this.endBulkOperation();
       });
       
       // Listen for legacy events for backward compatibility
-      globalEventBus.on('legacy:activeListUpdate', () => {
+      this.eventBus.on('legacy:activeListUpdate', () => {
         this.scheduleUpdate();
       });
       
       // Listen for state events from StateManager
-      globalEventBus.on('state:updateActiveList', () => {
+      this.eventBus.on('state:updateActiveList', () => {
         this.scheduleUpdate();
       });
       
@@ -140,22 +143,22 @@ export class ActiveListManager {
   setupStateWatchers() {
     try {
       // Watch for changes in feature layers
-      stateManager.watch('featureLayers', () => {
+      this.stateManager.watch('featureLayers', () => {
         this.scheduleUpdate();
       });
       
       // Watch for changes in names by category
-      stateManager.watch('namesByCategory', () => {
+      this.stateManager.watch('namesByCategory', () => {
         this.scheduleUpdate();
       });
       
       // Watch for changes in emphasised state
-      stateManager.watch('emphasised', () => {
+      this.stateManager.watch('emphasised', () => {
         this.scheduleUpdate();
       });
       
       // Watch for changes in name label markers
-      stateManager.watch('nameLabelMarkers', () => {
+      this.stateManager.watch('nameLabelMarkers', () => {
         this.scheduleUpdate();
       });
       
@@ -330,7 +333,7 @@ export class ActiveListManager {
         activeList.style.display = '';
         
         // Notify CollapsibleManager that the active section should be expanded
-        globalEventBus.emit('ui:sectionStateChange', {
+        this.eventBus.emit('ui:sectionStateChange', {
           headerId: 'activeHeader',
           expanded: true
         });
@@ -351,12 +354,12 @@ export class ActiveListManager {
    */
   addItems(category, container) {
     const meta = window.categoryMeta?.[category];
-    const namesByCategory = stateManager.get('namesByCategory', {});
-    const featureLayers = stateManager.get('featureLayers', {});
+    const namesByCategory = this.stateManager.get('namesByCategory', {});
+    const featureLayers = this.stateManager.get('featureLayers', {});
     if (!namesByCategory[category] || !featureLayers[category]) return;
     
     namesByCategory[category].forEach(name => {
-      const nameToKey = stateManager.get('nameToKey', {});
+      const nameToKey = this.stateManager.get('nameToKey', {});
       const key = nameToKey[category]?.[name];
       if (!key) return;
       
@@ -410,9 +413,9 @@ export class ActiveListManager {
       }
       nameSpan.style.flex = '1';
       // Set color to match polygon border (with optional adjustment)
-      const outlineColors = configurationManager.get('outlineColors', {});
-      const labelColorAdjust = configurationManager.get('labelColorAdjust', {});
-      const adjustHexColor = configurationManager.get('adjustHexColor', ((color, factor) => color));
+      const outlineColors = this.configurationManager.get('outlineColors', {});
+      const labelColorAdjust = this.configurationManager.get('labelColorAdjust', {});
+      const adjustHexColor = this.configurationManager.get('adjustHexColor', ((color, factor) => color));
       const baseColor = outlineColors[category];
       const factor = labelColorAdjust[category] ?? 1.0;
       if (baseColor && adjustHexColor) {
@@ -428,15 +431,15 @@ export class ActiveListManager {
       emphCell.style.width = '32px';
       const emphCb = document.createElement('input');
       emphCb.type = 'checkbox';
-      const emphasised = stateManager.get('emphasised', {});
+      const emphasised = this.stateManager.get('emphasised', {});
       emphCb.checked = !!emphasised[category]?.[key];
       emphCb.title = 'Emphasise';
       emphCb.style.width = '18px';
       emphCb.style.height = '18px';
       emphCb.style.margin = '0';
       emphCb.addEventListener('change', e => {
-        if (emphasisManager) {
-          emphasisManager.setEmphasis(category, key, e.target.checked, meta?.type === 'point');
+        if (this.emphasisManager) {
+          this.emphasisManager.setEmphasis(category, key, e.target.checked, meta?.type === 'point');
         }
         this.updateActiveList();
       });
@@ -466,12 +469,12 @@ export class ActiveListManager {
           } else {
             layerOrMarker = featureLayers[category][key] && featureLayers[category][key][0];
           }
-          if (labelManager) {
-            labelManager.ensureLabel(category, key, name, isPoint, layerOrMarker);
+          if (this.labelManager) {
+            this.labelManager.ensureLabel(category, key, name, isPoint, layerOrMarker);
           }
         } else {
-          if (labelManager) {
-            labelManager.removeLabel(category, key);
+          if (this.labelManager) {
+            this.labelManager.removeLabel(category, key);
           }
         }
       });
@@ -487,8 +490,8 @@ export class ActiveListManager {
         } else {
           layerOrMarker = featureLayers[category][key] && featureLayers[category][key][0];
         }
-        if (layerOrMarker && labelManager) {
-          labelManager.ensureLabel(category, key, name, isPoint, layerOrMarker);
+        if (layerOrMarker && this.labelManager) {
+          this.labelManager.ensureLabel(category, key, name, isPoint, layerOrMarker);
         }
       }
       
@@ -605,7 +608,7 @@ export class ActiveListManager {
    * Get the key for a name in a category
    */
   getNameKey(category, name) {
-    const nameToKey = stateManager.get('nameToKey', {});
+    const nameToKey = this.stateManager.get('nameToKey', {});
     return nameToKey[category]?.[name];
   }
   
@@ -745,13 +748,13 @@ export class ActiveListManager {
     nameSpan.style.flex = '1';
     
     // Set color to match polygon border
-    const outlineColors = configurationManager.get('outlineColors', {});
-    const labelColorAdjust = configurationManager.get('labelColorAdjust', {});
+    const outlineColors = this.configurationManager.get('outlineColors', {});
+    const labelColorAdjust = this.configurationManager.get('labelColorAdjust', {});
     const baseColor = outlineColors[category];
     const factor = labelColorAdjust[category] ?? 1.0;
     
     if (baseColor) {
-      const utils = configurationManager.get('utils', {});
+      const utils = this.configurationManager.get('utils', {});
       if (utils.adjustHexColor) {
         nameSpan.style.color = utils.adjustHexColor(baseColor, factor);
       } else {
@@ -1012,16 +1015,16 @@ export class ActiveListManager {
    */
   setEmphasis(category, key, emphasised) {
     // Update state
-    const currentEmphasised = stateManager.get('emphasised', {});
+    const currentEmphasised = this.stateManager.get('emphasised', {});
     if (!currentEmphasised[category]) {
       currentEmphasised[category] = {};
     }
     currentEmphasised[category][key] = emphasised;
-    stateManager.set('emphasised', currentEmphasised);
+    this.stateManager.set('emphasised', currentEmphasised);
     
     // Call legacy function if available
-    if (emphasisManager) {
-      emphasisManager.setEmphasis(category, key, emphasised);
+    if (this.emphasisManager) {
+      this.emphasisManager.setEmphasis(category, key, emphasised);
     }
   }
   
@@ -1086,8 +1089,9 @@ export class ActiveListManager {
 }
 
 // Export singleton instance
-export const activeListManager = new ActiveListManager();
-
-// Export for global access (ES6 module system)
-// Global exposure handled by consolidated legacy compatibility system
+// Legacy function for backward compatibility
+export const activeListManager = () => {
+  console.warn('activeListManager: Legacy function called. Use DI container to get ActiveListManager instance.');
+  throw new Error('Legacy function not available. Use DI container to get ActiveListManager instance.');
+};
 // See ApplicationBootstrap.setupLegacyCompatibility() for details

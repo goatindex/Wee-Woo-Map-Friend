@@ -4,15 +4,19 @@
  * Migrated from js/device.js
  */
 
-import { logger } from './StructuredLogger.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
 
 /**
  * DeviceManager - Comprehensive device context detection and management
  */
+@injectable()
 export class DeviceManager {
-  constructor() {
-    this.logger = logger.createChild({ module: 'DeviceManager' });
-    this.logger.info('DeviceManager initialized');
+  constructor(
+    @inject(TYPES.StructuredLogger) private logger
+  ) {
+    this.moduleLogger = this.logger.createChild({ module: 'DeviceManager' });
+    this.moduleLogger.info('DeviceManager initialized');
     
     this.orientationTimeout = null;
     this.lastTouchEnd = 0;
@@ -24,7 +28,7 @@ export class DeviceManager {
    * @returns {Object} Device context object
    */
   getContext() {
-    const timer = this.logger.time('get-device-context');
+    const timer = this.moduleLogger.time('get-device-context');
     
     try {
       const width = window.innerWidth;
@@ -110,7 +114,7 @@ export class DeviceManager {
         success: false 
       });
       
-      this.logger.error('Failed to get device context', {
+      this.moduleLogger.error('Failed to get device context', {
         error: error.message,
         stack: error.stack
       });
@@ -170,7 +174,7 @@ export class DeviceManager {
       return 'unknown';
       
     } catch (error) {
-      this.logger.error('Failed to detect platform', { error: error.message });
+      this.moduleLogger.error('Failed to detect platform', { error: error.message });
       return 'unknown';
     }
   }
@@ -192,7 +196,7 @@ export class DeviceManager {
       return 'unknown';
       
     } catch (error) {
-      this.logger.error('Failed to detect browser', { error: error.message });
+      this.moduleLogger.error('Failed to detect browser', { error: error.message });
       return 'unknown';
     }
   }
@@ -212,7 +216,7 @@ export class DeviceManager {
               !/Safari/.test(ua));
               
     } catch (error) {
-      this.logger.error('Failed to detect WebView', { error: error.message });
+      this.moduleLogger.error('Failed to detect WebView', { error: error.message });
       return false;
     }
   }
@@ -236,7 +240,7 @@ export class DeviceManager {
       };
       
     } catch (error) {
-      this.logger.error('Failed to get connection type', { error: error.message });
+      this.moduleLogger.error('Failed to get connection type', { error: error.message });
       return 'unknown';
     }
   }
@@ -257,7 +261,7 @@ export class DeviceManager {
       };
       
     } catch (error) {
-      this.logger.error('Failed to get safe areas', { error: error.message });
+      this.moduleLogger.error('Failed to get safe areas', { error: error.message });
       return { top: '0px', right: '0px', bottom: '0px', left: '0px' };
     }
   }
@@ -267,18 +271,18 @@ export class DeviceManager {
    * @returns {Object} Initial device context
    */
   init() {
-    const timer = this.logger.time('init-device-manager');
+    const timer = this.moduleLogger.time('init-device-manager');
     
     try {
       if (this.isInitialized) {
-        this.logger.warn('DeviceManager already initialized');
+        this.moduleLogger.warn('DeviceManager already initialized');
         return this.getContext();
       }
       
-      this.logger.info('Initializing device context system');
+      this.moduleLogger.info('Initializing device context system');
       
       const context = this.getContext();
-      this.logger.info('Current device context', { 
+      this.moduleLogger.info('Current device context', { 
         platform: context.platform,
         browser: context.browser,
         breakpoint: context.breakpoint,
@@ -310,7 +314,7 @@ export class DeviceManager {
         success: false 
       });
       
-      this.logger.error('Failed to initialize DeviceManager', {
+      this.moduleLogger.error('Failed to initialize DeviceManager', {
         error: error.message,
         stack: error.stack
       });
@@ -342,13 +346,13 @@ export class DeviceManager {
       root.style.setProperty('--platform', context.platform);
       root.style.setProperty('--breakpoint', context.breakpoint);
       
-      this.logger.debug('CSS properties updated', { 
+      this.moduleLogger.debug('CSS properties updated', { 
         breakpoint: context.breakpoint,
         orientation: context.orientation 
       });
       
     } catch (error) {
-      this.logger.error('Failed to update CSS properties', { error: error.message });
+      this.moduleLogger.error('Failed to update CSS properties', { error: error.message });
     }
   }
 
@@ -356,7 +360,7 @@ export class DeviceManager {
    * Clean up device manager
    */
   destroy() {
-    const timer = this.logger.time('destroy-device-manager');
+    const timer = this.moduleLogger.time('destroy-device-manager');
     
     try {
       // Clear orientation timeout
@@ -370,7 +374,7 @@ export class DeviceManager {
       
       timer.end({ success: true });
       
-      this.logger.info('DeviceManager destroyed');
+      this.moduleLogger.info('DeviceManager destroyed');
       
     } catch (error) {
       timer.end({ 
@@ -378,7 +382,7 @@ export class DeviceManager {
         success: false 
       });
       
-      this.logger.error('Failed to destroy DeviceManager', {
+      this.moduleLogger.error('Failed to destroy DeviceManager', {
         error: error.message
       });
     }
@@ -488,15 +492,26 @@ export class DeviceContext {
   }
 }
 
-// Create singleton instance
-export const deviceManager = new DeviceManager();
+// Legacy compatibility functions - use DI container instead
+export const deviceManager = {
+  getContext: () => { console.warn('deviceManager.getContext: Legacy function called. Use DI container to get DeviceManager instance.'); throw new Error('Legacy function not available. Use DI container to get DeviceManager instance.'); },
+  init: () => { console.warn('deviceManager.init: Legacy function called. Use DI container to get DeviceManager instance.'); throw new Error('Legacy function not available. Use DI container to get DeviceManager instance.'); },
+  destroy: () => { console.warn('deviceManager.destroy: Legacy function called. Use DI container to get DeviceManager instance.'); throw new Error('Legacy function not available. Use DI container to get DeviceManager instance.'); },
+  updateCSSProperties: () => { console.warn('deviceManager.updateCSSProperties: Legacy function called. Use DI container to get DeviceManager instance.'); throw new Error('Legacy function not available. Use DI container to get DeviceManager instance.'); }
+};
 
-// Create DeviceContext wrapper
-export const deviceContext = new DeviceContext(deviceManager);
+export const deviceContext = {
+  getContext: () => { console.warn('deviceContext.getContext: Legacy function called. Use DI container to get DeviceManager instance.'); throw new Error('Legacy function not available. Use DI container to get DeviceManager instance.'); },
+  getPlatform: () => { console.warn('deviceContext.getPlatform: Legacy function called. Use DI container to get DeviceManager instance.'); throw new Error('Legacy function not available. Use DI container to get DeviceManager instance.'); },
+  getBrowser: () => { console.warn('deviceContext.getBrowser: Legacy function called. Use DI container to get DeviceManager instance.'); throw new Error('Legacy function not available. Use DI container to get DeviceManager instance.'); },
+  isTouch: () => { console.warn('deviceContext.isTouch: Legacy function called. Use DI container to get DeviceManager instance.'); throw new Error('Legacy function not available. Use DI container to get DeviceManager instance.'); },
+  isPWA: () => { console.warn('deviceContext.isPWA: Legacy function called. Use DI container to get DeviceManager instance.'); throw new Error('Legacy function not available. Use DI container to get DeviceManager instance.'); },
+  getOrientation: () => { console.warn('deviceContext.getOrientation: Legacy function called. Use DI container to get DeviceManager instance.'); throw new Error('Legacy function not available. Use DI container to get DeviceManager instance.'); },
+  getDimensions: () => { console.warn('deviceContext.getDimensions: Legacy function called. Use DI container to get DeviceManager instance.'); throw new Error('Legacy function not available. Use DI container to get DeviceManager instance.'); }
+};
 
-// Legacy compatibility exports
-export const getResponsiveContext = () => deviceManager.getContext();
-export const isMobileSize = () => deviceManager.getContext().isMobile;
+export const getResponsiveContext = () => { console.warn('getResponsiveContext: Legacy function called. Use DI container to get DeviceManager instance.'); throw new Error('Legacy function not available. Use DI container to get DeviceManager instance.'); };
+export const isMobileSize = () => { console.warn('isMobileSize: Legacy function called. Use DI container to get DeviceManager instance.'); throw new Error('Legacy function not available. Use DI container to get DeviceManager instance.'); };
 
 // Global exposure handled by consolidated legacy compatibility system
 // See ApplicationBootstrap.setupLegacyCompatibility() for details

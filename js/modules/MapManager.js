@@ -4,17 +4,21 @@
  * Replaces map initialization logic from bootstrap.js with a reactive, event-driven system
  */
 
-import { globalEventBus } from './EventBus.js';
-import { stateManager } from './StateManager.js';
-import { configurationManager } from './ConfigurationManager.js';
-import { logger } from './StructuredLogger.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
 
 /**
  * @class MapManager
  * Manages the Leaflet map instance and core map functionality
  */
+@injectable()
 export class MapManager {
-  constructor() {
+  constructor(
+    @inject(TYPES.EventBus) private eventBus,
+    @inject(TYPES.StateManager) private stateManager,
+    @inject(TYPES.ConfigurationManager) private configurationManager,
+    @inject(TYPES.StructuredLogger) private logger
+  ) {
     this.initialized = false;
     this.map = null;
     this.defaultView = null;
@@ -22,7 +26,7 @@ export class MapManager {
     this.zoomControl = null;
     
     // Create module-specific logger
-    this.logger = logger.createChild({ module: 'MapManager' });
+    this.moduleLogger = this.logger.createChild({ module: 'MapManager' });
     
     // Map configuration
     this.config = {
@@ -48,7 +52,7 @@ export class MapManager {
     this.isReady = this.isReady.bind(this);
     this.getStatus = this.getStatus.bind(this);
     
-    this.logger.info('Map management system initialized', {
+    this.moduleLogger.info('Map management system initialized', {
       module: 'MapManager',
       timestamp: Date.now()
     });
@@ -59,7 +63,7 @@ export class MapManager {
    */
   async init() {
     if (this.initialized) {
-      this.logger.warn('Already initialized - skipping duplicate initialization', {
+      this.moduleLogger.warn('Already initialized - skipping duplicate initialization', {
         operation: 'init',
         currentState: 'initialized'
       });
@@ -69,7 +73,7 @@ export class MapManager {
     // Additional guard: check if map container already has a map
     const mapContainer = document.getElementById('map');
     if (mapContainer && mapContainer._leaflet_id) {
-      this.logger.warn('Map container already has a Leaflet map - cleaning up first', {
+      this.moduleLogger.warn('Map container already has a Leaflet map - cleaning up first', {
         operation: 'init',
         containerId: 'map',
         action: 'cleanup_required'
@@ -77,9 +81,9 @@ export class MapManager {
       this.cleanup();
     }
     
-    const timer = this.logger.time('map-initialization');
+    const timer = this.moduleLogger.time('map-initialization');
     try {
-      this.logger.info('Starting map initialization', {
+      this.moduleLogger.info('Starting map initialization', {
         operation: 'init',
         config: this.config
       });
@@ -103,13 +107,13 @@ export class MapManager {
       this.setupMapEvents();
       
       // Store the actual map instance in state manager for other modules to use
-      stateManager.set('map', this.map);
+      this.stateManager.set('map', this.map);
       
       // Also store serializable map state for debugging and persistence
       const center = this.map.getCenter();
       const bounds = this.map.getBounds();
       
-      stateManager.set('mapState', {
+      this.stateManager.set('mapState', {
         id: this.map._leaflet_id,
         center: {
           lat: center.lat,
@@ -130,13 +134,13 @@ export class MapManager {
         center: this.map.getCenter(),
         zoom: this.map.getZoom()
       };
-      stateManager.set('defaultView', this.defaultView);
+      this.stateManager.set('defaultView', this.defaultView);
       
       // Set map ready flag in state manager
-      stateManager.set('mapReady', true);
+      this.stateManager.set('mapReady', true);
       
       // Emit map ready event
-      globalEventBus.emit('map:ready', { map: this.map, manager: this });
+      this.eventBus.emit('map:ready', { map: this.map, manager: this });
       
       this.initialized = true;
       timer.end({
@@ -145,14 +149,14 @@ export class MapManager {
         center: this.map.getCenter(),
         zoom: this.map.getZoom()
       });
-      this.logger.info('Map system ready', {
+      this.moduleLogger.info('Map system ready', {
         mapId: this.map._leaflet_id,
         center: this.map.getCenter(),
         zoom: this.map.getZoom(),
         bounds: this.map.getBounds(),
         tileLayer: this.baseTileLayer ? 'configured' : 'missing',
         zoomControl: this.zoomControl ? 'configured' : 'missing',
-        panes: Object.keys(this.map.panes).length
+        panes: this.map.panes ? Object.keys(this.map.panes).length : 0
       });
       
     } catch (error) {
@@ -161,13 +165,13 @@ export class MapManager {
         error: error.message,
         config: this.config
       });
-      this.logger.error('Map initialization failed', {
+      this.moduleLogger.error('Map initialization failed', {
         operation: 'init',
         error: error.message,
         stack: error.stack,
         config: this.config
       });
-      globalEventBus.emit('map:error', { error });
+      this.eventBus.emit('map:error', { error });
       throw error;
     }
   }
@@ -178,7 +182,7 @@ export class MapManager {
    */
   async waitForLeaflet() {
     if (typeof L !== 'undefined') {
-      this.logger.info('Leaflet already available', {
+      this.moduleLogger.info('Leaflet already available', {
         operation: 'waitForLeaflet',
         version: L.version,
         loadTime: 0,
@@ -187,8 +191,8 @@ export class MapManager {
       return;
     }
     
-    const timer = this.logger.time('leaflet-load');
-    this.logger.debug('Waiting for Leaflet library', {
+    const timer = this.moduleLogger.time('leaflet-load');
+    this.moduleLogger.debug('Waiting for Leaflet library', {
       operation: 'waitForLeaflet',
       maxWaitTime: 10000
     });
@@ -212,7 +216,7 @@ export class MapManager {
             loadTime: Date.now() - startTime,
             version: L.version
           });
-          this.logger.info('Leaflet library loaded successfully', {
+          this.moduleLogger.info('Leaflet library loaded successfully', {
             operation: 'waitForLeaflet',
             loadTime: Date.now() - startTime,
             version: L.version
@@ -232,7 +236,7 @@ export class MapManager {
    * Create the Leaflet map instance
    */
   createMap() {
-    const timer = this.logger.time('map-creation');
+    const timer = this.moduleLogger.time('map-creation');
     try {
       const mapContainer = document.getElementById('map');
       if (!mapContainer) {
@@ -250,7 +254,7 @@ export class MapManager {
         mapId: this.map._leaflet_id,
         config: this.config
       });
-      this.logger.info('Map instance created', {
+      this.moduleLogger.info('Map instance created', {
         operation: 'createMap',
         mapId: this.map._leaflet_id,
         config: this.config,
@@ -264,7 +268,7 @@ export class MapManager {
         error: error.message,
         config: this.config
       });
-      this.logger.error('Failed to create map', {
+      this.moduleLogger.error('Failed to create map', {
         operation: 'createMap',
         error: error.message,
         stack: error.stack,
@@ -284,7 +288,7 @@ export class MapManager {
       });
       
       this.baseTileLayer.addTo(this.map);
-      this.logger.info('Base tile layer added', {
+      this.moduleLogger.info('Base tile layer added', {
         operation: 'setupBaseTileLayer',
         tileUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         attribution: '© OpenStreetMap contributors',
@@ -292,7 +296,7 @@ export class MapManager {
       });
       
     } catch (error) {
-      this.logger.error('Failed to setup base tile layer', {
+      this.moduleLogger.error('Failed to setup base tile layer', {
         operation: 'setupBaseTileLayer',
         error: error.message,
         stack: error.stack,
@@ -308,7 +312,7 @@ export class MapManager {
   setupZoomControl() {
     try {
       // Get device context for positioning
-      const deviceContext = stateManager.get('deviceContext');
+      const deviceContext = this.stateManager.get('deviceContext');
       // Position zoom controls to avoid conflict with layer menu
       // Layer menu is positioned at topright, so use topright for mobile and bottomright for desktop
       const position = deviceContext?.device === 'mobile' ? 'topright' : 'bottomright';
@@ -318,10 +322,10 @@ export class MapManager {
       });
       
       this.zoomControl.addTo(this.map);
-      this.logger.info('Zoom control added', { position });
+      this.moduleLogger.info('Zoom control added', { position });
       
     } catch (error) {
-      this.logger.error('Failed to setup zoom control', {
+      this.moduleLogger.error('Failed to setup zoom control', {
         operation: 'setupZoomControl',
         error: error.message,
         stack: error.stack,
@@ -335,29 +339,29 @@ export class MapManager {
    * Set up map panes for layer ordering
    */
   setupMapPanes() {
+    // Create panes to control z-order (bottom -> top): LGA, CFA, SES, Ambulance, Police, FRV
+    const panes = [
+      ['lga', 400],
+      ['cfa', 410],
+      ['ses', 420],
+      ['ambulance', 430],
+      ['police', 440],
+      ['frv', 450]
+    ];
+    
     try {
-      // Create panes to control z-order (bottom -> top): LGA, CFA, SES, Ambulance, Police, FRV
-      const panes = [
-        ['lga', 400],
-        ['cfa', 410],
-        ['ses', 420],
-        ['ambulance', 430],
-        ['police', 440],
-        ['frv', 450]
-      ];
-      
       panes.forEach(([name, z]) => {
         this.map.createPane(name);
         this.map.getPane(name).style.zIndex = String(z);
       });
       
-      this.logger.debug('Map panes created', {
+      this.moduleLogger.debug('Map panes created', {
         operation: 'setupMapPanes',
-        paneCount: Object.keys(this.map.panes).length
+        paneCount: this.map.panes ? Object.keys(this.map.panes).length : 0
       });
       
     } catch (error) {
-      this.logger.error('Failed to setup map panes', {
+      this.moduleLogger.error('Failed to setup map panes', {
         operation: 'setupMapPanes',
         error: error.message,
         stack: error.stack,
@@ -377,18 +381,18 @@ export class MapManager {
         if (window.NativeFeatures) {
           window.NativeFeatures.hapticFeedback('light');
         }
-        globalEventBus.emit('map:click', { map: this.map });
+        this.eventBus.emit('map:click', { map: this.map });
       });
       
       this.map.on('zoomend', () => {
         if (window.NativeFeatures) {
           window.NativeFeatures.hapticFeedback('light');
         }
-        globalEventBus.emit('map:zoomend', { map: this.map, zoom: this.map.getZoom() });
+        this.eventBus.emit('map:zoomend', { map: this.map, zoom: this.map.getZoom() });
       });
       
       this.map.on('moveend', () => {
-        globalEventBus.emit('map:moveend', { 
+        this.eventBus.emit('map:moveend', { 
           map: this.map, 
           center: this.map.getCenter(),
           bounds: this.map.getBounds()
@@ -402,13 +406,13 @@ export class MapManager {
         }
       });
       
-      this.logger.debug('Map events configured', {
+      this.moduleLogger.debug('Map events configured', {
         operation: 'setupMapEvents',
         eventCount: Object.keys(this.map._events || {}).length
       });
       
     } catch (error) {
-      this.logger.error('Failed to setup map events', {
+      this.moduleLogger.error('Failed to setup map events', {
         operation: 'setupMapEvents',
         error: error.message,
         stack: error.stack
@@ -425,15 +429,15 @@ export class MapManager {
     
     try {
       this.map.setView(this.defaultView.center, this.defaultView.zoom);
-      globalEventBus.emit('map:reset', { map: this.map });
-      this.logger.info('Map view reset', {
+      this.eventBus.emit('map:reset', { map: this.map });
+      this.moduleLogger.info('Map view reset', {
         operation: 'resetView',
         center: this.defaultView.center,
         zoom: this.defaultView.zoom
       });
       
     } catch (error) {
-      this.logger.error('Failed to reset map view', {
+      this.moduleLogger.error('Failed to reset map view', {
         operation: 'resetView',
         error: error.message,
         stack: error.stack,
@@ -472,13 +476,13 @@ export class MapManager {
       try {
         const mapId = this.map._leaflet_id;
         this.map.remove();
-        this.logger.info('Existing map cleaned up', {
+        this.moduleLogger.info('Existing map cleaned up', {
           operation: 'cleanup',
           mapId: mapId,
           action: 'map_removed'
         });
       } catch (error) {
-        this.logger.warn('Error cleaning up map', {
+        this.moduleLogger.warn('Error cleaning up map', {
           operation: 'cleanup',
           error: error.message,
           stack: error.stack
@@ -513,7 +517,7 @@ export class MapManager {
    * Cleanup map manager resources
    */
   async cleanup() {
-    this.logger.info('Cleaning up MapManager resources');
+    this.moduleLogger.info('Cleaning up MapManager resources');
     
     try {
       // Remove map from DOM
@@ -531,16 +535,29 @@ export class MapManager {
       this.initialized = false;
       this.defaultView = null;
       
-      this.logger.info('MapManager cleanup completed');
+      this.moduleLogger.info('MapManager cleanup completed');
     } catch (error) {
-      this.logger.error('MapManager cleanup failed', { error: error.message });
+      this.moduleLogger.error('MapManager cleanup failed', { error: error.message });
       throw error;
     }
   }
 }
 
 // Export singleton instance
-export const mapManager = new MapManager();
+// Legacy compatibility functions - use DI container instead
+export const mapManager = {
+  init: () => { console.warn('mapManager.init: Legacy function called. Use DI container to get MapManager instance.'); throw new Error('Legacy function not available. Use DI container to get MapManager instance.'); },
+  waitForLeaflet: () => { console.warn('mapManager.waitForLeaflet: Legacy function called. Use DI container to get MapManager instance.'); throw new Error('Legacy function not available. Use DI container to get MapManager instance.'); },
+  createMap: () => { console.warn('mapManager.createMap: Legacy function called. Use DI container to get MapManager instance.'); throw new Error('Legacy function not available. Use DI container to get MapManager instance.'); },
+  setupBaseTileLayer: () => { console.warn('mapManager.setupBaseTileLayer: Legacy function called. Use DI container to get MapManager instance.'); throw new Error('Legacy function not available. Use DI container to get MapManager instance.'); },
+  setupZoomControl: () => { console.warn('mapManager.setupZoomControl: Legacy function called. Use DI container to get MapManager instance.'); throw new Error('Legacy function not available. Use DI container to get MapManager instance.'); },
+  setupMapPanes: () => { console.warn('mapManager.setupMapPanes: Legacy function called. Use DI container to get MapManager instance.'); throw new Error('Legacy function not available. Use DI container to get MapManager instance.'); },
+  setupMapEvents: () => { console.warn('mapManager.setupMapEvents: Legacy function called. Use DI container to get MapManager instance.'); throw new Error('Legacy function not available. Use DI container to get MapManager instance.'); },
+  resetView: () => { console.warn('mapManager.resetView: Legacy function called. Use DI container to get MapManager instance.'); throw new Error('Legacy function not available. Use DI container to get MapManager instance.'); },
+  getMap: () => { console.warn('mapManager.getMap: Legacy function called. Use DI container to get MapManager instance.'); throw new Error('Legacy function not available. Use DI container to get MapManager instance.'); },
+  isReady: () => { console.warn('mapManager.isReady: Legacy function called. Use DI container to get MapManager instance.'); throw new Error('Legacy function not available. Use DI container to get MapManager instance.'); },
+  getStatus: () => { console.warn('mapManager.getStatus: Legacy function called. Use DI container to get MapManager instance.'); throw new Error('Legacy function not available. Use DI container to get MapManager instance.'); }
+};
 
 // Global exposure handled by consolidated legacy compatibility system
 // See ApplicationBootstrap.setupLegacyCompatibility() for details

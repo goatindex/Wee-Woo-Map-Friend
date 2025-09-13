@@ -4,17 +4,21 @@
  * Provides robust, future-proof data loading with error handling and performance optimization
  */
 
-import { globalEventBus } from './EventBus.js';
-import { stateManager } from './StateManager.js';
-import { configurationManager } from './ConfigurationManager.js';
-import { logger } from './StructuredLogger.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
 
 /**
  * @class DataLoadingOrchestrator
  * Orchestrates all data loading operations with robust error handling and performance optimization
  */
+@injectable()
 export class DataLoadingOrchestrator {
-  constructor() {
+  constructor(
+    @inject(TYPES.EventBus) private eventBus,
+    @inject(TYPES.StateManager) private stateManager,
+    @inject(TYPES.ConfigurationManager) private configurationManager,
+    @inject(TYPES.StructuredLogger) private logger
+  ) {
     this.initialized = false;
     this.loadingPhase = 'idle';
     this.loadedCategories = new Set();
@@ -24,7 +28,7 @@ export class DataLoadingOrchestrator {
     this.polygonLoader = null;
     
     // Create module-specific logger
-    this.logger = logger.createChild({ module: 'DataLoadingOrchestrator' });
+    this.moduleLogger = this.logger.createChild({ module: 'DataLoadingOrchestrator' });
     
     // Data loading configuration
     this.loadingConfig = {
@@ -65,7 +69,7 @@ export class DataLoadingOrchestrator {
     this.getLoadingStatus = this.getLoadingStatus.bind(this);
     this.getPerformanceMetrics = this.getPerformanceMetrics.bind(this);
     
-    this.logger.info('Orchestration system initialized');
+    this.moduleLogger.info('Orchestration system initialized');
   }
   
   /**
@@ -73,7 +77,7 @@ export class DataLoadingOrchestrator {
    */
   async initializeDataUrls() {
     try {
-      const { environmentConfig } = await import('./EnvironmentConfig.js');
+      const { environmentConfig } = await import('/dist/modules/EnvironmentConfig.js');
       const dataPaths = environmentConfig.getDataPaths();
       
       // Update URLs with environment-specific paths
@@ -86,13 +90,13 @@ export class DataLoadingOrchestrator {
         'police': dataPaths.police
       };
       
-      this.logger.info('Data URLs initialized', {
+      this.moduleLogger.info('Data URLs initialized', {
         operation: 'initializeDataUrls',
         urls: this.loadingConfig.urls,
         environment: environmentConfig.getEnvironment()
       });
     } catch (error) {
-      this.logger.error('Failed to initialize data URLs', {
+      this.moduleLogger.error('Failed to initialize data URLs', {
         operation: 'initializeDataUrls',
         error: error.message,
         stack: error.stack
@@ -106,19 +110,19 @@ export class DataLoadingOrchestrator {
    */
   async init() {
     if (this.initialized) {
-      this.logger.warn('Already initialized', {
+      this.moduleLogger.warn('Already initialized', {
         operation: 'init',
         currentState: 'initialized'
       });
       return;
     }
     
-    const timer = this.logger.time('orchestrator-initialization');
+    const timer = this.moduleLogger.time('orchestrator-initialization');
     try {
       // Initialize data URLs based on environment
       await this.initializeDataUrls();
       
-      this.logger.info('Starting initialization', {
+      this.moduleLogger.info('Starting initialization', {
         operation: 'init',
         config: this.loadingConfig,
         categories: Object.keys(this.loadingConfig.urls)
@@ -139,7 +143,7 @@ export class DataLoadingOrchestrator {
         categories: Object.keys(this.loadingConfig.urls),
         loadedCategories: Array.from(this.loadedCategories)
       });
-      this.logger.info('Initialization complete', {
+      this.moduleLogger.info('Initialization complete', {
         operation: 'init',
         categories: Object.keys(this.loadingConfig.urls),
         loadedCategories: Array.from(this.loadedCategories),
@@ -147,7 +151,7 @@ export class DataLoadingOrchestrator {
       });
       
       // Emit ready event
-      globalEventBus.emit('dataOrchestrator:ready', { orchestrator: this });
+      this.eventBus.emit('dataOrchestrator:ready', { orchestrator: this });
       
     } catch (error) {
       timer.end({
@@ -155,7 +159,7 @@ export class DataLoadingOrchestrator {
         error: error.message,
         categories: Object.keys(this.loadingConfig.urls)
       });
-      this.logger.error('Initialization failed', { 
+      this.moduleLogger.error('Initialization failed', { 
         operation: 'init',
         error: error.message,
         stack: error.stack,
@@ -170,7 +174,7 @@ export class DataLoadingOrchestrator {
    * Wait for required dependencies to be ready
    */
   async waitForDependencies() {
-    this.logger.debug('Waiting for dependencies...');
+    this.moduleLogger.debug('Waiting for dependencies...');
     
     // Wait for polygon loader to be available
     let attempts = 0;
@@ -178,10 +182,10 @@ export class DataLoadingOrchestrator {
     
     while (!this.polygonLoader && attempts < maxAttempts) {
       // Try to get polygon loader from state manager
-      const polygonLoaderModule = stateManager.get('polygonLoader');
+      const polygonLoaderModule = this.stateManager.get('polygonLoader');
       if (polygonLoaderModule) {
         this.polygonLoader = polygonLoaderModule;
-        this.logger.info('PolygonLoader found in state manager');
+        this.moduleLogger.info('PolygonLoader found in state manager');
         break;
       }
       
@@ -193,16 +197,16 @@ export class DataLoadingOrchestrator {
     if (!this.polygonLoader) {
       // Try to import PolygonLoader directly as fallback
       try {
-        this.logger.debug('Trying direct import of PolygonLoader...');
-        const { polygonLoader } = await import('./PolygonLoader.js');
+        this.moduleLogger.debug('Trying direct import of PolygonLoader...');
+        const { polygonLoader } = await import('/dist/modules/PolygonLoader.js');
         if (polygonLoader) {
           this.polygonLoader = polygonLoader;
-          this.logger.info('PolygonLoader imported directly');
+          this.moduleLogger.info('PolygonLoader imported directly');
         } else {
           throw new Error('PolygonLoader not found in module');
         }
       } catch (error) {
-        this.logger.error('Failed to import PolygonLoader directly', { 
+        this.moduleLogger.error('Failed to import PolygonLoader directly', { 
           error: error.message,
           stack: error.stack 
         });
@@ -210,15 +214,15 @@ export class DataLoadingOrchestrator {
       }
     }
     
-    this.logger.info('Dependencies ready');
+    this.moduleLogger.info('Dependencies ready');
   }
   
   /**
    * Load initial data with priority-based orchestration
    */
   async loadInitialData() {
-    const timer = this.logger.time('initial-data-loading');
-    this.logger.info('Starting initial data loading', {
+    const timer = this.moduleLogger.time('initial-data-loading');
+    this.moduleLogger.info('Starting initial data loading', {
       operation: 'loadInitialData',
       phase: 'initial',
       totalCategories: Object.keys(this.loadingConfig.urls).length
@@ -231,7 +235,7 @@ export class DataLoadingOrchestrator {
     
     // Load high priority first (blocking)
     if (categoriesByPriority.high.length > 0) {
-      this.logger.info('Loading high-priority data', { 
+      this.moduleLogger.info('Loading high-priority data', { 
         operation: 'loadInitialData',
         priority: 'high',
         categories: categoriesByPriority.high,
@@ -242,7 +246,7 @@ export class DataLoadingOrchestrator {
     
     // Load medium priority (non-blocking)
     if (categoriesByPriority.medium.length > 0) {
-      this.logger.info('Loading medium-priority data', { 
+      this.moduleLogger.info('Loading medium-priority data', { 
         operation: 'loadInitialData',
         priority: 'medium',
         categories: categoriesByPriority.medium,
@@ -253,7 +257,7 @@ export class DataLoadingOrchestrator {
     
     // Load low priority (background)
     if (categoriesByPriority.low.length > 0) {
-      this.logger.info('Loading low-priority data', { 
+      this.moduleLogger.info('Loading low-priority data', { 
         operation: 'loadInitialData',
         priority: 'low',
         categories: categoriesByPriority.low,
@@ -272,7 +276,7 @@ export class DataLoadingOrchestrator {
       mediumPriority: categoriesByPriority.medium.length,
       lowPriority: categoriesByPriority.low.length
     });
-    this.logger.info('Initial data loading orchestrated', {
+    this.moduleLogger.info('Initial data loading orchestrated', {
       operation: 'loadInitialData',
       phase: 'complete',
       highPriority: categoriesByPriority.high.length,
@@ -308,7 +312,7 @@ export class DataLoadingOrchestrator {
     for (let i = 0; i < categories.length; i += batchSize) {
       const batch = categories.slice(i, i + batchSize);
       
-      this.logger.debug(`Loading ${priority} priority batch`, { 
+      this.moduleLogger.debug(`Loading ${priority} priority batch`, { 
         operation: 'loadCategoriesInParallel',
         priority,
         batch,
@@ -328,7 +332,7 @@ export class DataLoadingOrchestrator {
         results.forEach((result, index) => {
           const category = batch[index];
           if (result.status === 'fulfilled') {
-            this.logger.info(`${category} loaded successfully`, {
+            this.moduleLogger.info(`${category} loaded successfully`, {
               operation: 'batchLoadResult',
               category,
               priority,
@@ -337,7 +341,7 @@ export class DataLoadingOrchestrator {
             });
             this.loadedCategories.add(category);
           } else {
-            this.logger.error(`${category} failed to load`, { 
+            this.moduleLogger.error(`${category} failed to load`, { 
               operation: 'batchLoadResult',
               category,
               priority,
@@ -356,7 +360,7 @@ export class DataLoadingOrchestrator {
         }
         
       } catch (error) {
-        this.logger.error('Batch loading failed', { 
+        this.moduleLogger.error('Batch loading failed', { 
           operation: 'loadCategoriesInParallel',
           priority,
           batch,
@@ -375,12 +379,12 @@ export class DataLoadingOrchestrator {
    */
   async loadCategory(category) {
     if (this.loadedCategories.has(category)) {
-      this.logger.warn(`${category} already loaded`);
+      this.moduleLogger.warn(`${category} already loaded`);
       return;
     }
     
     if (this.loadingPromises.has(category)) {
-      this.logger.warn(`${category} already loading`);
+      this.moduleLogger.warn(`${category} already loading`);
       return this.loadingPromises.get(category);
     }
     
@@ -389,7 +393,7 @@ export class DataLoadingOrchestrator {
       throw new Error(`DataLoadingOrchestrator: No URL configured for category ${category}`);
     }
     
-    this.logger.debug(`Loading ${category} from ${url}`, {
+    this.moduleLogger.debug(`Loading ${category} from ${url}`, {
       operation: 'loadCategory',
       category,
       url,
@@ -397,7 +401,7 @@ export class DataLoadingOrchestrator {
     });
     
     // Start StructuredLogger performance tracking
-    const timer = this.logger.time('category-load');
+    const timer = this.moduleLogger.time('category-load');
     
     // Create loading promise
     const loadingPromise = this.executeCategoryLoad(category, url);
@@ -418,13 +422,13 @@ export class DataLoadingOrchestrator {
       this.loadingPromises.delete(category);
       
       // Emit success event
-      globalEventBus.emit('dataOrchestrator:categoryLoaded', { 
+      this.eventBus.emit('dataOrchestrator:categoryLoaded', { 
         category, 
         duration: timer.duration, 
         orchestrator: this 
       });
       
-      this.logger.info(`${category} loaded successfully`, { 
+      this.moduleLogger.info(`${category} loaded successfully`, { 
         operation: 'loadCategory',
         category,
         priority: this.loadingConfig.priorities[category],
@@ -464,7 +468,7 @@ export class DataLoadingOrchestrator {
       // Try fallback URL if available
       const fallbackUrl = this.loadingConfig.fallbackUrls[category];
       if (fallbackUrl) {
-        this.logger.warn(`Primary URL failed for ${category}, trying fallback`, { 
+        this.moduleLogger.warn(`Primary URL failed for ${category}, trying fallback`, { 
           operation: 'executeCategoryLoad',
           category,
           primaryUrl: url,
@@ -481,7 +485,7 @@ export class DataLoadingOrchestrator {
    * Handle loading errors with recovery strategies
    */
   handleLoadingError(category, error) {
-    this.logger.error(`Error loading ${category}`, { 
+    this.moduleLogger.error(`Error loading ${category}`, { 
       category,
       error: error.message,
       stack: error.stack 
@@ -495,7 +499,7 @@ export class DataLoadingOrchestrator {
     });
     
     // Emit error event
-    globalEventBus.emit('dataOrchestrator:categoryError', { 
+    this.eventBus.emit('dataOrchestrator:categoryError', { 
       category, 
       error, 
       orchestrator: this 
@@ -505,7 +509,7 @@ export class DataLoadingOrchestrator {
     const priority = this.loadingConfig.priorities[category];
     if (priority === 'high') {
       // High priority: retry immediately
-      this.logger.info(`Retrying high-priority ${category}`, {
+      this.moduleLogger.info(`Retrying high-priority ${category}`, {
         operation: 'handleLoadingError',
         category,
         priority,
@@ -515,7 +519,7 @@ export class DataLoadingOrchestrator {
       setTimeout(() => this.retryFailedLoad(category), 1000);
     } else if (priority === 'medium') {
       // Medium priority: retry with delay
-      this.logger.info(`Retrying medium-priority ${category} in 5s`, {
+      this.moduleLogger.info(`Retrying medium-priority ${category} in 5s`, {
         operation: 'handleLoadingError',
         category,
         priority,
@@ -536,7 +540,7 @@ export class DataLoadingOrchestrator {
     
     const maxRetries = 3;
     if (errorInfo.retryCount > maxRetries) {
-      this.logger.error(`Max retries exceeded for ${category}`, { 
+      this.moduleLogger.error(`Max retries exceeded for ${category}`, { 
         operation: 'retryFailedLoad',
         category,
         retryCount: errorInfo.retryCount,
@@ -546,7 +550,7 @@ export class DataLoadingOrchestrator {
       return;
     }
     
-    this.logger.info(`Retry ${errorInfo.retryCount}/${maxRetries} for ${category}`, {
+    this.moduleLogger.info(`Retry ${errorInfo.retryCount}/${maxRetries} for ${category}`, {
       operation: 'retryFailedLoad',
       category,
       retryCount: errorInfo.retryCount,
@@ -557,7 +561,7 @@ export class DataLoadingOrchestrator {
     try {
       await this.loadCategory(category);
     } catch (error) {
-      this.logger.error(`Retry failed for ${category}`, { 
+      this.moduleLogger.error(`Retry failed for ${category}`, { 
         operation: 'retryFailedLoad',
         category,
         retryCount: errorInfo.retryCount,
@@ -574,16 +578,16 @@ export class DataLoadingOrchestrator {
    */
   setupDataManagement() {
     // Listen for data loading requests
-    globalEventBus.on('dataOrchestrator:loadCategory', ({ category, url }) => {
+    this.eventBus.on('dataOrchestrator:loadCategory', ({ category, url }) => {
       this.loadCategory(category, url);
     });
     
     // Listen for retry requests
-    globalEventBus.on('dataOrchestrator:retryCategory', ({ category }) => {
+    this.eventBus.on('dataOrchestrator:retryCategory', ({ category }) => {
       this.retryFailedLoad(category);
     });
     
-    this.logger.info('Data management setup complete');
+    this.moduleLogger.info('Data management setup complete');
   }
   
   /**
@@ -618,7 +622,7 @@ export class DataLoadingOrchestrator {
    * Legacy preloader functionality - maintains backward compatibility
    */
   async startPreloading() {
-    this.logger.info('Starting legacy preloading sequence...');
+    this.moduleLogger.info('Starting legacy preloading sequence...');
     
     // Show loading spinner
     this.showLoadingSpinner();
@@ -651,7 +655,7 @@ export class DataLoadingOrchestrator {
           await this.loadCategory(category);
         }
         
-        this.logger.info(`${name} loaded successfully`);
+        this.moduleLogger.info(`${name} loaded successfully`);
         
         // Small delay between items (matching legacy behavior)
         if (i < preloadOrder.length - 1) {
@@ -659,7 +663,7 @@ export class DataLoadingOrchestrator {
         }
         
       } catch (error) {
-        this.logger.error(`Failed to load ${name}`, { 
+        this.moduleLogger.error(`Failed to load ${name}`, { 
           name,
           category,
           error: error.message,
@@ -672,7 +676,7 @@ export class DataLoadingOrchestrator {
     // Hide loading spinner
     this.hideLoadingSpinner();
     
-    this.logger.info('Legacy preloading sequence complete');
+    this.moduleLogger.info('Legacy preloading sequence complete');
   }
   
   /**
@@ -732,7 +736,10 @@ export class DataLoadingOrchestrator {
 }
 
 // Export singleton instance
-export const dataLoadingOrchestrator = new DataLoadingOrchestrator();
+// Legacy function stub - use DI container instead
+export const dataLoadingOrchestrator = () => {
+  throw new Error('Legacy function not available. Use DI container to get DataLoadingOrchestrator instance.');
+};
 
 // Global exposure handled by consolidated legacy compatibility system
 // See ApplicationBootstrap.setupLegacyCompatibility() for details

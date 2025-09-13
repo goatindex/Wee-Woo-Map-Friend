@@ -1,767 +1,389 @@
 /**
  * @module modules/StateManager
- * Centralized state management for WeeWoo Map Friend application
- * Replaces window globals with a reactive state system
+ * State management service for centralized application state
+ * Provides reactive state updates and event-driven communication
+ * 
+ * @fileoverview State manager for the WeeWoo Map Friend application
+ * @version 1.0.0
+ * @author WeeWoo Map Friend Team
  */
 
-import { EventBus } from './EventBus.js';
-import { logger } from './StructuredLogger.js';
+import { injectable, inject } from 'inversify';
+import { BaseService } from './BaseService.js';
+import { TYPES } from './Types.js';
+import { IEventBus, IStateManager } from './interfaces.js';
 
 /**
- * @class StateManager
- * @extends EventBus
- * Manages application state with reactivity and persistence
+ * State manager implementation
  */
-export class StateManager extends EventBus {
-  constructor() {
-    super();
+@injectable()
+export class StateManager extends BaseService implements IStateManager {
+  private state: any = {};
+  private subscribers: Map<string, Set<Function>> = new Map();
+
+  constructor(
+    @inject(TYPES.EventBus) private eventBus: IEventBus,
+    @inject(TYPES.StructuredLogger) private structuredLogger
+  ) {
+    super(structuredLogger);
+  }
+
+  async initialize() {
+    await super.initialize();
+    this.initializeDefaultState();
+  }
+
+  getState(): any {
+    return this.state;
+  }
+
+  setState(newState: any): void {
+    const oldState = this.state;
+    this.state = { ...this.state, ...newState };
     
-    // Create module-specific logger
-    this.logger = logger.createChild({ module: 'StateManager' });
-    
-    // Internal state storage
-    this._state = {};
-    this._computed = new Map();
-    this._watchers = new Map();
-    this._middleware = [];
-    
-    // Create reactive proxy
-    this.state = new Proxy(this._state, {
-      get: (target, property) => {
-        // Return computed value if available
-        if (this._computed.has(property)) {
-          return this._computed.get(property).getter();
-        }
-        return target[property];
-      },
-      
-      set: (target, property, value) => {
-        const oldValue = target[property];
-        
-        // Run middleware
-        for (const middleware of this._middleware) {
-          const result = middleware(property, value, oldValue);
-          if (result !== undefined) {
-            value = result;
-          }
-        }
-        
-        // Only update if value actually changed
-        if (oldValue !== value) {
-          target[property] = value;
-          
-          // Emit state change event
-          this.emit('stateChange', { 
-            property, 
-            value, 
-            oldValue, 
-            state: this._state 
-          });
-          
-          // Emit property-specific event
-          this.emit(`state:${property}`, { value, oldValue });
-          
-          // Run watchers
-          if (this._watchers.has(property)) {
-            const watchers = this._watchers.get(property);
-            watchers.forEach(watcher => {
-              try {
-                watcher(value, oldValue);
-              } catch (error) {
-                this.logger.error(`Error in watcher for '${property}'`, { error: error.message, stack: error.stack });
-              }
-            });
-          }
-          
-          // Update dependent computed properties
-          this._updateComputedProperties(property);
-        }
-        
-        return true;
-      },
-      
-      deleteProperty: (target, property) => {
-        if (property in target) {
-          const oldValue = target[property];
-          delete target[property];
-          
-          this.emit('stateChange', { 
-            property, 
-            value: undefined, 
-            oldValue, 
-            state: this._state,
-            action: 'delete'
-          });
-          
-          this.emit(`state:${property}`, { value: undefined, oldValue });
-        }
-        return true;
-      }
+    // Log state changes using BaseService log method
+    this.log('State updated', { 
+      oldState: this.sanitizeState(oldState), 
+      newState: this.sanitizeState(newState) 
     });
     
-    // Initialize with legacy state from window globals
-    this._migrateLegacyState();
-    
-    // Store state in state manager for other modules to access
-    this.set('state', this._state);
-    
-    // Set up legacy compatibility layer
-    this._setupLegacyCompatibility();
-    
-    // Bind methods
-    this.isReady = this.isReady.bind(this);
+    this.eventBus.emit('state:updated', { 
+      oldState: this.sanitizeState(oldState), 
+      newState: this.sanitizeState(this.state) 
+    });
   }
-  
-  /**
-   * Migrate existing window globals to state management
-   * @private
-   */
-  _migrateLegacyState() {
-    // Migrate existing global state
-    if (typeof window !== 'undefined') {
-      const legacyGlobals = [
-        'map', 'featureLayers', 'namesByCategory', 'nameToKey', 'emphasised', 
-        'nameLabelMarkers', 'pendingLabels', 'markersLayer', 'categoryMeta', 
-        'outlineColors', 'baseOpacities', 'labelColorAdjust', 'headerColorAdjust'
-      ];
-      
-      legacyGlobals.forEach(globalName => {
-        if (window[globalName] !== undefined) {
-          this._state[globalName] = window[globalName];
-        }
-      });
-      
-      // Initialize empty structures if they don't exist
-      this._state.featureLayers = this._state.featureLayers || { ses:{}, lga:{}, cfa:{}, ambulance:{}, police:{}, frv:{} };
-      this._state.namesByCategory = this._state.namesByCategory || { ses:[], lga:[], cfa:[], ambulance:[], police:[], frv:[] };
-      this._state.nameToKey = this._state.nameToKey || { ses:{}, lga:{}, cfa:{}, ambulance:{}, police:{}, frv:{} };
-      this._state.emphasised = this._state.emphasised || { ses:{}, lga:{}, cfa:{}, ambulance:{}, police:{}, frv:{} };
-      this._state.nameLabelMarkers = this._state.nameLabelMarkers || { ses:{}, lga:{}, cfa:{}, ambulance:{}, police:{}, frv:{} };
-      this._state.pendingLabels = this._state.pendingLabels || [];
-      
-      // UI and application state
-      this._state.activeListFilter = '';
-      this._state.sidebarVisible = true;
-      this._state.isBulkOperation = false;
-      
-      // Legacy facility coordinate variables (initialized as empty objects)
-      this._state.sesFacilityCoords = {};
-      this._state.sesFacilityMarkers = {};
-      this._state.cfaFacilityCoords = {};
-      
-      // Device and responsive state
-      this._state.deviceContext = null; // Will be set by DeviceManager
-      this._state.windowSize = {
-        width: typeof window !== 'undefined' ? window.innerWidth : 1024,
-        height: typeof window !== 'undefined' ? window.innerHeight : 768
-      };
-      
-      // Application state
-      this._state.appInitialized = false;
-      this._state.mapReady = false;
-      this._state.dataLoaded = false;
-      this._state.errorState = null;
+
+  subscribe(path: string, listener: Function): Function {
+    if (!this.subscribers.has(path)) {
+      this.subscribers.set(path, new Set());
     }
     
-    this.logger.info('Legacy state migration complete');
-  }
-  
-  /**
-   * Set up legacy compatibility layer
-   * Maintains backward compatibility with window globals
-   */
-  _setupLegacyCompatibility() {
-    if (typeof window === 'undefined') return;
+    this.subscribers.get(path)!.add(listener);
     
-    this.logger.debug('Setting up legacy compatibility layer');
-    
-    // Legacy state variables - proxy to StateManager
-    const legacyStateVars = [
-      'featureLayers', 'namesByCategory', 'nameToKey', 'emphasised', 
-      'nameLabelMarkers', 'pendingLabels', 'activeListFilter', 'isBulkOperation'
-    ];
-    
-    legacyStateVars.forEach(varName => {
-      Object.defineProperty(window, varName, {
-        get: () => this.get(varName),
-        set: (value) => this.set(varName, value),
-        configurable: true
-      });
-    });
-    
-    // Legacy facility coordinate variables
-    Object.defineProperty(window, 'sesFacilityCoords', {
-      get: () => this.get('sesFacilityCoords', {}),
-      set: (value) => this.set('sesFacilityCoords', value),
-      configurable: true
-    });
-    
-    Object.defineProperty(window, 'sesFacilityMarkers', {
-      get: () => this.get('sesFacilityMarkers', {}),
-      set: (value) => this.set('sesFacilityMarkers', value),
-      configurable: true
-    });
-    
-    Object.defineProperty(window, 'cfaFacilityCoords', {
-      get: () => this.get('cfaFacilityCoords', {}),
-      set: (value) => this.set('cfaFacilityCoords', value),
-      configurable: true
-    });
-    
-    // Legacy map functions (now handled by MapManager)
-    window.getMap = () => {
-      // Get actual map instance from MapManager, not serialized state
-      if (window.mapManager && typeof window.mapManager.getMap === 'function') {
-        return window.mapManager.getMap();
-      }
-      return null;
-    };
-    
-    // Legacy filter function (now handled by ActiveListManager)
-    
-    // Legacy BulkOperationManager - proxy to StateManager methods
-    window.BulkOperationManager = {
-      begin: (operationType, itemCount) => this.beginBulkOperation(operationType, itemCount),
-      end: () => this.endBulkOperation(),
-      isActive: () => this.isBulkOperationActive(),
-      addPendingLabel: (labelData) => this.addPendingLabel(labelData),
-      markActiveListUpdatePending: () => this.markActiveListUpdatePending(),
-      getStatus: () => this.getBulkOperationStatus()
-    };
-    
-    // Legacy bulk operation functions
-    window.beginBulkOperation = () => this.beginBulkOperation('legacy');
-    window.endBulkOperation = () => this.endBulkOperation();
-    
-    this.logger.info('Legacy compatibility layer active');
-  }
-  
-  /**
-   * Add middleware for state changes
-   * @param {Function} middleware - Middleware function (property, newValue, oldValue) => newValue
-   */
-  addMiddleware(middleware) {
-    if (typeof middleware === 'function') {
-      this._middleware.push(middleware);
-    }
-  }
-  
-  /**
-   * Remove middleware
-   * @param {Function} middleware - Middleware function to remove
-   */
-  removeMiddleware(middleware) {
-    const index = this._middleware.indexOf(middleware);
-    if (index !== -1) {
-      this._middleware.splice(index, 1);
-    }
-  }
-  
-  /**
-   * Watch for changes to a specific property
-   * @param {string} property - Property name to watch
-   * @param {Function} callback - Callback function (newValue, oldValue) => void
-   * @returns {Function} Unwatch function
-   */
-  watch(property, callback) {
-    if (!this._watchers.has(property)) {
-      this._watchers.set(property, []);
-    }
-    
-    this._watchers.get(property).push(callback);
-    
-    // Return unwatch function
     return () => {
-      const watchers = this._watchers.get(property);
-      if (watchers) {
-        const index = watchers.indexOf(callback);
-        if (index !== -1) {
-          watchers.splice(index, 1);
-        }
-        
-        // Clean up empty watcher arrays
-        if (watchers.length === 0) {
-          this._watchers.delete(property);
-        }
+      const pathSubscribers = this.subscribers.get(path);
+      if (pathSubscribers) {
+        pathSubscribers.delete(listener);
       }
     };
   }
   
   /**
-   * Define computed property that depends on other state
-   * @param {string} name - Computed property name
-   * @param {Function} getter - Function that computes the value
-   * @param {string[]} dependencies - Array of state properties this depends on
+   * Unsubscribe a listener from a specific path
+   * @param path - The path to unsubscribe from
+   * @param listener - The listener function to remove
    */
-  computed(name, getter, dependencies = []) {
-    this._computed.set(name, {
-      getter,
-      dependencies,
-      cached: null,
-      dirty: true
+  unsubscribe(path: string, listener: Function): void {
+    const pathSubscribers = this.subscribers.get(path);
+    if (pathSubscribers) {
+      pathSubscribers.delete(listener);
+    }
+  }
+
+  /**
+   * Watch for changes to a specific state path
+   * This is an alias for subscribe() to maintain compatibility with existing code
+   * @param path - The state path to watch
+   * @param listener - The callback function to execute when the path changes
+   * @returns Unsubscribe function
+   */
+  watch(path: string, listener: Function): Function {
+    return this.subscribe(path, listener);
+  }
+
+  dispatch(action: any): void {
+    // Log action dispatch using BaseService log method
+    this.log('Action dispatched', { action });
+    this.eventBus.emit('state:action', action);
+  }
+
+  /**
+   * Get a specific value from state by key
+   * @param key - The key to retrieve from state
+   * @returns The value at the key, or undefined if not found
+   */
+  get(key: string): any {
+    // Input validation using centralized validation
+    const keyValidation = this.validateKey(key);
+    if (!keyValidation.valid) {
+      this.logError('Invalid key provided to get()', new Error(keyValidation.error), {
+        operation: 'get',
+        key: key,
+        keyType: typeof key,
+        recommendation: keyValidation.recommendation
+      });
+      this.eventBus.emit('state:error', {
+        type: 'validation_error',
+        operation: 'get',
+        message: `Invalid key provided to get() - ${keyValidation.error}`,
+        context: { key, keyType: typeof key },
+        severity: 'error',
+        recoverable: false
+      });
+      return undefined;
+    }
+
+    // Log successful operation
+    this.log('State value retrieved', { 
+      key, 
+      valueExists: key in this.state,
+      stateSize: Object.keys(this.state).length
+    });
+
+    return this.state[key];
+  }
+
+  /**
+   * Set a specific value in state by key
+   * @param key - The key to set in state
+   * @param value - The value to set
+   */
+  set(key: string, value: any): void {
+    // Input validation for key using centralized validation
+    const keyValidation = this.validateKey(key);
+    if (!keyValidation.valid) {
+      this.logError('Invalid key provided to set()', new Error(keyValidation.error), {
+        operation: 'set',
+        key: key,
+        keyType: typeof key,
+        value: this.sanitizeState(value),
+        recommendation: keyValidation.recommendation
+      });
+      this.eventBus.emit('state:error', {
+        type: 'validation_error',
+        operation: 'set',
+        message: `Invalid key provided to set() - ${keyValidation.error}`,
+        context: { key, keyType: typeof key, value: this.sanitizeState(value) },
+        severity: 'error',
+        recoverable: false
+      });
+      return;
+    }
+
+    // Input validation for value using centralized validation
+    const valueValidation = this.validateValue(value);
+    if (!valueValidation.valid) {
+      this.logError('Invalid value provided to set()', new Error(valueValidation.error), {
+        operation: 'set',
+        key: key,
+        value: this.sanitizeState(value),
+        recommendation: valueValidation.recommendation
+      });
+      this.eventBus.emit('state:error', {
+        type: 'validation_error',
+        operation: 'set',
+        message: `Invalid value provided to set() - ${valueValidation.error}`,
+        context: { key, value: this.sanitizeState(value) },
+        severity: 'warning',
+        recoverable: true
+      });
+      return;
+    }
+
+    // Check state size limits
+    const currentStateSize = Object.keys(this.state).length;
+    if (currentStateSize > 1000) {
+      this.logError('State size limit exceeded', new Error(`State has ${currentStateSize} keys, limit is 1000`), {
+        operation: 'set',
+        key: key,
+        currentStateSize: currentStateSize,
+        stateLimit: 1000,
+        recommendation: 'Consider cleaning up unused state keys'
+      });
+      this.eventBus.emit('state:error', {
+        type: 'performance_warning',
+        operation: 'set',
+        message: `State size limit exceeded - ${currentStateSize} keys (limit: 1000)`,
+        context: { key, currentStateSize, stateLimit: 1000 },
+        severity: 'warning',
+        recoverable: true
+      });
+    }
+
+    const oldValue = this.state[key];
+    this.state[key] = value;
+    
+    // Log the change with enhanced context
+    this.log('State value updated', { 
+      key, 
+      oldValue: this.sanitizeState(oldValue), 
+      newValue: this.sanitizeState(value),
+      stateSize: Object.keys(this.state).length,
+      valueType: typeof value,
+      isNewKey: !(key in this.state)
     });
     
-    // Watch dependencies and mark as dirty when they change
-    dependencies.forEach(dep => {
-      this.watch(dep, () => {
-        const computed = this._computed.get(name);
-        if (computed) {
-          computed.dirty = true;
-          this.emit(`computed:${name}`, { name, value: computed.getter() });
-        }
-      });
+    // Emit change event with enhanced context
+    this.eventBus.emit('state:valueChanged', { 
+      key, 
+      oldValue: this.sanitizeState(oldValue), 
+      newValue: this.sanitizeState(value),
+      stateSize: Object.keys(this.state).length,
+      valueType: typeof value,
+      isNewKey: !(key in this.state)
     });
   }
-  
-  /**
-   * Update computed properties when dependencies change
-   * @private
-   * @param {string} changedProperty - Property that changed
-   */
-  _updateComputedProperties(changedProperty) {
-    this._computed.forEach((computed, name) => {
-      if (computed.dependencies.includes(changedProperty)) {
-        computed.dirty = true;
-        this.emit(`computed:${name}`, { name, value: computed.getter() });
+
+  private initializeDefaultState(): void {
+    this.state = {
+      map: {
+        center: [0, 0],
+        zoom: 10,
+        layers: new Map()
+      },
+      sidebar: {
+        expandedSections: [],
+        selectedItems: new Map()
+      },
+      data: {
+        categories: new Map(),
+        loading: new Map()
+      },
+      ui: {
+        theme: 'light',
+        language: 'en'
       }
-    });
+    };
   }
-  
+
   /**
-   * Get current state value
-   * @param {string} path - Property path (supports nested: 'user.name')
-   * @param {any} defaultValue - Default value if property doesn't exist
-   * @returns {any} Property value
+   * Validate state key format and content
+   * @param key - The key to validate
+   * @returns Validation result with details
    */
-  get(path, defaultValue = undefined) {
-    const keys = path.split('.');
-    let current = this._state;
+  private validateKey(key: any): { valid: boolean; error?: string; recommendation?: string } {
+    if (key === null || key === undefined) {
+      return {
+        valid: false,
+        error: 'Key cannot be null or undefined',
+        recommendation: 'Provide a valid string key'
+      };
+    }
+
+    if (typeof key !== 'string') {
+      return {
+        valid: false,
+        error: `Expected string, got ${typeof key}`,
+        recommendation: 'Provide a string key'
+      };
+    }
+
+    if (key.trim() === '') {
+      return {
+        valid: false,
+        error: 'Key cannot be empty string',
+        recommendation: 'Provide a non-empty string key'
+      };
+    }
+
+    if (key.length > 100) {
+      return {
+        valid: false,
+        error: `Key too long (${key.length} characters, max 100)`,
+        recommendation: 'Use shorter, more descriptive keys'
+      };
+    }
+
+    if (!/^[a-zA-Z0-9._-]+$/.test(key)) {
+      return {
+        valid: false,
+        error: 'Key contains invalid characters',
+        recommendation: 'Use only alphanumeric characters, dots, underscores, and hyphens'
+      };
+    }
+
+    return { valid: true };
+  }
+
+  /**
+   * Validate state value for storage
+   * @param value - The value to validate
+   * @returns Validation result with details
+   */
+  private validateValue(value: any): { valid: boolean; error?: string; recommendation?: string } {
+    if (value === undefined) {
+      return {
+        valid: false,
+        error: 'Value cannot be undefined',
+        recommendation: 'Use null instead of undefined, or delete the key'
+      };
+    }
+
+    // Check for circular references
+    try {
+      JSON.stringify(value);
+    } catch (error) {
+      if (error.message.includes('circular')) {
+        return {
+          valid: false,
+          error: 'Circular reference detected in value',
+          recommendation: 'Remove circular references before setting state'
+        };
+      }
+    }
+
+    // Check value size (approximate)
+    const serialized = JSON.stringify(value);
+    if (serialized.length > 100000) { // 100KB
+      return {
+        valid: false,
+        error: `Value too large (${serialized.length} characters, max 100,000)`,
+        recommendation: 'Consider storing large values in a separate storage system'
+      };
+    }
+
+    return { valid: true };
+  }
+
+  /**
+   * Get state statistics for monitoring
+   * @returns State statistics object
+   */
+  getStateStats(): { keyCount: number; memoryUsage: number; largestKey?: string; oldestKey?: string } {
+    const keys = Object.keys(this.state);
+    const keyCount = keys.length;
+    
+    let memoryUsage = 0;
+    let largestKey = '';
+    let largestSize = 0;
     
     for (const key of keys) {
-      if (current && typeof current === 'object' && key in current) {
-        current = current[key];
-      } else {
-        return defaultValue;
+      const serialized = JSON.stringify(this.state[key]);
+      const size = serialized.length;
+      memoryUsage += size;
+      
+      if (size > largestSize) {
+        largestSize = size;
+        largestKey = key;
       }
     }
     
-    return current;
-  }
-  
-  /**
-   * Check for circular references in an object
-   * @param {any} obj - Object to check
-   * @param {Set} seen - Set of already seen objects
-   * @returns {boolean} True if circular reference detected
-   */
-  _hasCircularReference(obj, seen = new Set()) {
-    if (obj === null || typeof obj !== 'object') {
-      return false;
-    }
-    
-    if (seen.has(obj)) {
-      return true;
-    }
-    
-    seen.add(obj);
-    
-    for (const value of Object.values(obj)) {
-      if (this._hasCircularReference(value, seen)) {
-        return true;
-      }
-    }
-    
-    seen.delete(obj);
-    return false;
-  }
-
-  /**
-   * Set state value
-   * @param {string|Object} path - Property path or object of key-value pairs
-   * @param {any} value - Value to set (ignored if path is object)
-   */
-  set(path, value) {
-    // Check for circular references (skip for map state as it's handled specially)
-    if (path !== 'map' && this._hasCircularReference(value)) {
-      throw new Error('Circular reference detected in state value');
-    }
-    
-    if (typeof path === 'object') {
-      // Batch update
-      Object.entries(path).forEach(([key, val]) => {
-        // Check for circular references (skip for map state as it's handled specially)
-        if (key !== 'map' && this._hasCircularReference(val)) {
-          throw new Error(`Circular reference detected in state value for key: ${key}`);
-        }
-        this.state[key] = val;
-      });
-    } else {
-      // Single property update
-      const keys = path.split('.');
-      let current = this._state;
-      
-      // Navigate to parent object
-      for (let i = 0; i < keys.length - 1; i++) {
-        const key = keys[i];
-        if (!(key in current) || typeof current[key] !== 'object') {
-          current[key] = {};
-        }
-        current = current[key];
-      }
-      
-      // Set final property
-      const finalKey = keys[keys.length - 1];
-      current[finalKey] = value;
-      
-      // Trigger reactivity manually for nested properties
-      this.emit('stateChange', { 
-        property: path, 
-        value, 
-        oldValue: undefined, 
-        state: this._state 
-      });
-    }
-  }
-  
-  /**
-   * Reset state to initial values
-   * @param {string[]} [properties] - Specific properties to reset (optional)
-   */
-  reset(properties) {
-    if (properties) {
-      properties.forEach(prop => {
-        delete this.state[prop];
-      });
-    } else {
-      // Clear all state
-      Object.keys(this._state).forEach(key => {
-        delete this.state[key];
-      });
-      
-      // Re-initialize with defaults
-      this._migrateLegacyState();
-    }
-    
-    this.emit('stateReset', { properties });
-  }
-  
-  /**
-   * Persist state to localStorage
-   * @param {string} key - Storage key
-   * @param {string[]} [properties] - Specific properties to persist (optional)
-   */
-  persist(key = 'weewoo-map-state', properties) {
-    try {
-      const dataToStore = properties 
-        ? properties.reduce((acc, prop) => {
-            if (prop in this._state) {
-              acc[prop] = this._state[prop];
-            }
-            return acc;
-          }, {})
-        : this._state;
-      
-      localStorage.setItem(key, JSON.stringify(dataToStore));
-      this.emit('statePersisted', { key, data: dataToStore });
-    } catch (error) {
-      this.logger.error('Failed to persist state', { error: error.message, stack: error.stack });
-    }
-  }
-  
-  /**
-   * Restore state from localStorage
-   * @param {string} key - Storage key
-   * @param {boolean} merge - Whether to merge with current state (default: true)
-   */
-  restore(key = 'weewoo-map-state', merge = true) {
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        const data = JSON.parse(stored);
-        
-        if (merge) {
-          Object.entries(data).forEach(([prop, value]) => {
-            this.state[prop] = value;
-          });
-        } else {
-          this.reset();
-          Object.entries(data).forEach(([prop, value]) => {
-            this.state[prop] = value;
-          });
-        }
-        
-        this.emit('stateRestored', { key, data });
-      }
-    } catch (error) {
-      this.logger.error('Failed to restore state', { error: error.message, stack: error.stack });
-    }
-  }
-  
-  /**
-   * Get a snapshot of current state
-   * @param {string[]} [properties] - Specific properties to include (optional)
-   * @returns {Object} State snapshot
-   */
-  getSnapshot(properties) {
-    if (properties) {
-      return properties.reduce((acc, prop) => {
-        if (prop in this._state) {
-          acc[prop] = this._state[prop];
-        }
-        return acc;
-      }, {});
-    }
-    
-    return { ...this._state };
-  }
-  
-  /**
-   * Begin a bulk operation
-   * @param {string} operationType - Type of operation (e.g., 'toggleAll', 'import', 'reset')
-   * @param {number} itemCount - Number of items to be processed
-   * @returns {boolean} True if operation started successfully
-   */
-  beginBulkOperation(operationType, itemCount = 0) {
-    if (this.get('isBulkOperation')) {
-      this.logger.warn('Bulk operation already active, nested calls not supported');
-      return false;
-    }
-    
-    this.set('isBulkOperation', true);
-    this.set('bulkOperationType', operationType);
-    this.set('bulkOperationItemCount', itemCount);
-    this.set('bulkOperationStartTime', Date.now());
-    this.set('bulkOperationPendingLabels', []);
-    this.set('bulkOperationPendingActiveListUpdate', false);
-    
-    this.logger.info(`Bulk operation started: ${operationType}`, { itemCount });
-    this.emit('bulkOperation:started', { operationType, itemCount });
-    return true;
-  }
-  
-  /**
-   * End a bulk operation and process deferred items
-   */
-  endBulkOperation() {
-    if (!this.get('isBulkOperation')) {
-      this.logger.warn('No bulk operation active to end');
-      return;
-    }
-    
-    const operationType = this.get('bulkOperationType');
-    const startTime = this.get('bulkOperationStartTime');
-    const duration = Date.now() - startTime;
-    
-    this.logger.info(`Bulk operation completed: ${operationType}`, { duration });
-    
-    // Process deferred labels first
-    const pendingLabels = this.get('bulkOperationPendingLabels', []);
-    if (pendingLabels.length > 0) {
-      this.logger.debug(`Processing ${pendingLabels.length} deferred labels`);
-      this._processDeferredLabels(pendingLabels);
-    }
-    
-    // Process active list update if pending
-    if (this.get('bulkOperationPendingActiveListUpdate')) {
-      this.logger.debug('Processing pending active list update');
-      this._processActiveListUpdate();
-    }
-    
-    // Clear bulk operation state
-    this.set('isBulkOperation', false);
-    this.set('bulkOperationType', null);
-    this.set('bulkOperationItemCount', 0);
-    this.set('bulkOperationStartTime', null);
-    this.set('bulkOperationPendingLabels', []);
-    this.set('bulkOperationPendingActiveListUpdate', false);
-    
-    this.emit('bulkOperation:ended', { operationType, duration });
-  }
-  
-  /**
-   * Check if a bulk operation is currently active
-   * @returns {boolean} True if bulk operation is active
-   */
-  isBulkOperationActive() {
-    return this.get('isBulkOperation', false);
-  }
-  
-  /**
-   * Add a pending label for deferred creation
-   * @param {Object} labelData - Label data object
-   */
-  addPendingLabel(labelData) {
-    if (!this.get('isBulkOperation')) {
-      this.logger.warn('Cannot add pending label outside of bulk operation');
-      return;
-    }
-    
-    const pendingLabels = this.get('bulkOperationPendingLabels', []);
-    pendingLabels.push(labelData);
-    this.set('bulkOperationPendingLabels', pendingLabels);
-  }
-  
-  /**
-   * Mark active list update as pending
-   */
-  markActiveListUpdatePending() {
-    if (!this.get('isBulkOperation')) {
-      this.logger.warn('Cannot mark active list update pending outside of bulk operation');
-      return;
-    }
-    this.set('bulkOperationPendingActiveListUpdate', true);
-  }
-  
-  /**
-   * Process deferred labels in optimized batches
-   * @private
-   * @param {Array} labels - Array of label data objects
-   */
-  async _processDeferredLabels(labels) {
-    if (labels.length === 0) return;
-    
-    // Category-specific batch sizes for label creation
-    const labelBatchSizes = {
-      'lga': 1,   // Process LGA labels one at a time due to extreme complexity
-      'cfa': 8,   // Larger batches for CFA since we use pre-calculated coordinates
-      'ses': 8,   // Larger batches for SES since we use pre-calculated coordinates
-      'ambulance': 10,
-      'police': 10
-    };
-    
-    // Group labels by category for optimized processing
-    const labelsByCategory = {};
-    labels.forEach(label => {
-      if (!labelsByCategory[label.category]) {
-        labelsByCategory[label.category] = [];
-      }
-      labelsByCategory[label.category].push(label);
-    });
-    
-    // Process each category with its optimal batch size
-    const categoryKeys = Object.keys(labelsByCategory);
-    let totalBatches = 0;
-    let currentBatch = 0;
-    
-    // Calculate total number of batches for progress tracking
-    categoryKeys.forEach(category => {
-      const categoryLabels = labelsByCategory[category];
-      const batchSize = labelBatchSizes[category] || 10;
-      totalBatches += Math.ceil(categoryLabels.length / batchSize);
-    });
-    
-    this.logger.debug(`Processing ${labels.length} labels in ${totalBatches} batches`);
-    
-    for (let catIndex = 0; catIndex < categoryKeys.length; catIndex++) {
-      const category = categoryKeys[catIndex];
-      const categoryLabels = labelsByCategory[category];
-      const batchSize = labelBatchSizes[category] || 10;
-      
-      for (let i = 0; i < categoryLabels.length; i += batchSize) {
-        const batch = categoryLabels.slice(i, i + batchSize);
-        currentBatch++;
-        
-        // Process current batch
-        batch.forEach(({category, key, labelName, isPoint, layer}) => {
-          const featureLayers = this.get('featureLayers', {});
-          if (featureLayers[category] && featureLayers[category][key] && 
-              featureLayers[category][key].some(l => l._map)) {
-            // Only create label if the layer is still on the map
-            // Emit event for label creation instead of direct call
-            this.emit('state:createLabel', { category, key, labelName, isPoint, layer });
-          }
-        });
-        
-        // Yield between all batches except the very last one
-        if (currentBatch < totalBatches) {
-          if (category === 'lga') {
-            await new Promise(resolve => setTimeout(resolve, 10)); // 10ms delay for LGA
-          } else {
-            await new Promise(resolve => requestAnimationFrame(resolve));
-          }
-        }
-      }
-    }
-    
-    this.logger.info('All deferred labels processed');
-  }
-  
-  /**
-   * Process pending active list update
-   * @private
-   */
-  _processActiveListUpdate() {
-    // Emit event for active list update instead of direct call
-    this.logger.debug('Emitting active list update event after bulk operation');
-    this.emit('state:updateActiveList');
-  }
-  
-  /**
-   * Get current bulk operation status
-   * @returns {Object} Bulk operation status information
-   */
-  getBulkOperationStatus() {
     return {
-      isActive: this.get('isBulkOperation', false),
-      operationType: this.get('bulkOperationType'),
-      itemCount: this.get('bulkOperationItemCount', 0),
-      duration: this.get('bulkOperationStartTime') ? Date.now() - this.get('bulkOperationStartTime') : 0,
-      pendingLabels: this.get('bulkOperationPendingLabels', []).length,
-      pendingActiveListUpdate: this.get('bulkOperationPendingActiveListUpdate', false)
+      keyCount,
+      memoryUsage,
+      largestKey: largestKey || undefined,
+      oldestKey: keys[0] || undefined
     };
   }
-  
-  /**
-   * Check if state manager is ready
-   * @returns {boolean} True if initialized
-   */
-  isReady() {
-    return true; // StateManager is always ready after construction
+
+  private sanitizeState(state: any): any {
+    // Remove sensitive data before logging
+    const sanitized = { ...state };
+    delete sanitized.password;
+    delete sanitized.token;
+    return sanitized;
   }
 
   /**
-   * Cleanup state manager resources
+   * Check if StateManager is ready
    */
-  async cleanup() {
-    this.logger.info('Cleaning up StateManager resources');
-    
-    try {
-      // Clear all watchers
-      this.watchers.clear();
-      
-      // Clear bulk operation
-      this.bulkOperation = null;
-      
-      // Reset state to initial values
-      this._state = {
-        layers: {},
-        names: {},
-        emphasised: {},
-        labels: {},
-        deviceContext: null,
-        windowSize: {
-          width: typeof window !== 'undefined' ? window.innerWidth : 1024,
-          height: typeof window !== 'undefined' ? window.innerHeight : 768
-        }
-      };
-      
-      // Reset flags
-      this.initialized = false;
-      this.lastUpdate = null;
-      
-      this.logger.info('StateManager cleanup completed');
-    } catch (error) {
-      this.logger.error('StateManager cleanup failed', { error: error.message });
-      throw error;
-    }
+  isReady(): boolean {
+    return this.initialized === true;
   }
 }
 
-// Create global state manager instance
-export const stateManager = new StateManager();
-
-// Export convenient access to state
-export const state = stateManager.state;
-
-// Global exposure handled by consolidated legacy compatibility system
-// See ApplicationBootstrap.setupLegacyCompatibility() for details
+// Legacy function for backward compatibility
+export const stateManager = () => {
+  console.warn('stateManager: Legacy function called. Use DI container to get StateManager instance.');
+  throw new Error('Legacy function not available. Use DI container to get StateManager instance.');
+};

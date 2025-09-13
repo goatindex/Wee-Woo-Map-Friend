@@ -10,6 +10,14 @@
  * 5. Data Loading & Layer Management
  * 6. Reset & State Management
  * 7. Error Recovery & Resilience
+ * 
+ * 📚 Documentation:
+ * - Testing Framework: project_docs/development/testing-playwright.md
+ * - Build Process: project_docs/development/build-automation.md
+ * 
+ * 🔧 Build Process:
+ * Tests automatically run `npm run build:js` before execution to ensure
+ * decorators are properly transformed from TypeScript to browser-compatible JavaScript.
  */
 
 import { test, expect } from '@playwright/test';

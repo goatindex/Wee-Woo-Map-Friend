@@ -1,0 +1,2507 @@
+{
+  "summary": {
+    "total_issues": 198,
+    "high_severity": 41,
+    "medium_severity": 157
+  },
+  "issues_by_category": {
+    "incomplete_di_constructors": [
+      {
+        "file": "MobileComponentAdapter.js",
+        "issue": "Missing StructuredLogger injection",
+        "line": 679,
+        "severity": "high"
+      },
+      {
+        "file": "MobileComponentAdapter.js",
+        "issue": "Missing super() call",
+        "line": 679,
+        "severity": "high"
+      }
+    ],
+    "legacy_function_imports": [
+      {
+        "file": "ActiveListManager.js",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 11,
+        "severity": "high"
+      },
+      {
+        "file": "ActiveListManager.js",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 10,
+        "severity": "high"
+      },
+      {
+        "file": "ActiveListManager.js",
+        "issue": "Legacy function import: import { configurationManager } from './ConfigurationManager.js'",
+        "line": 12,
+        "severity": "high"
+      },
+      {
+        "file": "CfaFacilitiesLoader.js",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 8,
+        "severity": "high"
+      },
+      {
+        "file": "CfaFacilitiesLoader.js",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 7,
+        "severity": "high"
+      },
+      {
+        "file": "CfaFacilitiesLoader.js",
+        "issue": "Legacy function import: import { configurationManager } from './ConfigurationManager.js'",
+        "line": 9,
+        "severity": "high"
+      },
+      {
+        "file": "EmphasisManager.js",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 23,
+        "severity": "high"
+      },
+      {
+        "file": "LabelManager.js",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 24,
+        "severity": "high"
+      },
+      {
+        "file": "LabelManager.js",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 23,
+        "severity": "high"
+      },
+      {
+        "file": "MigrationDashboard.js",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 6,
+        "severity": "high"
+      },
+      {
+        "file": "MobileDocsNavManager.js",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 7,
+        "severity": "high"
+      },
+      {
+        "file": "SesFacilitiesLoader.js",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 8,
+        "severity": "high"
+      },
+      {
+        "file": "SesFacilitiesLoader.js",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 7,
+        "severity": "high"
+      },
+      {
+        "file": "SesFacilitiesLoader.js",
+        "issue": "Legacy function import: import { configurationManager } from './ConfigurationManager.js'",
+        "line": 9,
+        "severity": "high"
+      },
+      {
+        "file": "SesUnitsLoader.js",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 8,
+        "severity": "high"
+      },
+      {
+        "file": "SesUnitsLoader.js",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 7,
+        "severity": "high"
+      },
+      {
+        "file": "SesUnitsLoader.js",
+        "issue": "Legacy function import: import { configurationManager } from './ConfigurationManager.js'",
+        "line": 9,
+        "severity": "high"
+      },
+      {
+        "file": "StateSynchronizer.js",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 8,
+        "severity": "high"
+      },
+      {
+        "file": "StateSynchronizer.js",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 7,
+        "severity": "high"
+      },
+      {
+        "file": "StateSynchronizer.js",
+        "issue": "Legacy function import: import { configurationManager } from './ConfigurationManager.js'",
+        "line": 9,
+        "severity": "high"
+      },
+      {
+        "file": "UIManager.js",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 8,
+        "severity": "high"
+      },
+      {
+        "file": "UIManager.js",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 7,
+        "severity": "high"
+      },
+      {
+        "file": "UIManager.js",
+        "issue": "Legacy function import: import { searchManager } from './SearchManager.js'",
+        "line": 10,
+        "severity": "high"
+      },
+      {
+        "file": "UIManager.js",
+        "issue": "Legacy function import: import { collapsibleManager } from './CollapsibleManager.js'",
+        "line": 9,
+        "severity": "high"
+      }
+    ],
+    "mock_logger_usage": [
+      {
+        "file": "AmbulanceLoader.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 30,
+        "severity": "medium"
+      },
+      {
+        "file": "ApplicationBootstrap.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 111,
+        "severity": "medium"
+      },
+      {
+        "file": "BaseFAB.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 8,
+        "severity": "medium"
+      },
+      {
+        "file": "BaseFAB.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 7,
+        "severity": "medium"
+      },
+      {
+        "file": "BaseFAB.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 43,
+        "severity": "medium"
+      },
+      {
+        "file": "BaseFAB.js",
+        "issue": "Mock logger usage: logger.createChild({ \n      module:",
+        "line": 43,
+        "severity": "medium"
+      },
+      {
+        "file": "CfaFacilitiesLoader.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 12,
+        "severity": "medium"
+      },
+      {
+        "file": "CfaFacilitiesLoader.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "file": "CfaFacilitiesLoader.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 39,
+        "severity": "medium"
+      },
+      {
+        "file": "CfaFacilitiesLoader.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 39,
+        "severity": "medium"
+      },
+      {
+        "file": "ComponentCommunication.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 16,
+        "severity": "medium"
+      },
+      {
+        "file": "ComponentCommunication.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "file": "ComponentCommunication.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 89,
+        "severity": "medium"
+      },
+      {
+        "file": "ComponentCommunication.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 89,
+        "severity": "medium"
+      },
+      {
+        "file": "ComponentErrorBoundary.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 16,
+        "severity": "medium"
+      },
+      {
+        "file": "ComponentErrorBoundary.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "file": "ComponentLifecycleManager.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 16,
+        "severity": "medium"
+      },
+      {
+        "file": "ComponentLifecycleManager.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "file": "ComponentMemoryManager.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "file": "ComponentMemoryManager.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 14,
+        "severity": "medium"
+      },
+      {
+        "file": "ComponentMemoryManager.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 71,
+        "severity": "medium"
+      },
+      {
+        "file": "ComponentMemoryManager.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 71,
+        "severity": "medium"
+      },
+      {
+        "file": "ConfigService.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 33,
+        "severity": "medium"
+      },
+      {
+        "file": "ConfigService.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 33,
+        "severity": "medium"
+      },
+      {
+        "file": "CoordinateConverter.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 18,
+        "severity": "medium"
+      },
+      {
+        "file": "DataLoadingOrchestrator.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 31,
+        "severity": "medium"
+      },
+      {
+        "file": "DataValidator.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 41,
+        "severity": "medium"
+      },
+      {
+        "file": "DependencyRegistry.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 8,
+        "severity": "medium"
+      },
+      {
+        "file": "DependencyRegistry.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 7,
+        "severity": "medium"
+      },
+      {
+        "file": "DependencyRegistry.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 32,
+        "severity": "medium"
+      },
+      {
+        "file": "DependencyRegistry.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 32,
+        "severity": "medium"
+      },
+      {
+        "file": "DeviceManager.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 18,
+        "severity": "medium"
+      },
+      {
+        "file": "EmphasisManager.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 9,
+        "severity": "medium"
+      },
+      {
+        "file": "EmphasisManager.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 8,
+        "severity": "medium"
+      },
+      {
+        "file": "EmphasisManager.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 31,
+        "severity": "medium"
+      },
+      {
+        "file": "EmphasisManager.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 31,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedComponentBase.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 16,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedComponentBase.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedComponentBase.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 131,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedComponentBase.js",
+        "issue": "Mock logger usage: logger.createChild({ \n      module:",
+        "line": 131,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedEventBus.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedEventBus.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 10,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedEventBus.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 195,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedEventBus.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 255,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedEventBus.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 309,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedEventBus.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 437,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedEventBus.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 195,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedEventBus.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 255,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedEventBus.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 309,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedEventBus.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 437,
+        "severity": "medium"
+      },
+      {
+        "file": "EnvironmentConfig.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 20,
+        "severity": "medium"
+      },
+      {
+        "file": "EnvironmentService.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "file": "EnvironmentService.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 14,
+        "severity": "medium"
+      },
+      {
+        "file": "ErrorBoundary.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 96,
+        "severity": "medium"
+      },
+      {
+        "file": "ErrorBoundary.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 201,
+        "severity": "medium"
+      },
+      {
+        "file": "ErrorBoundary.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 493,
+        "severity": "medium"
+      },
+      {
+        "file": "ErrorBoundary.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 96,
+        "severity": "medium"
+      },
+      {
+        "file": "ErrorBoundary.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 201,
+        "severity": "medium"
+      },
+      {
+        "file": "ErrorBoundary.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 493,
+        "severity": "medium"
+      },
+      {
+        "file": "ErrorUI.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 17,
+        "severity": "medium"
+      },
+      {
+        "file": "FABManager.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 7,
+        "severity": "medium"
+      },
+      {
+        "file": "FABManager.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 6,
+        "severity": "medium"
+      },
+      {
+        "file": "FABManager.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 36,
+        "severity": "medium"
+      },
+      {
+        "file": "FABManager.js",
+        "issue": "Mock logger usage: logger.createChild({ \n      module:",
+        "line": 36,
+        "severity": "medium"
+      },
+      {
+        "file": "FeatureEnhancer.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 40,
+        "severity": "medium"
+      },
+      {
+        "file": "LabelManager.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 9,
+        "severity": "medium"
+      },
+      {
+        "file": "LabelManager.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 8,
+        "severity": "medium"
+      },
+      {
+        "file": "LabelManager.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 32,
+        "severity": "medium"
+      },
+      {
+        "file": "LabelManager.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 32,
+        "severity": "medium"
+      },
+      {
+        "file": "MapManager.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 29,
+        "severity": "medium"
+      },
+      {
+        "file": "MobileComponentAdapter.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "file": "MobileComponentAdapter.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 14,
+        "severity": "medium"
+      },
+      {
+        "file": "MobileDocsNavManager.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 9,
+        "severity": "medium"
+      },
+      {
+        "file": "MobileDocsNavManager.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 8,
+        "severity": "medium"
+      },
+      {
+        "file": "MobileDocsNavManager.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 35,
+        "severity": "medium"
+      },
+      {
+        "file": "MobileDocsNavManager.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 35,
+        "severity": "medium"
+      },
+      {
+        "file": "PathResolver.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 19,
+        "severity": "medium"
+      },
+      {
+        "file": "PlatformService.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "file": "PlatformService.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 14,
+        "severity": "medium"
+      },
+      {
+        "file": "PoliceLoader.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 30,
+        "severity": "medium"
+      },
+      {
+        "file": "PolygonLoader.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 30,
+        "severity": "medium"
+      },
+      {
+        "file": "PolygonPlusManager.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 7,
+        "severity": "medium"
+      },
+      {
+        "file": "PolygonPlusManager.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 6,
+        "severity": "medium"
+      },
+      {
+        "file": "PolygonPlusManager.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 28,
+        "severity": "medium"
+      },
+      {
+        "file": "PolygonPlusManager.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 28,
+        "severity": "medium"
+      },
+      {
+        "file": "ProgressiveDataLoader.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 5,
+        "severity": "medium"
+      },
+      {
+        "file": "ProgressiveDataLoader.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 4,
+        "severity": "medium"
+      },
+      {
+        "file": "ReduxStateManager.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 12,
+        "severity": "medium"
+      },
+      {
+        "file": "ReduxStateManager.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "file": "ReduxStateManager.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 346,
+        "severity": "medium"
+      },
+      {
+        "file": "ReduxStateManager.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 346,
+        "severity": "medium"
+      },
+      {
+        "file": "RefactoredMapManager.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "file": "RefactoredMapManager.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 10,
+        "severity": "medium"
+      },
+      {
+        "file": "RefactoredMapManager.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 54,
+        "severity": "medium"
+      },
+      {
+        "file": "RefactoredMapManager.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 54,
+        "severity": "medium"
+      },
+      {
+        "file": "RefactoredSearchManager.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "file": "RefactoredSearchManager.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 10,
+        "severity": "medium"
+      },
+      {
+        "file": "RefactoredSearchManager.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 55,
+        "severity": "medium"
+      },
+      {
+        "file": "RefactoredSearchManager.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 55,
+        "severity": "medium"
+      },
+      {
+        "file": "RefactoredSidebarManager.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "file": "RefactoredSidebarManager.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 10,
+        "severity": "medium"
+      },
+      {
+        "file": "RefactoredSidebarManager.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 54,
+        "severity": "medium"
+      },
+      {
+        "file": "RefactoredSidebarManager.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 54,
+        "severity": "medium"
+      },
+      {
+        "file": "Router.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 9,
+        "severity": "medium"
+      },
+      {
+        "file": "Router.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 8,
+        "severity": "medium"
+      },
+      {
+        "file": "Router.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 39,
+        "severity": "medium"
+      },
+      {
+        "file": "Router.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 39,
+        "severity": "medium"
+      },
+      {
+        "file": "SesFacilitiesLoader.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 12,
+        "severity": "medium"
+      },
+      {
+        "file": "SesFacilitiesLoader.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "file": "SesFacilitiesLoader.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 40,
+        "severity": "medium"
+      },
+      {
+        "file": "SesFacilitiesLoader.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 40,
+        "severity": "medium"
+      },
+      {
+        "file": "SesUnitsLoader.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 12,
+        "severity": "medium"
+      },
+      {
+        "file": "SesUnitsLoader.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "file": "SesUnitsLoader.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 40,
+        "severity": "medium"
+      },
+      {
+        "file": "SesUnitsLoader.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 40,
+        "severity": "medium"
+      },
+      {
+        "file": "StructuredLogger.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 744,
+        "severity": "medium"
+      },
+      {
+        "file": "UIManager.js",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 13,
+        "severity": "medium"
+      },
+      {
+        "file": "UIManager.js",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 12,
+        "severity": "medium"
+      },
+      {
+        "file": "UIManager.js",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 40,
+        "severity": "medium"
+      },
+      {
+        "file": "UIManager.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 40,
+        "severity": "medium"
+      },
+      {
+        "file": "UtilityManager.js",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 18,
+        "severity": "medium"
+      }
+    ],
+    "missing_inject_decorators": [
+      {
+        "file": "CircuitBreakerStrategy.js",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 46,
+        "severity": "high"
+      },
+      {
+        "file": "ErrorBoundary.js",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 61,
+        "severity": "high"
+      },
+      {
+        "file": "ErrorContext.js",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 63,
+        "severity": "high"
+      },
+      {
+        "file": "FallbackStrategy.js",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 60,
+        "severity": "high"
+      },
+      {
+        "file": "HealthCheckService.js",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 58,
+        "severity": "high"
+      },
+      {
+        "file": "RetryStrategy.js",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 63,
+        "severity": "high"
+      },
+      {
+        "file": "StructuredLogger.js",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 17,
+        "severity": "high"
+      },
+      {
+        "file": "UnifiedErrorHandler.js",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 73,
+        "severity": "high"
+      }
+    ],
+    "incorrect_super_calls": [
+      {
+        "file": "ActiveListManager.js",
+        "issue": "Incorrect super() call: super()",
+        "line": 32,
+        "severity": "high"
+      },
+      {
+        "file": "ComponentMemoryManager.js",
+        "issue": "Incorrect super() call: super()",
+        "line": 68,
+        "severity": "high"
+      },
+      {
+        "file": "EnhancedComponentBase.js",
+        "issue": "Incorrect super() call: super()",
+        "line": 97,
+        "severity": "high"
+      },
+      {
+        "file": "RefactoredMapManager.js",
+        "issue": "Incorrect super() call: super()",
+        "line": 39,
+        "severity": "high"
+      },
+      {
+        "file": "RefactoredSearchManager.js",
+        "issue": "Incorrect super() call: super()",
+        "line": 39,
+        "severity": "high"
+      },
+      {
+        "file": "RefactoredSidebarManager.js",
+        "issue": "Incorrect super() call: super()",
+        "line": 39,
+        "severity": "high"
+      },
+      {
+        "file": "TextFormatter.js",
+        "issue": "Incorrect super() call: super()",
+        "line": 21,
+        "severity": "high"
+      }
+    ],
+    "legacy_singleton_exports": [
+      {
+        "file": "ApplicationBootstrap.js",
+        "issue": "Legacy singleton export: export const applicationBootstrap = new ApplicationBootstrap()",
+        "line": 1169,
+        "severity": "medium"
+      },
+      {
+        "file": "ApplicationBootstrap.js",
+        "issue": "Legacy singleton export: export const applicationBootstrap = new ApplicationBootstrap()",
+        "line": 1169,
+        "severity": "medium"
+      },
+      {
+        "file": "CfaFacilitiesLoader.js",
+        "issue": "Legacy singleton export: export const cfaFacilitiesLoader = new CfaFacilitiesLoader()",
+        "line": 327,
+        "severity": "medium"
+      },
+      {
+        "file": "CfaFacilitiesLoader.js",
+        "issue": "Legacy singleton export: export const cfaFacilitiesLoader = new CfaFacilitiesLoader()",
+        "line": 327,
+        "severity": "medium"
+      },
+      {
+        "file": "DependencyContainer.js",
+        "issue": "Legacy singleton export: export const dependencyContainer = new DependencyContainer()",
+        "line": 589,
+        "severity": "medium"
+      },
+      {
+        "file": "DependencyContainer.js",
+        "issue": "Legacy singleton export: export const dependencyContainer = new DependencyContainer()",
+        "line": 589,
+        "severity": "medium"
+      },
+      {
+        "file": "DependencyRegistry.js",
+        "issue": "Legacy singleton export: export const dependencyRegistry = new DependencyRegistry()",
+        "line": 303,
+        "severity": "medium"
+      },
+      {
+        "file": "DependencyRegistry.js",
+        "issue": "Legacy singleton export: export const dependencyRegistry = new DependencyRegistry()",
+        "line": 303,
+        "severity": "medium"
+      },
+      {
+        "file": "EmphasisManager.js",
+        "issue": "Legacy singleton export: export const emphasisManager = new EmphasisManager()",
+        "line": 429,
+        "severity": "medium"
+      },
+      {
+        "file": "EmphasisManager.js",
+        "issue": "Legacy singleton export: export const emphasisManager = new EmphasisManager()",
+        "line": 429,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedEventBus.js",
+        "issue": "Legacy singleton export: export const enhancedEventBus = new EnhancedEventBus()",
+        "line": 984,
+        "severity": "medium"
+      },
+      {
+        "file": "EnhancedEventBus.js",
+        "issue": "Legacy singleton export: export const enhancedEventBus = new EnhancedEventBus()",
+        "line": 984,
+        "severity": "medium"
+      },
+      {
+        "file": "FABManager.js",
+        "issue": "Legacy singleton export: export const fabManager = new FABManager()",
+        "line": 296,
+        "severity": "medium"
+      },
+      {
+        "file": "FABManager.js",
+        "issue": "Legacy singleton export: export const fabManager = new FABManager()",
+        "line": 296,
+        "severity": "medium"
+      },
+      {
+        "file": "LabelManager.js",
+        "issue": "Legacy singleton export: export const labelManager = new LabelManager()",
+        "line": 461,
+        "severity": "medium"
+      },
+      {
+        "file": "LabelManager.js",
+        "issue": "Legacy singleton export: export const labelManager = new LabelManager()",
+        "line": 461,
+        "severity": "medium"
+      },
+      {
+        "file": "MigrationDashboard.js",
+        "issue": "Legacy singleton export: export const migrationDashboard = new MigrationDashboard()",
+        "line": 515,
+        "severity": "medium"
+      },
+      {
+        "file": "MigrationDashboard.js",
+        "issue": "Legacy singleton export: export const migrationDashboard = new MigrationDashboard()",
+        "line": 515,
+        "severity": "medium"
+      },
+      {
+        "file": "MobileDocsNavManager.js",
+        "issue": "Legacy singleton export: export const mobileDocsNavManager = new MobileDocsNavManager()",
+        "line": 598,
+        "severity": "medium"
+      },
+      {
+        "file": "MobileDocsNavManager.js",
+        "issue": "Legacy singleton export: export const mobileDocsNavManager = new MobileDocsNavManager()",
+        "line": 598,
+        "severity": "medium"
+      },
+      {
+        "file": "PolygonPlusManager.js",
+        "issue": "Legacy singleton export: export const polygonPlusManager = new PolygonPlusManager()",
+        "line": 330,
+        "severity": "medium"
+      },
+      {
+        "file": "PolygonPlusManager.js",
+        "issue": "Legacy singleton export: export const polygonPlusManager = new PolygonPlusManager()",
+        "line": 330,
+        "severity": "medium"
+      },
+      {
+        "file": "ReduxStateManager.js",
+        "issue": "Legacy singleton export: export const reduxStateManager = new ReduxStateManager()",
+        "line": 566,
+        "severity": "medium"
+      },
+      {
+        "file": "ReduxStateManager.js",
+        "issue": "Legacy singleton export: export const reduxStateManager = new ReduxStateManager()",
+        "line": 566,
+        "severity": "medium"
+      },
+      {
+        "file": "Router.js",
+        "issue": "Legacy singleton export: export const router = new Router()",
+        "line": 376,
+        "severity": "medium"
+      },
+      {
+        "file": "Router.js",
+        "issue": "Legacy singleton export: export const docsRouter = new DocsRouter()",
+        "line": 377,
+        "severity": "medium"
+      },
+      {
+        "file": "Router.js",
+        "issue": "Legacy singleton export: export const router = new Router()",
+        "line": 376,
+        "severity": "medium"
+      },
+      {
+        "file": "Router.js",
+        "issue": "Legacy singleton export: export const docsRouter = new DocsRouter()",
+        "line": 377,
+        "severity": "medium"
+      },
+      {
+        "file": "SesFacilitiesLoader.js",
+        "issue": "Legacy singleton export: export const sesFacilitiesLoader = new SesFacilitiesLoader()",
+        "line": 361,
+        "severity": "medium"
+      },
+      {
+        "file": "SesFacilitiesLoader.js",
+        "issue": "Legacy singleton export: export const sesFacilitiesLoader = new SesFacilitiesLoader()",
+        "line": 361,
+        "severity": "medium"
+      },
+      {
+        "file": "SesUnitsLoader.js",
+        "issue": "Legacy singleton export: export const sesUnitsLoader = new SesUnitsLoader()",
+        "line": 349,
+        "severity": "medium"
+      },
+      {
+        "file": "SesUnitsLoader.js",
+        "issue": "Legacy singleton export: export const sesUnitsLoader = new SesUnitsLoader()",
+        "line": 349,
+        "severity": "medium"
+      },
+      {
+        "file": "StateSynchronizer.js",
+        "issue": "Legacy singleton export: export const stateSynchronizer = new StateSynchronizer()",
+        "line": 456,
+        "severity": "medium"
+      },
+      {
+        "file": "StateSynchronizer.js",
+        "issue": "Legacy singleton export: export const stateSynchronizer = new StateSynchronizer()",
+        "line": 456,
+        "severity": "medium"
+      },
+      {
+        "file": "UIManager.js",
+        "issue": "Legacy singleton export: export const uiManager = new UIManager()",
+        "line": 472,
+        "severity": "medium"
+      },
+      {
+        "file": "UIManager.js",
+        "issue": "Legacy singleton export: export const uiManager = new UIManager()",
+        "line": 472,
+        "severity": "medium"
+      }
+    ]
+  },
+  "files_with_issues": {
+    "MobileComponentAdapter.js": [
+      {
+        "category": "incomplete_di_constructors",
+        "issue": "Missing StructuredLogger injection",
+        "line": 679,
+        "severity": "high"
+      },
+      {
+        "category": "incomplete_di_constructors",
+        "issue": "Missing super() call",
+        "line": 679,
+        "severity": "high"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 14,
+        "severity": "medium"
+      }
+    ],
+    "ActiveListManager.js": [
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 11,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 10,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { configurationManager } from './ConfigurationManager.js'",
+        "line": 12,
+        "severity": "high"
+      },
+      {
+        "category": "incorrect_super_calls",
+        "issue": "Incorrect super() call: super()",
+        "line": 32,
+        "severity": "high"
+      }
+    ],
+    "CfaFacilitiesLoader.js": [
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 8,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 7,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { configurationManager } from './ConfigurationManager.js'",
+        "line": 9,
+        "severity": "high"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 12,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 39,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 39,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const cfaFacilitiesLoader = new CfaFacilitiesLoader()",
+        "line": 327,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const cfaFacilitiesLoader = new CfaFacilitiesLoader()",
+        "line": 327,
+        "severity": "medium"
+      }
+    ],
+    "EmphasisManager.js": [
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 23,
+        "severity": "high"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 9,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 8,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 31,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 31,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const emphasisManager = new EmphasisManager()",
+        "line": 429,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const emphasisManager = new EmphasisManager()",
+        "line": 429,
+        "severity": "medium"
+      }
+    ],
+    "LabelManager.js": [
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 24,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 23,
+        "severity": "high"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 9,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 8,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 32,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 32,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const labelManager = new LabelManager()",
+        "line": 461,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const labelManager = new LabelManager()",
+        "line": 461,
+        "severity": "medium"
+      }
+    ],
+    "MigrationDashboard.js": [
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 6,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const migrationDashboard = new MigrationDashboard()",
+        "line": 515,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const migrationDashboard = new MigrationDashboard()",
+        "line": 515,
+        "severity": "medium"
+      }
+    ],
+    "MobileDocsNavManager.js": [
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 7,
+        "severity": "high"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 9,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 8,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 35,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 35,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const mobileDocsNavManager = new MobileDocsNavManager()",
+        "line": 598,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const mobileDocsNavManager = new MobileDocsNavManager()",
+        "line": 598,
+        "severity": "medium"
+      }
+    ],
+    "SesFacilitiesLoader.js": [
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 8,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 7,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { configurationManager } from './ConfigurationManager.js'",
+        "line": 9,
+        "severity": "high"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 12,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 40,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 40,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const sesFacilitiesLoader = new SesFacilitiesLoader()",
+        "line": 361,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const sesFacilitiesLoader = new SesFacilitiesLoader()",
+        "line": 361,
+        "severity": "medium"
+      }
+    ],
+    "SesUnitsLoader.js": [
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 8,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 7,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { configurationManager } from './ConfigurationManager.js'",
+        "line": 9,
+        "severity": "high"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 12,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 40,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 40,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const sesUnitsLoader = new SesUnitsLoader()",
+        "line": 349,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const sesUnitsLoader = new SesUnitsLoader()",
+        "line": 349,
+        "severity": "medium"
+      }
+    ],
+    "StateSynchronizer.js": [
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 8,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 7,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { configurationManager } from './ConfigurationManager.js'",
+        "line": 9,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const stateSynchronizer = new StateSynchronizer()",
+        "line": 456,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const stateSynchronizer = new StateSynchronizer()",
+        "line": 456,
+        "severity": "medium"
+      }
+    ],
+    "UIManager.js": [
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { stateManager } from './StateManager.js'",
+        "line": 8,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { globalEventBus } from './EventBus.js'",
+        "line": 7,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { searchManager } from './SearchManager.js'",
+        "line": 10,
+        "severity": "high"
+      },
+      {
+        "category": "legacy_function_imports",
+        "issue": "Legacy function import: import { collapsibleManager } from './CollapsibleManager.js'",
+        "line": 9,
+        "severity": "high"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 13,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 12,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 40,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 40,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const uiManager = new UIManager()",
+        "line": 472,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const uiManager = new UIManager()",
+        "line": 472,
+        "severity": "medium"
+      }
+    ],
+    "AmbulanceLoader.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 30,
+        "severity": "medium"
+      }
+    ],
+    "ApplicationBootstrap.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 111,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const applicationBootstrap = new ApplicationBootstrap()",
+        "line": 1169,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const applicationBootstrap = new ApplicationBootstrap()",
+        "line": 1169,
+        "severity": "medium"
+      }
+    ],
+    "BaseFAB.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 8,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 7,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 43,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ \n      module:",
+        "line": 43,
+        "severity": "medium"
+      }
+    ],
+    "ComponentCommunication.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 16,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 89,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 89,
+        "severity": "medium"
+      }
+    ],
+    "ComponentErrorBoundary.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 16,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 15,
+        "severity": "medium"
+      }
+    ],
+    "ComponentLifecycleManager.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 16,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 15,
+        "severity": "medium"
+      }
+    ],
+    "ComponentMemoryManager.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 14,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 71,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 71,
+        "severity": "medium"
+      },
+      {
+        "category": "incorrect_super_calls",
+        "issue": "Incorrect super() call: super()",
+        "line": 68,
+        "severity": "high"
+      }
+    ],
+    "ConfigService.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 33,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 33,
+        "severity": "medium"
+      }
+    ],
+    "CoordinateConverter.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 18,
+        "severity": "medium"
+      }
+    ],
+    "DataLoadingOrchestrator.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 31,
+        "severity": "medium"
+      }
+    ],
+    "DataValidator.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 41,
+        "severity": "medium"
+      }
+    ],
+    "DependencyRegistry.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 8,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 7,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 32,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 32,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const dependencyRegistry = new DependencyRegistry()",
+        "line": 303,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const dependencyRegistry = new DependencyRegistry()",
+        "line": 303,
+        "severity": "medium"
+      }
+    ],
+    "DeviceManager.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 18,
+        "severity": "medium"
+      }
+    ],
+    "EnhancedComponentBase.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 16,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 131,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ \n      module:",
+        "line": 131,
+        "severity": "medium"
+      },
+      {
+        "category": "incorrect_super_calls",
+        "issue": "Incorrect super() call: super()",
+        "line": 97,
+        "severity": "high"
+      }
+    ],
+    "EnhancedEventBus.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 10,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 195,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 255,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 309,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 437,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 195,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 255,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 309,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 437,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const enhancedEventBus = new EnhancedEventBus()",
+        "line": 984,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const enhancedEventBus = new EnhancedEventBus()",
+        "line": 984,
+        "severity": "medium"
+      }
+    ],
+    "EnvironmentConfig.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 20,
+        "severity": "medium"
+      }
+    ],
+    "EnvironmentService.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 14,
+        "severity": "medium"
+      }
+    ],
+    "ErrorBoundary.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 96,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 201,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 493,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 96,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 201,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 493,
+        "severity": "medium"
+      },
+      {
+        "category": "missing_inject_decorators",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 61,
+        "severity": "high"
+      }
+    ],
+    "ErrorUI.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 17,
+        "severity": "medium"
+      }
+    ],
+    "FABManager.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 7,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 6,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 36,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ \n      module:",
+        "line": 36,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const fabManager = new FABManager()",
+        "line": 296,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const fabManager = new FABManager()",
+        "line": 296,
+        "severity": "medium"
+      }
+    ],
+    "FeatureEnhancer.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 40,
+        "severity": "medium"
+      }
+    ],
+    "MapManager.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 29,
+        "severity": "medium"
+      }
+    ],
+    "PathResolver.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 19,
+        "severity": "medium"
+      }
+    ],
+    "PlatformService.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 15,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 14,
+        "severity": "medium"
+      }
+    ],
+    "PoliceLoader.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 30,
+        "severity": "medium"
+      }
+    ],
+    "PolygonLoader.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 30,
+        "severity": "medium"
+      }
+    ],
+    "PolygonPlusManager.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 7,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 6,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 28,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 28,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const polygonPlusManager = new PolygonPlusManager()",
+        "line": 330,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const polygonPlusManager = new PolygonPlusManager()",
+        "line": 330,
+        "severity": "medium"
+      }
+    ],
+    "ProgressiveDataLoader.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 5,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 4,
+        "severity": "medium"
+      }
+    ],
+    "ReduxStateManager.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 12,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 346,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 346,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const reduxStateManager = new ReduxStateManager()",
+        "line": 566,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const reduxStateManager = new ReduxStateManager()",
+        "line": 566,
+        "severity": "medium"
+      }
+    ],
+    "RefactoredMapManager.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 10,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 54,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 54,
+        "severity": "medium"
+      },
+      {
+        "category": "incorrect_super_calls",
+        "issue": "Incorrect super() call: super()",
+        "line": 39,
+        "severity": "high"
+      }
+    ],
+    "RefactoredSearchManager.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 10,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 55,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 55,
+        "severity": "medium"
+      },
+      {
+        "category": "incorrect_super_calls",
+        "issue": "Incorrect super() call: super()",
+        "line": 39,
+        "severity": "high"
+      }
+    ],
+    "RefactoredSidebarManager.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 11,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 10,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 54,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 54,
+        "severity": "medium"
+      },
+      {
+        "category": "incorrect_super_calls",
+        "issue": "Incorrect super() call: super()",
+        "line": 39,
+        "severity": "high"
+      }
+    ],
+    "Router.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 9,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: // Temporarily use a mock logger",
+        "line": 8,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: this.logger = logger.createChild",
+        "line": 39,
+        "severity": "medium"
+      },
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 39,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const router = new Router()",
+        "line": 376,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const docsRouter = new DocsRouter()",
+        "line": 377,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const router = new Router()",
+        "line": 376,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const docsRouter = new DocsRouter()",
+        "line": 377,
+        "severity": "medium"
+      }
+    ],
+    "StructuredLogger.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: const logger = {",
+        "line": 744,
+        "severity": "medium"
+      },
+      {
+        "category": "missing_inject_decorators",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 17,
+        "severity": "high"
+      }
+    ],
+    "UtilityManager.js": [
+      {
+        "category": "mock_logger_usage",
+        "issue": "Mock logger usage: logger.createChild({ module:",
+        "line": 18,
+        "severity": "medium"
+      }
+    ],
+    "CircuitBreakerStrategy.js": [
+      {
+        "category": "missing_inject_decorators",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 46,
+        "severity": "high"
+      }
+    ],
+    "ErrorContext.js": [
+      {
+        "category": "missing_inject_decorators",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 63,
+        "severity": "high"
+      }
+    ],
+    "FallbackStrategy.js": [
+      {
+        "category": "missing_inject_decorators",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 60,
+        "severity": "high"
+      }
+    ],
+    "HealthCheckService.js": [
+      {
+        "category": "missing_inject_decorators",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 58,
+        "severity": "high"
+      }
+    ],
+    "RetryStrategy.js": [
+      {
+        "category": "missing_inject_decorators",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 63,
+        "severity": "high"
+      }
+    ],
+    "UnifiedErrorHandler.js": [
+      {
+        "category": "missing_inject_decorators",
+        "issue": "Constructor parameters missing @inject decorators",
+        "line": 73,
+        "severity": "high"
+      }
+    ],
+    "TextFormatter.js": [
+      {
+        "category": "incorrect_super_calls",
+        "issue": "Incorrect super() call: super()",
+        "line": 21,
+        "severity": "high"
+      }
+    ],
+    "DependencyContainer.js": [
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const dependencyContainer = new DependencyContainer()",
+        "line": 589,
+        "severity": "medium"
+      },
+      {
+        "category": "legacy_singleton_exports",
+        "issue": "Legacy singleton export: export const dependencyContainer = new DependencyContainer()",
+        "line": 589,
+        "severity": "medium"
+      }
+    ]
+  }
+}

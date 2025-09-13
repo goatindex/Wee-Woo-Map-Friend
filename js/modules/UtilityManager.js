@@ -4,14 +4,19 @@
  * Migrated from js/utils.js
  */
 
-import { logger } from './StructuredLogger.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 
 /**
  * UtilityManager - Handles various utility functions for the application
  */
-export class UtilityManager {
-  constructor() {
-    this.logger = logger.createChild({ module: 'UtilityManager' });
+@injectable()
+export class UtilityManager extends BaseService {
+  constructor(
+    @inject(TYPES.StructuredLogger) structuredLogger
+  ) {
+    super(structuredLogger);
     this.logger.info('UtilityManager initialized');
   }
 
@@ -498,19 +503,88 @@ export class UtilityManager {
   }
 }
 
-// Create singleton instance
-export const utilityManager = new UtilityManager();
+// Legacy compatibility functions - use DI container instead
+export const utilityManager = {
+  init: () => {
+    console.warn('utilityManager.init: Legacy function called. Use DI container to get UtilityManager instance.');
+    throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+  },
+  getResponsiveContext: () => {
+    console.warn('utilityManager.getResponsiveContext: Legacy function called. Use DI container to get UtilityManager instance.');
+    throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+  },
+  isMobileSize: () => {
+    console.warn('utilityManager.isMobileSize: Legacy function called. Use DI container to get UtilityManager instance.');
+    throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+  },
+  toTitleCase: () => {
+    console.warn('utilityManager.toTitleCase: Legacy function called. Use DI container to get UtilityManager instance.');
+    throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+  },
+  formatFrvName: () => {
+    console.warn('utilityManager.formatFrvName: Legacy function called. Use DI container to get UtilityManager instance.');
+    throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+  },
+  formatLgaName: () => {
+    console.warn('utilityManager.formatLgaName: Legacy function called. Use DI container to get UtilityManager instance.');
+    throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+  },
+  isOffline: () => {
+    console.warn('utilityManager.isOffline: Legacy function called. Use DI container to get UtilityManager instance.');
+    throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+  },
+  showSidebarError: () => {
+    console.warn('utilityManager.showSidebarError: Legacy function called. Use DI container to get UtilityManager instance.');
+    throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+  },
+  convertMGA94ToLatLon: () => {
+    console.warn('utilityManager.convertMGA94ToLatLon: Legacy function called. Use DI container to get UtilityManager instance.');
+    throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+  },
+  createCheckbox: () => {
+    console.warn('utilityManager.createCheckbox: Legacy function called. Use DI container to get UtilityManager instance.');
+    throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+  },
+  destroy: () => {
+    console.warn('utilityManager.destroy: Legacy function called. Use DI container to get UtilityManager instance.');
+    throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+  }
+};
 
-// Legacy compatibility exports
-export const getResponsiveContext = () => utilityManager.getResponsiveContext();
-export const isMobileSize = () => utilityManager.isMobileSize();
-export const toTitleCase = (str) => utilityManager.toTitleCase(str);
-export const formatFrvName = (name) => utilityManager.formatFrvName(name);
-export const formatLgaName = (name) => utilityManager.formatLgaName(name);
-export const isOffline = () => utilityManager.isOffline();
-export const showSidebarError = (message) => utilityManager.showSidebarError(message);
-export const convertMGA94ToLatLon = (easting, northing) => utilityManager.convertMGA94ToLatLon(easting, northing);
-export const createCheckbox = (id, label, checked, onChange) => utilityManager.createCheckbox(id, label, checked, onChange);
-
-// Global exposure handled by consolidated legacy compatibility system
-// See ApplicationBootstrap.setupLegacyCompatibility() for details
+// Legacy convenience functions - use DI container instead
+export const getResponsiveContext = () => {
+  console.warn('getResponsiveContext: Legacy function called. Use DI container to get UtilityManager instance.');
+  throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+};
+export const isMobileSize = () => {
+  console.warn('isMobileSize: Legacy function called. Use DI container to get UtilityManager instance.');
+  throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+};
+export const toTitleCase = () => {
+  console.warn('toTitleCase: Legacy function called. Use DI container to get UtilityManager instance.');
+  throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+};
+export const formatFrvName = () => {
+  console.warn('formatFrvName: Legacy function called. Use DI container to get UtilityManager instance.');
+  throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+};
+export const formatLgaName = () => {
+  console.warn('formatLgaName: Legacy function called. Use DI container to get UtilityManager instance.');
+  throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+};
+export const isOffline = () => {
+  console.warn('isOffline: Legacy function called. Use DI container to get UtilityManager instance.');
+  throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+};
+export const showSidebarError = () => {
+  console.warn('showSidebarError: Legacy function called. Use DI container to get UtilityManager instance.');
+  throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+};
+export const convertMGA94ToLatLon = () => {
+  console.warn('convertMGA94ToLatLon: Legacy function called. Use DI container to get UtilityManager instance.');
+  throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+};
+export const createCheckbox = () => {
+  console.warn('createCheckbox: Legacy function called. Use DI container to get UtilityManager instance.');
+  throw new Error('Legacy function not available. Use DI container to get UtilityManager instance.');
+};

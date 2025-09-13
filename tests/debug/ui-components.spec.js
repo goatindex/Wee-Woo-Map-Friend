@@ -1,6 +1,13 @@
 /**
- * @fileoverview UI Components Tests
- * Tests component interactions and event system in browser environment
+ * @fileoverview Playwright Test File
+ * 
+ * 📚 Documentation:
+ * - Testing Framework: project_docs/development/testing-playwright.md
+ * - Build Process: project_docs/development/build-automation.md
+ * 
+ * 🔧 Build Process:
+ * Tests automatically run `npm run build:js` before execution to ensure
+ * decorators are properly transformed from TypeScript to browser-compatible JavaScript.
  */
 
 import { test, expect } from '@playwright/test';

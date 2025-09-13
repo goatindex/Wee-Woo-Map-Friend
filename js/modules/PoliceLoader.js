@@ -4,18 +4,24 @@
  * Replaces the legacy loadPolice function with a reactive, event-driven system
  */
 
-import { globalEventBus } from './EventBus.js';
-import { stateManager } from './StateManager.js';
-import { configurationManager } from './ConfigurationManager.js';
-import { layerManager } from './LayerManager.js';
-import { logger } from './StructuredLogger.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 
 /**
  * @class PoliceLoader
  * Loads and manages police station data from GeoJSON sources
  */
-export class PoliceLoader {
-  constructor() {
+@injectable()
+export class PoliceLoader extends BaseService {
+  constructor(
+    @inject(TYPES.StructuredLogger) structuredLogger,
+    @inject(TYPES.EventBus) private eventBus,
+    @inject(TYPES.StateManager) private stateManager,
+    @inject(TYPES.ConfigurationManager) private configurationManager,
+    @inject(TYPES.LayerManager) private layerManager
+  ) {
+    super(structuredLogger);
     this.initialized = false;
     this.loading = false;
     this.loaded = false;
@@ -23,7 +29,7 @@ export class PoliceLoader {
     this.markers = new Map(); // key -> marker
     
     // Create module-specific logger
-    this.logger = logger.createChild({ module: 'PoliceLoader' });
+    this.logger = this.
     
     // Bind methods
     this.init = this.init.bind(this);
@@ -75,9 +81,9 @@ export class PoliceLoader {
    */
   async waitForDependencies() {
     const dependencies = [
-      { name: 'LayerManager', check: () => layerManager.isReady() },
-      { name: 'ConfigurationManager', check: () => configurationManager.isReady() },
-      { name: 'StateManager', check: () => stateManager.isReady() }
+      { name: 'LayerManager', check: () => this.layerManager.isReady() },
+      { name: 'ConfigurationManager', check: () => this.configurationManager.isReady() },
+      { name: 'StateManager', check: () => this.stateManager.isReady() }
     ];
     
     for (const dep of dependencies) {
@@ -118,12 +124,12 @@ export class PoliceLoader {
    */
   setupEventListeners() {
     // Listen for layer manager events
-    globalEventBus.on('layer:ready', () => {
+    this.eventBus.on('layer:ready', () => {
       this.logger.info('Layer manager ready, can load police stations');
     });
     
     // Listen for configuration changes
-    globalEventBus.on('config:change', ({ path, value }) => {
+    this.eventBus.on('config:change', ({ path, value }) => {
       if (path.startsWith('categoryMeta.police')) {
         this.logger.info('Police metadata updated');
       }
@@ -183,7 +189,7 @@ export class PoliceLoader {
       this.logger.info('Loading police stations...');
       
       this.loading = true;
-      globalEventBus.emit('police:loading');
+      this.eventBus.emit('police:loading');
       
       // Check offline status
       if (this.isOffline()) {
@@ -207,7 +213,7 @@ export class PoliceLoader {
       this.loading = false;
       
       // Emit success event
-      globalEventBus.emit('police:loaded', { 
+      this.eventBus.emit('police:loaded', { 
         featureCount: this.policeData.length 
       });
       
@@ -224,7 +230,7 @@ export class PoliceLoader {
       this.loading = false;
       
       // Emit error event
-      globalEventBus.emit('police:error', { error });
+      this.eventBus.emit('police:error', { error });
       
       // Show user-friendly error
       this.showLoadingError(error);
@@ -238,13 +244,13 @@ export class PoliceLoader {
    */
   processFeatures() {
     const category = 'police';
-    const meta = configurationManager.get(`categoryMeta.${category}`);
+    const meta = this.configurationManager.get(`categoryMeta.${category}`);
     if (!meta) {
       throw new Error(`No metadata found for category ${category}`);
     }
     
     // Initialize feature layers for police category
-    const currentFeatureLayers = stateManager.get('featureLayers', {});
+    const currentFeatureLayers = this.stateManager.get('featureLayers', {});
     if (!currentFeatureLayers[category]) {
       currentFeatureLayers[category] = {};
     }
@@ -258,10 +264,10 @@ export class PoliceLoader {
       currentFeatureLayers[category][key] = null; // Will be populated when marker is shown
     });
     
-    stateManager.set('featureLayers', currentFeatureLayers);
+    this.stateManager.set('featureLayers', currentFeatureLayers);
     
     // Update names by category
-    const currentNamesByCategory = stateManager.get('namesByCategory', {});
+    const currentNamesByCategory = this.stateManager.get('namesByCategory', {});
     currentNamesByCategory[category] = Object.keys(currentFeatureLayers[category])
       .map(key => {
         const match = this.policeData.find(feature => 
@@ -271,30 +277,30 @@ export class PoliceLoader {
       })
       .sort((a, b) => a.localeCompare(b));
     
-    stateManager.set('namesByCategory', currentNamesByCategory);
+    this.stateManager.set('namesByCategory', currentNamesByCategory);
     
     // Update name to key mapping
-    const currentNameToKey = stateManager.get('nameToKey', {});
+    const currentNameToKey = this.stateManager.get('nameToKey', {});
     currentNameToKey[category] = {};
     currentNamesByCategory[category].forEach(name => {
       currentNameToKey[category][name] = name.toLowerCase().replace(/\s+/g, '_');
     });
     
-    stateManager.set('nameToKey', currentNameToKey);
+    this.stateManager.set('nameToKey', currentNameToKey);
     
     // Initialize emphasised state for category
-    const currentEmphasised = stateManager.get('emphasised', {});
+    const currentEmphasised = this.stateManager.get('emphasised', {});
     if (!currentEmphasised[category]) {
       currentEmphasised[category] = {};
     }
-    stateManager.set('emphasised', currentEmphasised);
+    this.stateManager.set('emphasised', currentEmphasised);
     
     // Initialize name label markers for category
-    const currentNameLabelMarkers = stateManager.get('nameLabelMarkers', {});
+    const currentNameLabelMarkers = this.stateManager.get('nameLabelMarkers', {});
     if (!currentNameLabelMarkers[category]) {
       currentNameLabelMarkers[category] = {};
     }
-    stateManager.set('nameLabelMarkers', currentNameLabelMarkers);
+    this.stateManager.set('nameLabelMarkers', currentNameLabelMarkers);
     
     this.logger.info(`Processed ${this.policeData.length} police features`);
   }
@@ -304,7 +310,7 @@ export class PoliceLoader {
    */
   populateSidebar() {
     const category = 'police';
-    const meta = configurationManager.get(`categoryMeta.${category}`);
+    const meta = this.configurationManager.get(`categoryMeta.${category}`);
     const listEl = document.getElementById(meta.listId);
     
     if (!listEl) {
@@ -315,8 +321,8 @@ export class PoliceLoader {
     // Clear existing content
     listEl.innerHTML = '';
     
-    const namesByCategory = stateManager.get('namesByCategory', {});
-    const nameToKey = stateManager.get('nameToKey', {});
+    const namesByCategory = this.stateManager.get('namesByCategory', {});
+    const nameToKey = this.stateManager.get('nameToKey', {});
     
     // Create checkboxes for each police station
     namesByCategory[category].forEach(fullName => {
@@ -347,7 +353,7 @@ export class PoliceLoader {
    */
   setupToggleAll() {
     const category = 'police';
-    const meta = configurationManager.get(`categoryMeta.${category}`);
+    const meta = this.configurationManager.get(`categoryMeta.${category}`);
     const toggleAll = document.getElementById(meta.toggleAllId);
     
     if (!toggleAll) {
@@ -372,11 +378,11 @@ export class PoliceLoader {
    */
   handleToggleAll(checked) {
     const category = 'police';
-    const namesByCategory = stateManager.get('namesByCategory', {});
-    const nameToKey = stateManager.get('nameToKey', {});
+    const namesByCategory = this.stateManager.get('namesByCategory', {});
+    const nameToKey = this.stateManager.get('nameToKey', {});
     
     // Begin bulk operation
-    stateManager.beginBulkOperation('toggleAll', namesByCategory[category].length);
+    this.stateManager.beginBulkOperation('toggleAll', namesByCategory[category].length);
     
     try {
       namesByCategory[category].forEach(name => {
@@ -395,7 +401,7 @@ export class PoliceLoader {
       });
     } finally {
       // End bulk operation
-      stateManager.endBulkOperation();
+      this.stateManager.endBulkOperation();
     }
     
     this.logger.info(`Toggle All handled for ${category}`, { checked });
@@ -411,23 +417,23 @@ export class PoliceLoader {
       this.hideMarker(key);
       
       // Clean up emphasis and labels
-      const emphasised = stateManager.get('emphasised', {});
+      const emphasised = this.stateManager.get('emphasised', {});
       if (emphasised.police) {
         emphasised.police[key] = false;
-        stateManager.set('emphasised', emphasised);
+        this.stateManager.set('emphasised', emphasised);
       }
       
-      const nameLabelMarkers = stateManager.get('nameLabelMarkers', {});
-      const map = stateManager.get('map');
+      const nameLabelMarkers = this.stateManager.get('nameLabelMarkers', {});
+      const map = this.stateManager.get('map');
       if (nameLabelMarkers.police?.[key] && map) {
         map.removeLayer(nameLabelMarkers.police[key]);
         nameLabelMarkers.police[key] = null;
-        stateManager.set('nameLabelMarkers', nameLabelMarkers);
+        this.stateManager.set('nameLabelMarkers', nameLabelMarkers);
       }
     }
     
     // Update active list
-    globalEventBus.emit('activeList:update');
+    this.eventBus.emit('activeList:update');
   }
   
   /**
@@ -454,14 +460,14 @@ export class PoliceLoader {
    * Show police marker for the given key
    */
   showMarker(key) {
-    const map = stateManager.get('map');
+    const map = this.stateManager.get('map');
     if (!map) {
       this.logger.warn('Map not available');
       return;
     }
     
     // Check if marker already exists and is visible
-    const featureLayers = stateManager.get('featureLayers', {});
+    const featureLayers = this.stateManager.get('featureLayers', {});
     if (featureLayers.police?.[key]) {
       map.addLayer(featureLayers.police[key]);
       return;
@@ -497,7 +503,7 @@ export class PoliceLoader {
     
     // Store marker reference
     featureLayers.police[key] = marker;
-    stateManager.set('featureLayers', featureLayers);
+    this.stateManager.set('featureLayers', featureLayers);
     
     this.markers.set(key, marker);
     
@@ -508,13 +514,13 @@ export class PoliceLoader {
    * Hide police marker for the given key
    */
   hideMarker(key) {
-    const map = stateManager.get('map');
+    const map = this.stateManager.get('map');
     if (!map) {
       this.logger.warn('Map not available');
       return;
     }
     
-    const featureLayers = stateManager.get('featureLayers', {});
+    const featureLayers = this.stateManager.get('featureLayers', {});
     const marker = featureLayers.police?.[key];
     
     if (marker) {
@@ -595,7 +601,19 @@ export class PoliceLoader {
 }
 
 // Export singleton instance
-export const policeLoader = new PoliceLoader();
+// Legacy compatibility functions - use DI container instead
+export const policeLoader = {
+  init: () => { console.warn('policeLoader.init: Legacy function called. Use DI container to get PoliceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get PoliceLoader instance.'); },
+  load: () => { console.warn('policeLoader.load: Legacy function called. Use DI container to get PoliceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get PoliceLoader instance.'); },
+  getFeatures: () => { console.warn('policeLoader.getFeatures: Legacy function called. Use DI container to get PoliceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get PoliceLoader instance.'); },
+  createIcon: () => { console.warn('policeLoader.createIcon: Legacy function called. Use DI container to get PoliceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get PoliceLoader instance.'); },
+  showMarker: () => { console.warn('policeLoader.showMarker: Legacy function called. Use DI container to get PoliceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get PoliceLoader instance.'); },
+  hideMarker: () => { console.warn('policeLoader.hideMarker: Legacy function called. Use DI container to get PoliceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get PoliceLoader instance.'); },
+  processFeatures: () => { console.warn('policeLoader.processFeatures: Legacy function called. Use DI container to get PoliceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get PoliceLoader instance.'); },
+  populateSidebar: () => { console.warn('policeLoader.populateSidebar: Legacy function called. Use DI container to get PoliceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get PoliceLoader instance.'); },
+  setupToggleAll: () => { console.warn('policeLoader.setupToggleAll: Legacy function called. Use DI container to get PoliceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get PoliceLoader instance.'); },
+  handleMarkerToggle: () => { console.warn('policeLoader.handleMarkerToggle: Legacy function called. Use DI container to get PoliceLoader instance.'); throw new Error('Legacy function not available. Use DI container to get PoliceLoader instance.'); }
+};
 
 // Global exposure handled by consolidated legacy compatibility system
 // See ApplicationBootstrap.setupLegacyCompatibility() for details

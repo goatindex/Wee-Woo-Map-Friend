@@ -3,8 +3,8 @@
  * Provides offline support and performance optimization through caching
  */
 
-// Updated cache versions to force cache invalidation - DataService removed
-const CACHE_VERSION = 'v2.1.0-no-dataservice';
+// Updated cache versions - DataService migration completed
+const CACHE_VERSION = 'v2.1.0-stable';
 const CACHE_NAME = `weewoo-map-${CACHE_VERSION}`;
 const STATIC_CACHE = `weewoo-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `weewoo-runtime-${CACHE_VERSION}`;
@@ -37,7 +37,6 @@ const STATIC_ASSETS = [
   `${BASE_PATH}dist/modules/EnhancedEventBus.js`,
   `${BASE_PATH}dist/modules/StructuredLogger.js`,
   `${BASE_PATH}dist/modules/ConfigService.js`,
-  `${BASE_PATH}dist/modules/DataService.js`,
   `${BASE_PATH}dist/modules/ComponentCommunication.js`,
   `${BASE_PATH}dist/modules/ComponentLifecycleManager.js`,
   `${BASE_PATH}dist/modules/ComponentErrorBoundary.js`,
@@ -148,7 +147,7 @@ self.addEventListener('activate', event => {
             type: 'CACHE_INVALIDATED',
             version: CACHE_VERSION,
             action: 'RELOAD',
-            reason: 'DataService removed - force fresh load'
+            reason: 'Cache updated - migration completed'
           });
         });
       });
@@ -179,7 +178,7 @@ self.addEventListener('message', event => {
             type: 'CACHE_INVALIDATED',
             version: CACHE_VERSION,
             action: 'RELOAD',
-            reason: event.data.reason
+            reason: event.data.reason || 'Manual cache invalidation'
           });
         });
       });

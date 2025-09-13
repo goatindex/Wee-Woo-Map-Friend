@@ -3,14 +3,19 @@
  * @module ErrorUI
  */
 
-import { logger } from './StructuredLogger.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 
 /**
  * Error UI utility for displaying dismissible error messages and handling online/offline states
  */
-export class ErrorUI {
-  constructor() {
-    this.logger = logger.createChild({ module: 'ErrorUI' });
+@injectable()
+export class ErrorUI extends BaseService {
+  constructor(
+    @inject(TYPES.StructuredLogger) structuredLogger
+  ) {
+    super(structuredLogger);
     this.errorMessages = new Set(); // Track active error messages
     this.isOfflineListenerSetup = false;
     
@@ -310,10 +315,48 @@ export class ErrorUI {
   }
 }
 
-// Create and export a singleton instance
-export const errorUI = new ErrorUI();
+// Legacy compatibility functions - use DI container instead
+export const errorUI = {
+  showSidebarError: () => {
+    console.warn('errorUI.showSidebarError: Legacy function called. Use DI container to get ErrorUI instance.');
+    throw new Error('Legacy function not available. Use DI container to get ErrorUI instance.');
+  },
+  removeErrorMessage: () => {
+    console.warn('errorUI.removeErrorMessage: Legacy function called. Use DI container to get ErrorUI instance.');
+    throw new Error('Legacy function not available. Use DI container to get ErrorUI instance.');
+  },
+  clearAllErrors: () => {
+    console.warn('errorUI.clearAllErrors: Legacy function called. Use DI container to get ErrorUI instance.');
+    throw new Error('Legacy function not available. Use DI container to get ErrorUI instance.');
+  },
+  isOffline: () => {
+    console.warn('errorUI.isOffline: Legacy function called. Use DI container to get ErrorUI instance.');
+    throw new Error('Legacy function not available. Use DI container to get ErrorUI instance.');
+  },
+  setupOfflineListener: () => {
+    console.warn('errorUI.setupOfflineListener: Legacy function called. Use DI container to get ErrorUI instance.');
+    throw new Error('Legacy function not available. Use DI container to get ErrorUI instance.');
+  },
+  showSuccessMessage: () => {
+    console.warn('errorUI.showSuccessMessage: Legacy function called. Use DI container to get ErrorUI instance.');
+    throw new Error('Legacy function not available. Use DI container to get ErrorUI instance.');
+  },
+  showWarningMessage: () => {
+    console.warn('errorUI.showWarningMessage: Legacy function called. Use DI container to get ErrorUI instance.');
+    throw new Error('Legacy function not available. Use DI container to get ErrorUI instance.');
+  }
+};
 
-// Legacy compatibility functions for backward compatibility
-export const showSidebarError = (message, options) => errorUI.showSidebarError(message, options);
-export const isOffline = () => errorUI.isOffline();
-export const setupOfflineListener = () => errorUI.setupOfflineListener();
+// Legacy convenience functions - use DI container instead
+export const showSidebarError = () => {
+  console.warn('showSidebarError: Legacy function called. Use DI container to get ErrorUI instance.');
+  throw new Error('Legacy function not available. Use DI container to get ErrorUI instance.');
+};
+export const isOffline = () => {
+  console.warn('isOffline: Legacy function called. Use DI container to get ErrorUI instance.');
+  throw new Error('Legacy function not available. Use DI container to get ErrorUI instance.');
+};
+export const setupOfflineListener = () => {
+  console.warn('setupOfflineListener: Legacy function called. Use DI container to get ErrorUI instance.');
+  throw new Error('Legacy function not available. Use DI container to get ErrorUI instance.');
+};

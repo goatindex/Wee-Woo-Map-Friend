@@ -3,15 +3,18 @@
  * @module CoordinateConverter
  */
 
-import { logger } from './StructuredLogger.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
 
 /**
  * Coordinate conversion utility for MGA94 Zone 55 (EPSG:28355) to WGS84 conversion
  * Uses proj4 library for coordinate system transformations
  */
+@injectable()
 export class CoordinateConverter {
-  constructor() {
-    this.logger = logger.createChild({ module: 'CoordinateConverter' });
+  constructor(
+    @inject(TYPES.StructuredLogger) private logger
+  ) {
     this.logger.info('CoordinateConverter initialized');
   }
 
@@ -151,10 +154,17 @@ export class CoordinateConverter {
   }
 }
 
-// Create and export a singleton instance
-export const coordinateConverter = new CoordinateConverter();
-
 // Legacy compatibility functions for backward compatibility
-export const convertMGA94ToLatLon = (x, y) => coordinateConverter.convertMGA94ToLatLon(x, y);
-export const batchConvertMGA94ToLatLon = (coordinates) => coordinateConverter.batchConvertMGA94ToLatLon(coordinates);
-export const validateMGA94Coordinates = (x, y) => coordinateConverter.validateMGA94Coordinates(x, y);
+// Note: These functions will be removed once all modules are migrated to DI
+export const convertMGA94ToLatLon = (x, y) => {
+  console.warn('convertMGA94ToLatLon: Legacy function called. Use DI container to get CoordinateConverter instance.');
+  throw new Error('Legacy function not available. Use DI container to get CoordinateConverter instance.');
+};
+export const batchConvertMGA94ToLatLon = (coordinates) => {
+  console.warn('batchConvertMGA94ToLatLon: Legacy function called. Use DI container to get CoordinateConverter instance.');
+  throw new Error('Legacy function not available. Use DI container to get CoordinateConverter instance.');
+};
+export const validateMGA94Coordinates = (x, y) => {
+  console.warn('validateMGA94Coordinates: Legacy function called. Use DI container to get CoordinateConverter instance.');
+  throw new Error('Legacy function not available. Use DI container to get CoordinateConverter instance.');
+};

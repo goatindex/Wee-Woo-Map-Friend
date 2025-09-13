@@ -1,0 +1,120 @@
+{
+  "name": "weewoo-map-friends-v2",
+  "version": "2.0.0",
+  "description": "Emergency Services Mapping Tool for Australia",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:github": "vite --mode github",
+    "dev:webapp": "vite --mode webapp",
+    "dev:native": "vite --mode native",
+    "build": "vite build",
+    "build:github": "vite build --mode github",
+    "build:webapp": "vite build --mode webapp",
+    "build:native": "vite build --mode native",
+    "build:all": "npm run build:github && npm run build:webapp && npm run build:native",
+    "build:analyze": "node scripts/build-analyze.js",
+    "build:budget-check": "node scripts/build-budget-check.js",
+    "preview": "vite preview",
+    "preview:github": "vite preview --mode github",
+    "preview:webapp": "vite preview --mode webapp",
+    "preview:native": "vite preview --mode native",
+    "test": "vitest",
+    "test:unit": "vitest",
+    "test:unit:coverage": "vitest --coverage",
+    "test:unit:ui": "vitest --ui",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:github": "playwright test --config=playwright.github.config.js",
+    "test:e2e:webapp": "playwright test --config=playwright.webapp.config.js",
+    "test:e2e:native": "playwright test --config=playwright.native.config.js",
+    "test:critical-path": "playwright test tests/critical-path.spec.js",
+    "test:offline": "playwright test tests/offline.spec.js",
+    "test:performance": "playwright test tests/performance.spec.js",
+    "lint": "eslint src --ext .js,.ts,.jsx,.tsx",
+    "lint:fix": "eslint src --ext .js,.ts,.jsx,.tsx --fix",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
+    "security:check": "npm audit --audit-level=moderate",
+    "license:check": "license-checker --onlyAllow 'MIT;Apache-2.0;BSD-3-Clause'",
+    "complexity:check": "plop complexity-check",
+    "prepare": "husky install",
+    "deploy:github": "npm run build:github && gh-pages -d dist",
+    "deploy:webapp": "npm run build:webapp && vercel --prod",
+    "deploy:native": "npm run build:native && npx cap sync",
+    "deploy:all": "npm run deploy:github && npm run deploy:webapp && npm run deploy:native"
+  },
+  "keywords": [
+    "emergency-services",
+    "mapping",
+    "australia",
+    "victoria",
+    "weather",
+    "routing",
+    "mobile"
+  ],
+  "author": "WeeWoo Map Friends Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mapexp/weewoo-map-friends-v2.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mapexp/weewoo-map-friends-v2/issues"
+  },
+  "homepage": "https://mapexp.github.io/weewoo-map-friends-v2",
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "turf": "^6.5.0",
+    "proj4": "^2.9.0",
+    "zustand": "^4.4.7",
+    "axios": "^1.6.0",
+    "date-fns": "^2.30.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@types/leaflet": "^1.9.8",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "@vitejs/plugin-swc": "^3.5.0",
+    "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.0",
+    "terser": "^5.24.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0",
+    "vite-plugin-pwa": "^0.17.0",
+    "vitest": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "gh-pages": "^6.1.0",
+    "license-checker": "^25.0.0",
+    "jscpd": "^3.5.0",
+    "plop": "^4.0.0",
+    "rollup-plugin-analyzer": "^4.0.0",
+    "@lhci/cli": "^0.12.0"
+  },
+  "lint-staged": {
+    "*.{js,ts,jsx,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ]
+}

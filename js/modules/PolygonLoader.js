@@ -4,26 +4,29 @@
  * Replaces the legacy loadPolygonCategory function with a reactive, event-driven system
  */
 
-import { globalEventBus } from './EventBus.js';
-import { stateManager } from './StateManager.js';
-import { configurationManager } from './ConfigurationManager.js';
-import { layerManager } from './LayerManager.js';
-import { logger } from './StructuredLogger.js';
-import { labelManager } from './LabelManager.js';
+import { injectable, inject } from 'inversify';
+import { TYPES } from './Types.js';
+import { BaseService } from './BaseService.js';
 
 /**
  * @class PolygonLoader
  * Loads and manages polygon data from GeoJSON sources
  */
-export class PolygonLoader {
-  constructor() {
+@injectable()
+export class PolygonLoader extends BaseService {
+  constructor(
+    @inject(TYPES.StructuredLogger) structuredLogger,
+    @inject(TYPES.EventBus) private eventBus,
+    @inject(TYPES.StateManager) private stateManager,
+    @inject(TYPES.ConfigurationManager) private configurationManager,
+    @inject(TYPES.LayerManager) private layerManager,
+    @inject(TYPES.LabelManager) private labelManager
+  ) {
+    super(structuredLogger);
     this.initialized = false;
     this.loadingCategories = new Set();
     this.loadedCategories = new Set();
     this.categoryData = new Map(); // category -> { features, layers, names, nameToKey }
-    
-    // Create module-specific logger
-    this.logger = logger.createChild({ module: 'PolygonLoader' });
     
     // Bind methods
     this.init = this.init.bind(this);
@@ -72,9 +75,9 @@ export class PolygonLoader {
    */
   async waitForDependencies() {
     const dependencies = [
-      { name: 'LayerManager', check: () => layerManager.isReady() },
-      { name: 'ConfigurationManager', check: () => configurationManager.isReady() },
-      { name: 'StateManager', check: () => stateManager.isReady() }
+      { name: 'LayerManager', check: () => this.layerManager.isReady() },
+      { name: 'ConfigurationManager', check: () => this.configurationManager.isReady() },
+      { name: 'StateManager', check: () => this.stateManager.isReady() }
     ];
     
     for (const dep of dependencies) {
@@ -115,12 +118,12 @@ export class PolygonLoader {
    */
   setupEventListeners() {
     // Listen for layer manager events
-    globalEventBus.on('layer:ready', () => {
+    this.eventBus.on('layer:ready', () => {
       console.log('🔄 PolygonLoader: Layer manager ready, can load polygons');
     });
     
     // Listen for configuration changes
-    globalEventBus.on('config:change', ({ path, value }) => {
+    this.eventBus.on('config:change', ({ path, value }) => {
       if (path.startsWith('categoryMeta')) {
         console.log('🔄 PolygonLoader: Category metadata updated');
       }
@@ -147,7 +150,7 @@ export class PolygonLoader {
       console.log(`🔧 PolygonLoader: Loading category ${category} from ${url}`);
       
       this.loadingCategories.add(category);
-      globalEventBus.emit('polygon:loading', { category, url });
+      this.eventBus.emit('polygon:loading', { category, url });
       
       // Check offline status
       if (this.isOffline()) {
@@ -187,7 +190,7 @@ export class PolygonLoader {
       });
       
       // Emit success event
-      globalEventBus.emit('polygon:loaded', { 
+      this.eventBus.emit('polygon:loaded', { 
         category, 
         featureCount: processedData.features.length,
         layerCount: layers.length
@@ -201,7 +204,7 @@ export class PolygonLoader {
       this.loadingCategories.delete(category);
       
       // Emit error event
-      globalEventBus.emit('polygon:error', { category, error });
+      this.eventBus.emit('polygon:error', { category, error });
       
       // Show user-friendly error
       this.showLoadingError(category, error);
@@ -214,7 +217,7 @@ export class PolygonLoader {
    * Process GeoJSON features for a category
    */
   processFeatures(category, features) {
-    const meta = configurationManager.get(`categoryMeta.${category}`);
+    const meta = this.configurationManager.get(`categoryMeta.${category}`);
     if (!meta) {
       throw new Error(`No metadata found for category ${category}`);
     }
@@ -295,7 +298,7 @@ export class PolygonLoader {
    * Create map layers from processed features
    */
   createLayers(category, features) {
-    const meta = configurationManager.get(`categoryMeta.${category}`);
+    const meta = this.configurationManager.get(`categoryMeta.${category}`);
     const layers = [];
     
     // Group features by key
@@ -311,7 +314,7 @@ export class PolygonLoader {
     // Create layers for each key
     featuresByKey.forEach((keyFeatures, key) => {
       try {
-        const styleFn = configurationManager.getStyle(category);
+        const styleFn = this.configurationManager.getStyle(category);
         const style = styleFn ? styleFn() : {};
         const layer = L.geoJSON(keyFeatures, {
           style,
@@ -322,7 +325,7 @@ export class PolygonLoader {
           layers.push(layer);
           
           // Add to layer manager
-          layerManager.addLayer(category, key, layer);
+          this.layerManager.addLayer(category, key, layer);
         }
         
       } catch (error) {
@@ -339,7 +342,7 @@ export class PolygonLoader {
   updateState(category, processedData, layers) {
     try {
       // Update feature layers in state
-      const currentFeatureLayers = stateManager.get('featureLayers', {});
+      const currentFeatureLayers = this.stateManager.get('featureLayers', {});
       if (!currentFeatureLayers[category]) {
         currentFeatureLayers[category] = {};
       }
@@ -375,38 +378,38 @@ export class PolygonLoader {
       });
       
       currentFeatureLayers[category] = layersByKey;
-      stateManager.set('featureLayers', currentFeatureLayers);
+      this.stateManager.set('featureLayers', currentFeatureLayers);
       
       // Update names by category
-      const currentNamesByCategory = stateManager.get('namesByCategory', {});
+      const currentNamesByCategory = this.stateManager.get('namesByCategory', {});
       currentNamesByCategory[category] = processedData.names;
-      stateManager.set('namesByCategory', currentNamesByCategory);
+      this.stateManager.set('namesByCategory', currentNamesByCategory);
       
       // Update name to key mapping
-      const currentNameToKey = stateManager.get('nameToKey', {});
+      const currentNameToKey = this.stateManager.get('nameToKey', {});
       currentNameToKey[category] = processedData.nameToKey;
-      stateManager.set('nameToKey', currentNameToKey);
+      this.stateManager.set('nameToKey', currentNameToKey);
       
       // Initialize emphasised state for category
-      const currentEmphasised = stateManager.get('emphasised', {});
+      const currentEmphasised = this.stateManager.get('emphasised', {});
       if (!currentEmphasised[category]) {
         currentEmphasised[category] = {};
       }
-      stateManager.set('emphasised', currentEmphasised);
+      this.stateManager.set('emphasised', currentEmphasised);
       
       // Initialize name label markers for category
-      const currentNameLabelMarkers = stateManager.get('nameLabelMarkers', {});
+      const currentNameLabelMarkers = this.stateManager.get('nameLabelMarkers', {});
       if (!currentNameLabelMarkers[category]) {
         currentNameLabelMarkers[category] = {};
       }
-      stateManager.set('nameLabelMarkers', currentNameLabelMarkers);
+      this.stateManager.set('nameLabelMarkers', currentNameLabelMarkers);
       
       // Initialize SES facility markers and coordinates
-      if (!stateManager.get('sesFacilityMarkers')) {
-        stateManager.set('sesFacilityMarkers', {});
+      if (!this.stateManager.get('sesFacilityMarkers')) {
+        this.stateManager.set('sesFacilityMarkers', {});
       }
-      if (!stateManager.get('sesFacilityCoords')) {
-        stateManager.set('sesFacilityCoords', {});
+      if (!this.stateManager.get('sesFacilityCoords')) {
+        this.stateManager.set('sesFacilityCoords', {});
       }
       
       this.logger.info(`State updated for category ${category}`);
@@ -425,7 +428,7 @@ export class PolygonLoader {
    */
   populateSidebar(category, processedData) {
     try {
-      const meta = configurationManager.get(`categoryMeta.${category}`);
+      const meta = this.configurationManager.get(`categoryMeta.${category}`);
       const listEl = document.getElementById(meta.listId);
       
       if (!listEl) {
@@ -495,10 +498,10 @@ export class PolygonLoader {
     try {
       if (checked) {
         // Show layer
-        layerManager.showLayer(category, key);
+        this.layerManager.showLayer(category, key);
         
         // Show name label for polygons
-        const meta = configurationManager.get(`categoryMeta.${category}`);
+        const meta = this.configurationManager.get(`categoryMeta.${category}`);
         if (meta.type === 'polygon') {
           const labelName = this.formatDisplayName(category, displayName);
           this.ensureLabel(category, key, labelName, false);
@@ -509,7 +512,7 @@ export class PolygonLoader {
         
       } else {
         // Hide layer
-        layerManager.hideLayer(category, key);
+        this.layerManager.hideLayer(category, key);
         
         // Remove label
         this.removeLabel(category, key);
@@ -519,7 +522,7 @@ export class PolygonLoader {
       }
       
       // Update active list
-      globalEventBus.emit('activeList:update');
+      this.eventBus.emit('activeList:update');
       
     } catch (error) {
       console.error(`🚨 PolygonLoader: Failed to handle feature toggle for ${category}/${key}:`, error);
@@ -534,7 +537,7 @@ export class PolygonLoader {
       const categoryData = this.categoryData.get(category);
       if (!categoryData) return;
       
-      const meta = configurationManager.get(`categoryMeta.${category}`);
+      const meta = this.configurationManager.get(`categoryMeta.${category}`);
       const toggleAll = document.getElementById(meta.toggleAllId);
       
       // Optimistic UI: disable toggle and show loading state
@@ -544,7 +547,7 @@ export class PolygonLoader {
       }
       
       // Begin bulk operation for performance
-      const bulkStarted = stateManager.beginBulkOperation('toggleAll', categoryData.names.length);
+      const bulkStarted = this.stateManager.beginBulkOperation('toggleAll', categoryData.names.length);
       if (!bulkStarted) {
         this.logger.warn('Bulk operation already active, proceeding without bulk optimization');
       }
@@ -607,7 +610,7 @@ export class PolygonLoader {
         
       } finally {
         // End bulk operations and process deferred items
-        stateManager.endBulkOperation();
+        this.stateManager.endBulkOperation();
         
         // Restore toggle state
         if (toggleAll) {
@@ -634,10 +637,10 @@ export class PolygonLoader {
    */
   handleFeatureToggleDirect(category, key, checked, displayName) {
     try {
-      const map = stateManager.get('map');
+      const map = this.stateManager.get('map');
       if (!map) return;
       
-      const featureLayers = stateManager.get('featureLayers', {});
+      const featureLayers = this.stateManager.get('featureLayers', {});
       const categoryLayers = featureLayers[category]?.[key];
       
       if (!categoryLayers) return;
@@ -655,11 +658,11 @@ export class PolygonLoader {
           }
           
           // Defer label creation during bulk operation
-          if (stateManager.get('isBulkOperation')) {
-            const meta = configurationManager.get(`categoryMeta.${category}`);
+          if (this.stateManager.get('isBulkOperation')) {
+            const meta = this.configurationManager.get(`categoryMeta.${category}`);
             if (meta.type === 'polygon') {
               const labelName = this.formatDisplayName(category, displayName);
-              stateManager.addPendingLabel({
+              this.stateManager.addPendingLabel({
                 category, 
                 key, 
                 labelName, 
@@ -669,7 +672,7 @@ export class PolygonLoader {
             }
           } else {
             // Show name label for polygons
-            const meta = configurationManager.get(`categoryMeta.${category}`);
+            const meta = this.configurationManager.get(`categoryMeta.${category}`);
             if (meta.type === 'polygon') {
               const labelName = this.formatDisplayName(category, displayName);
               this.ensureLabel(category, key, labelName, false, layer);
@@ -687,17 +690,17 @@ export class PolygonLoader {
           }
           
           // Clean up emphasis and labels
-          const emphasised = stateManager.get('emphasised', {});
+          const emphasised = this.stateManager.get('emphasised', {});
           if (emphasised[category]) {
             emphasised[category][key] = false;
-            stateManager.set('emphasised', emphasised);
+            this.stateManager.set('emphasised', emphasised);
           }
           
-          const nameLabelMarkers = stateManager.get('nameLabelMarkers', {});
+          const nameLabelMarkers = this.stateManager.get('nameLabelMarkers', {});
           if (nameLabelMarkers[category]?.[key]) {
             map.removeLayer(nameLabelMarkers[category][key]);
             nameLabelMarkers[category][key] = null;
-            stateManager.set('nameLabelMarkers', nameLabelMarkers);
+            this.stateManager.set('nameLabelMarkers', nameLabelMarkers);
           }
         }
       });
@@ -802,7 +805,7 @@ export class PolygonLoader {
    * Create SES chevron icon
    */
   makeSesChevronIcon() {
-    const outlineColors = configurationManager.get('outlineColors', {});
+    const outlineColors = this.configurationManager.get('outlineColors', {});
     const color = outlineColors.ses || '#FF9900';
     const size = 14; // height of triangle
     const half = 8;  // half width of base
@@ -821,16 +824,16 @@ export class PolygonLoader {
   showSesChevron(key, map = null) {
     try {
       if (!map) {
-        map = stateManager.get('map');
+        map = this.stateManager.get('map');
         if (!map) return;
       }
       
       // Check if marker already exists
-      const sesFacilityMarkers = stateManager.get('sesFacilityMarkers', {});
+      const sesFacilityMarkers = this.stateManager.get('sesFacilityMarkers', {});
       if (sesFacilityMarkers[key]) return;
       
       // Get coordinates
-      const sesFacilityCoords = stateManager.get('sesFacilityCoords', {});
+      const sesFacilityCoords = this.stateManager.get('sesFacilityCoords', {});
       const coordData = sesFacilityCoords[key.toLowerCase()];
       if (!coordData) return;
       
@@ -843,7 +846,7 @@ export class PolygonLoader {
       
       // Store marker reference
       sesFacilityMarkers[key] = marker;
-      stateManager.set('sesFacilityMarkers', sesFacilityMarkers);
+      this.stateManager.set('sesFacilityMarkers', sesFacilityMarkers);
       
       this.logger.debug(`SES chevron shown for ${key}`);
       
@@ -860,17 +863,17 @@ export class PolygonLoader {
   hideSesChevron(key, map = null) {
     try {
       if (!map) {
-        map = stateManager.get('map');
+        map = this.stateManager.get('map');
         if (!map) return;
       }
       
-      const sesFacilityMarkers = stateManager.get('sesFacilityMarkers', {});
+      const sesFacilityMarkers = this.stateManager.get('sesFacilityMarkers', {});
       const marker = sesFacilityMarkers[key];
       
       if (marker) {
         map.removeLayer(marker);
         delete sesFacilityMarkers[key];
-        stateManager.set('sesFacilityMarkers', sesFacilityMarkers);
+        this.stateManager.set('sesFacilityMarkers', sesFacilityMarkers);
         
         this.logger.debug(`SES chevron hidden for ${key}`);
       }
@@ -909,14 +912,14 @@ export class PolygonLoader {
   }
   
   ensureLabel(category, key, name, isPoint, layer) {
-    if (labelManager) {
-      labelManager.ensureLabel(category, key, name, isPoint, layer);
+    if (this.labelManager) {
+      this.labelManager.ensureLabel(category, key, name, isPoint, layer);
     }
   }
   
   removeLabel(category, key) {
-    if (labelManager) {
-      labelManager.removeLabel(category, key);
+    if (this.labelManager) {
+      this.labelManager.removeLabel(category, key);
     }
   }
   
@@ -979,7 +982,41 @@ export class PolygonLoader {
 }
 
 // Export singleton instance
-export const polygonLoader = new PolygonLoader();
+// Legacy compatibility functions - use DI container instead
+export const polygonLoader = {
+  init: () => {
+    console.warn('polygonLoader.init: Legacy function called. Use DI container to get PolygonLoader instance.');
+    throw new Error('Legacy function not available. Use DI container to get PolygonLoader instance.');
+  },
+  loadCategory: () => {
+    console.warn('polygonLoader.loadCategory: Legacy function called. Use DI container to get PolygonLoader instance.');
+    throw new Error('Legacy function not available. Use DI container to get PolygonLoader instance.');
+  },
+  processFeatures: () => {
+    console.warn('polygonLoader.processFeatures: Legacy function called. Use DI container to get PolygonLoader instance.');
+    throw new Error('Legacy function not available. Use DI container to get PolygonLoader instance.');
+  },
+  createLayers: () => {
+    console.warn('polygonLoader.createLayers: Legacy function called. Use DI container to get PolygonLoader instance.');
+    throw new Error('Legacy function not available. Use DI container to get PolygonLoader instance.');
+  },
+  getCategoryData: () => {
+    console.warn('polygonLoader.getCategoryData: Legacy function called. Use DI container to get PolygonLoader instance.');
+    throw new Error('Legacy function not available. Use DI container to get PolygonLoader instance.');
+  },
+  isCategoryLoaded: () => {
+    console.warn('polygonLoader.isCategoryLoaded: Legacy function called. Use DI container to get PolygonLoader instance.');
+    throw new Error('Legacy function not available. Use DI container to get PolygonLoader instance.');
+  },
+  getLoadedCategories: () => {
+    console.warn('polygonLoader.getLoadedCategories: Legacy function called. Use DI container to get PolygonLoader instance.');
+    throw new Error('Legacy function not available. Use DI container to get PolygonLoader instance.');
+  },
+  cleanup: () => {
+    console.warn('polygonLoader.cleanup: Legacy function called. Use DI container to get PolygonLoader instance.');
+    throw new Error('Legacy function not available. Use DI container to get PolygonLoader instance.');
+  }
+};
 
 // Global exposure handled by consolidated legacy compatibility system
 // See ApplicationBootstrap.setupLegacyCompatibility() for details

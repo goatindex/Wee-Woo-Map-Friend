@@ -43,6 +43,7 @@ WeeWoo Map Friend is built on a modern, responsive architecture that prioritizes
 - **Performance Optimization**: Canvas rendering, async operations, and smart caching strategies
 - **Legacy Compatibility**: Backward compatibility maintained during modernization
 - **Modern Build System**: SWC-based compilation for TypeScript decorators and ES6 modules
+- **Structured Logging**: Service-specific logging with context-aware structured output
 
 ## Key Components
 
@@ -119,6 +120,18 @@ WeeWoo Map Friend is built on a modern, responsive architecture that prioritizes
 - **`js/workers/geometryWorker.js`** — Background geometry processing for performance optimization
 - **Async Processing** — Heavy spatial calculations without blocking main thread
 - **Performance Enhancement** — Improved responsiveness during complex operations
+
+### Logging Architecture
+
+- **`js/modules/StructuredLogger.js`** — Centralized structured logging system with multiple transports
+- **`js/modules/BaseService.js`** — Base service class providing `this.logger` property to all extending services
+- **Service-Specific Logging** — Each service gets its own logger instance with module context
+- **Dual Logging Patterns**:
+  - **Services extending BaseService**: Use `this.logger.debug()`, `this.logger.info()`, etc.
+  - **Services extending BaseService**: Also have `this.log()` and `this.logError()` methods for backward compatibility
+  - **DependencyContainer**: Uses direct `logger.info()` calls since it doesn't extend BaseService
+- **Structured Output** — All logs include service context, timestamps, and structured metadata
+- **Performance Tracking** — Built-in performance timing and metrics collection
 
 ## Event Flow
 
