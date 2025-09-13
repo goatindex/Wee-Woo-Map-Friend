@@ -1022,3 +1022,6 @@ __pycache__/
 performance-baseline.json
 
 # Generated files cleanup - added by cleanup script
+
+# MCP configuration files (contain secrets)
+mcp.json
